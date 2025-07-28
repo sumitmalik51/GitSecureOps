@@ -13,13 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v3
-        with:
-          submodules: true
-          lfs: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,41 +25,22 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: 🧹 Clean and install dependencies
-        run: |
-          npm cache clean --force
-          rm -rf node_modules package-lock.json
-          cd github-repo-manager
-          npm install
-
-      - name: 🧪 Verify Node.js and Vite
-        run: |
-          node --version
-          npm --version
-          npx vite --version
+      - name: Install dependencies
         working-directory: github-repo-manager
+        run: npm install
 
-      - name: 🧱 TypeScript compilation
-        run: npx tsc -b
+      - name: Build with Vite
         working-directory: github-repo-manager
-
-      - name: 🚀 Build with Vite
-        run: npx vite build --mode production
+        run: npm run build
         env:
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
           VITE_GITHUB_REDIRECT_URI: ${{ secrets.VITE_GITHUB_REDIRECT_URI }}
           VITE_GITHUB_CLIENT_SECRET: ${{ secrets.VITE_GITHUB_CLIENT_SECRET }}
-          NODE_OPTIONS: "--max-old-space-size=4096"
-        working-directory: github-repo-manager
 
-      - name: 📁 List build output
-        run: ls -la github-repo-manager/dist/
-
-      - name: 🚀 Deploy to Azure Static Web App
-        id: builddeploy
+      - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_PEBBLE_03A66440F }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "github-repo-manager"
