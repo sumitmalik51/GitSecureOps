@@ -1,0 +1,8 @@
+name: github-repo-manager
+infra:
+  provider: bicep
+services:
+  github-repo-manager-web:
+    project: ./
+    host: staticwebapp
+    language: ts

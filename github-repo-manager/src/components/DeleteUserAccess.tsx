@@ -446,7 +446,7 @@ export default function DeleteUserAccess({
                 </h3>
                 <button
                   onClick={addUserField}
-                  className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                  className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-black dark:text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
                   disabled={searching}
                 >
                   + Add User
@@ -498,7 +498,7 @@ export default function DeleteUserAccess({
               <button
                 onClick={searchUserAccess}
                 disabled={searching || getValidUsernames().length === 0}
-                className="group relative px-8 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="group relative px-8 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-black dark:text-white font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <div className="flex items-center">
                   {searching ? (
@@ -658,7 +658,7 @@ export default function DeleteUserAccess({
                 <button
                   onClick={removeUserAccess}
                   disabled={removing}
-                  className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all duration-300 disabled:opacity-50 disabled:transform-none overflow-hidden"
+                  className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-black dark:text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all duration-300 disabled:opacity-50 disabled:transform-none overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="relative flex items-center">

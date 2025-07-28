@@ -1,13 +1,15 @@
 // GitHub OAuth Service
+import environmentService from './environmentService';
+
 export class GitHubOAuthService {
   private clientId: string;
   private redirectUri: string;
   private scopes: string[];
 
   constructor() {
-    // These should be set via environment variables in production
-    this.clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || 'your-github-client-id';
-    this.redirectUri = import.meta.env.VITE_GITHUB_REDIRECT_URI || `${window.location.origin}/auth/callback`;
+    // Use environment service for configuration
+    this.clientId = environmentService.getGitHubClientId();
+    this.redirectUri = environmentService.getGitHubRedirectUri();
     this.scopes = ['repo', 'read:org', 'user:email'];
   }
 
@@ -101,7 +103,7 @@ export class GitHubOAuthService {
       },
       body: JSON.stringify({
         client_id: this.clientId,
-        client_secret: import.meta.env.VITE_GITHUB_CLIENT_SECRET,
+        client_secret: environmentService.getGitHubClientSecret(),
         code: code,
       }),
     });
