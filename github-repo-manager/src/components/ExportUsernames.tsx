@@ -6,8 +6,9 @@ interface ExportUsernamesProps {
   token: string;
   username: string;
   onBack: () => void;
-  selectedScope?: 'user' | 'org' | 'all';
+  selectedScope?: 'user' | 'org' | 'all' | 'multi-org';
   selectedOrg?: string;
+  selectedOrgs?: string[];
 }
 
 interface CollaboratorData {
@@ -20,7 +21,8 @@ export default function ExportUsernames({
   token, 
   onBack, 
   selectedScope = 'user', 
-  selectedOrg = '' 
+  selectedOrg = '',
+  selectedOrgs: _selectedOrgs = []
 }: ExportUsernamesProps) {
   const [collaborators, setCollaborators] = useState<CollaboratorData[]>([]);
   const [loading, setLoading] = useState(false);

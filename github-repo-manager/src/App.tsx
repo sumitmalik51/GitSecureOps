@@ -7,14 +7,16 @@ import OrganizationSelector from './components/OrganizationSelector';
 import DeleteUserAccess from './components/DeleteUserAccess';
 import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
+import githubService from './services/githubService';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'app'>('landing');
   const [token, setToken] = useState('');
   const [username, setUsername] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
-  const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'all'>('user');
+  const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'all' | 'multi-org'>('user');
   const [selectedOrg, setSelectedOrg] = useState<string>('');
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
 
   const handleGetStarted = () => {
     setCurrentPage('auth');
@@ -23,6 +25,10 @@ function App() {
   const handleAuthSuccess = (authToken: string, authUsername: string) => {
     setToken(authToken);
     setUsername(authUsername);
+    
+    // Set the token in the github service so it can make API calls
+    githubService.setToken(authToken);
+    
     setCurrentPage('app');
     setCurrentView('dashboard');
   };
@@ -30,6 +36,10 @@ function App() {
   const handleLogout = () => {
     setToken('');
     setUsername('');
+    
+    // Clear the token from the github service
+    githubService.setToken('');
+    
     setCurrentPage('landing');
     setCurrentView('dashboard');
     setSelectedScope('user');
@@ -48,16 +58,23 @@ function App() {
     }
   };
 
-  const handleScopeSelection = (scope: 'user' | 'org' | 'all', orgLogin?: string) => {
+  const handleScopeSelection = (scope: 'user' | 'org' | 'all' | 'multi-org', orgLogin?: string, selectedOrgsList?: string[]) => {
     if (scope === 'org' && orgLogin) {
       setSelectedScope('org');
       setSelectedOrg(orgLogin);
+      setSelectedOrgs([]);
+    } else if (scope === 'multi-org' && selectedOrgsList && selectedOrgsList.length > 0) {
+      setSelectedScope('multi-org');
+      setSelectedOrgs(selectedOrgsList);
+      setSelectedOrg('');
     } else if (scope === 'all') {
       setSelectedScope('all');
       setSelectedOrg('');
+      setSelectedOrgs([]);
     } else {
       setSelectedScope('user');
       setSelectedOrg('');
+      setSelectedOrgs([]);
     }
     
     // Extract the original option from the current view
@@ -135,6 +152,7 @@ function App() {
             onBack={handleBack}
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );
@@ -148,6 +166,7 @@ function App() {
             repoType="private"
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );
@@ -161,6 +180,7 @@ function App() {
             repoType="public"
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );
@@ -173,6 +193,7 @@ function App() {
             onBack={handleBack}
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );

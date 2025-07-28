@@ -6,17 +6,19 @@ interface DeleteUserAccessProps {
   token: string;
   username: string;
   onBack: () => void;
-  selectedScope?: 'user' | 'org' | 'all';
+  selectedScope?: 'user' | 'org' | 'all' | 'multi-org';
   selectedOrg?: string;
+  selectedOrgs?: string[];
 }
 
 export default function DeleteUserAccess({ 
   token, 
   onBack, 
   selectedScope = 'user', 
-  selectedOrg = '' 
+  selectedOrg = '',
+  selectedOrgs = []
 }: DeleteUserAccessProps) {
-  const [targetUsername, setTargetUsername] = useState('');
+  const [targetUsernames, setTargetUsernames] = useState<string[]>(['']);
   const [searching, setSearching] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState('');
@@ -30,9 +32,32 @@ export default function DeleteUserAccess({
   const [removeErrors, setRemoveErrors] = useState<{ repo: string; error: string }[]>([]);
   const [currentPhase, setCurrentPhase] = useState('');
 
+  // Helper functions for multi-user management
+  const addUserField = () => {
+    setTargetUsernames([...targetUsernames, '']);
+  };
+
+  const removeUserField = (index: number) => {
+    if (targetUsernames.length > 1) {
+      const newUsernames = targetUsernames.filter((_, i) => i !== index);
+      setTargetUsernames(newUsernames);
+    }
+  };
+
+  const updateUsername = (index: number, value: string) => {
+    const newUsernames = [...targetUsernames];
+    newUsernames[index] = value;
+    setTargetUsernames(newUsernames);
+  };
+
+  const getValidUsernames = () => {
+    return targetUsernames.filter(username => username.trim() !== '');
+  };
+
   const searchUserAccess = async () => {
-    if (!targetUsername.trim()) {
-      setError('Please enter a username to search');
+    const validUsernames = getValidUsernames();
+    if (validUsernames.length === 0) {
+      setError('Please enter at least one username to search');
       return;
     }
 
@@ -58,6 +83,16 @@ export default function DeleteUserAccess({
         setSearchProgress(`🏢 Loading ${selectedOrg} organization repositories...`);
         allRepos = await githubService.getOrgRepositories(selectedOrg);
         setSearchProgress(`🏢 Loaded ${allRepos.length} ${selectedOrg} organization repositories`);
+      } else if (selectedScope === 'multi-org' && selectedOrgs && selectedOrgs.length > 0) {
+        setSearchProgress(`🏢 Loading ${selectedOrgs.length} selected organizations...`);
+        setSearchProgressValue(10);
+        const orgRepoArrays = await Promise.all(
+          selectedOrgs.map(orgLogin => 
+            githubService.getOrgRepositories(orgLogin).catch(() => [])
+          )
+        );
+        allRepos = orgRepoArrays.flat();
+        setSearchProgress(`🏢 Loaded ${allRepos.length} repositories from ${selectedOrgs.length} organizations`);
       } else {
         setSearchProgress(`🔍 Loading all repositories + organizations...`);
         setSearchProgressValue(10);
@@ -75,17 +110,20 @@ export default function DeleteUserAccess({
       
       // Phase 2: Search for user access
       setCurrentPhase('Searching for User Access');
+      const userList = validUsernames.join(', ');
       let searchMessage;
       if (selectedScope === 'user') {
-        searchMessage = `🚀 Searching ${allRepos.length} personal repositories for "${targetUsername}"...`;
+        searchMessage = `🚀 Searching ${allRepos.length} personal repositories for users: ${userList}...`;
       } else if (selectedScope === 'org' && selectedOrg) {
-        searchMessage = `🏢 Searching ${allRepos.length} ${selectedOrg} repositories for "${targetUsername}"...`;
+        searchMessage = `🏢 Searching ${allRepos.length} ${selectedOrg} repositories for users: ${userList}...`;
+      } else if (selectedScope === 'multi-org' && selectedOrgs && selectedOrgs.length > 0) {
+        searchMessage = `🏢 Searching ${allRepos.length} repositories from ${selectedOrgs.length} orgs for users: ${userList}...`;
       } else {
-        searchMessage = `🔍 Searching ${allRepos.length} repositories + orgs for "${targetUsername}"...`;
+        searchMessage = `🔍 Searching ${allRepos.length} repositories + orgs for users: ${userList}...`;
       }
       setSearchProgress(searchMessage);
       
-      // Find repositories where the target user has access - with batching
+      // Find repositories where any of the target users have access - with batching
       const reposWithAccess: RepoAccess[] = [];
       const BATCH_SIZE = 10; // Process 10 repos at a time to avoid overwhelming the API
       
@@ -94,44 +132,47 @@ export default function DeleteUserAccess({
         
         const batchPromises = batch.map(async (repo) => {
           try {
-            // First, only check if user is a direct collaborator
+            // First, only check if any target user is a direct collaborator
             const collaborators = await githubService.getRepositoryCollaborators(
               repo.owner.login,
               repo.name
             );
             
-            const collaborator = collaborators.find(collab => 
-              collab.login.toLowerCase() === targetUsername.toLowerCase()
+            const foundUsers = collaborators.filter(collab => 
+              validUsernames.some(username => 
+                collab.login.toLowerCase() === username.toLowerCase()
+              )
             );
             
-            // Only include if user is a direct collaborator
-            if (collaborator) {
-              // Get detailed permission info only for confirmed collaborators
+            // Return info for each found user
+            const userAccesses = [];
+            for (const user of foundUsers) {
               const repoAccess = await githubService.getUserPermissionForRepo(
                 repo.owner.login,
                 repo.name,
-                targetUsername
+                user.login
               );
               
-              return {
+              userAccesses.push({
                 repo: repo.full_name,
                 hasAccess: true,
                 permission: repoAccess.permission,
                 permissionIcon: repoAccess.permissionIcon,
-                permissionColor: repoAccess.permissionColor
-              };
+                permissionColor: repoAccess.permissionColor,
+                user: user.login
+              });
             }
             
-            return null;
+            return userAccesses;
           } catch (err) {
             // If we can't check collaborators, the user likely doesn't have admin access to this repo
             console.warn(`Cannot check collaborators for ${repo.full_name} - likely no admin access:`, err);
-            return null;
+            return [];
           }
         });
         
         const batchResults = await Promise.all(batchPromises);
-        const foundRepos = batchResults.filter(repo => repo !== null) as RepoAccess[];
+        const foundRepos = batchResults.flat().filter(repo => repo !== null) as RepoAccess[];
         reposWithAccess.push(...foundRepos);
         
         const newProcessed = i + batch.length;
@@ -146,6 +187,8 @@ export default function DeleteUserAccess({
           progressMessage = `🚀 Processed ${newProcessed}/${allRepos.length} personal repositories... Found ${reposWithAccess.length} matches`;
         } else if (selectedScope === 'org' && selectedOrg) {
           progressMessage = `🏢 Processed ${newProcessed}/${allRepos.length} ${selectedOrg} repositories... Found ${reposWithAccess.length} matches`;
+        } else if (selectedScope === 'multi-org' && selectedOrgs && selectedOrgs.length > 0) {
+          progressMessage = `🏢 Processed ${newProcessed}/${allRepos.length} repositories from ${selectedOrgs.length} orgs... Found ${reposWithAccess.length} matches`;
         } else {
           progressMessage = `🔍 Processed ${newProcessed}/${allRepos.length} repositories + orgs... Found ${reposWithAccess.length} matches`;
         }
@@ -164,11 +207,11 @@ export default function DeleteUserAccess({
       setSearchProgressValue(100);
       
       if (reposWithAccess.length === 0) {
-        setError(`User "${targetUsername}" does not have access to any of your ${allRepos.length} repositories`);
-        setSearchProgress(`❌ Search complete - No access found for "${targetUsername}"`);
+        setError(`None of the specified users (${userList}) have access to any of your ${allRepos.length} repositories`);
+        setSearchProgress(`❌ Search complete - No access found for users: ${userList}`);
       } else {
-        setSuccess(`Found ${reposWithAccess.length} repositories where "${targetUsername}" has access`);
-        setSearchProgress(`✅ Search complete - Found ${reposWithAccess.length} repositories with "${targetUsername}" access`);
+        setSuccess(`Found ${reposWithAccess.length} repository access entries for users: ${userList}`);
+        setSearchProgress(`✅ Search complete - Found ${reposWithAccess.length} access entries for users: ${userList}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search user access');
@@ -200,28 +243,36 @@ export default function DeleteUserAccess({
     const errors: { repo: string; error: string }[] = [];
     let processed = 0;
     
-    setSearchProgress(`🚨 Starting removal of "${targetUsername}" from ${userRepos.length} repositories...`);
+    const uniqueUsers = [...new Set(userRepos.map(repo => repo.user))];
+    const userList = uniqueUsers.join(', ');
+    
+    setSearchProgress(`🚨 Starting removal of users (${userList}) from ${userRepos.length} repository access entries...`);
     setRemoveProgressValue(5);
     
     for (const repoAccess of userRepos) {
       const [owner, repoName] = repoAccess.repo.split('/');
+      if (!repoAccess.user) {
+        console.warn(`No user specified for repository ${repoAccess.repo}`);
+        continue;
+      }
+      
       try {
-        setSearchProgress(`🗑️ Removing "${targetUsername}" from ${repoAccess.repo}...`);
-        await githubService.removeCollaborator(owner, repoName, targetUsername);
+        setSearchProgress(`🗑️ Removing "${repoAccess.user}" from ${repoAccess.repo}...`);
+        await githubService.removeCollaborator(owner, repoName, repoAccess.user);
         results.success++;
-        setSearchProgress(`✅ Removed "${targetUsername}" from ${repoAccess.repo}`);
+        setSearchProgress(`✅ Removed "${repoAccess.user}" from ${repoAccess.repo}`);
       } catch (err) {
         results.failed++;
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        errors.push({ repo: repoAccess.repo, error: errorMessage });
-        console.error(`Failed to remove ${targetUsername} from ${repoAccess.repo}:`, err);
-        setSearchProgress(`❌ Failed to remove "${targetUsername}" from ${repoAccess.repo}`);
+        errors.push({ repo: `${repoAccess.repo} (${repoAccess.user})`, error: errorMessage });
+        console.error(`Failed to remove ${repoAccess.user} from ${repoAccess.repo}:`, err);
+        setSearchProgress(`❌ Failed to remove "${repoAccess.user}" from ${repoAccess.repo}`);
       }
       
       processed++;
       const progress = (processed / userRepos.length) * 95; // Reserve 5% for finalization
       setRemoveProgressValue(5 + progress);
-      setSearchProgress(`🔄 Progress: ${processed}/${userRepos.length} repositories processed (${results.success} successful, ${results.failed} failed)`);
+      setSearchProgress(`🔄 Progress: ${processed}/${userRepos.length} access entries processed (${results.success} successful, ${results.failed} failed)`);
       
       // Small delay between removals to be respectful to the API
       if (processed < userRepos.length) {
@@ -234,13 +285,13 @@ export default function DeleteUserAccess({
     setRemoveErrors(errors);
     
     if (results.success > 0) {
-      setSuccess(`Successfully removed "${targetUsername}" from ${results.success} repositories`);
+      setSuccess(`Successfully removed user access from ${results.success} repository entries for users: ${userList}`);
       setUserRepos([]);
-      setSearchProgress(`✅ Removal complete! Successfully removed "${targetUsername}" from ${results.success} repositories`);
+      setSearchProgress(`✅ Removal complete! Successfully removed access from ${results.success} repository entries`);
     }
     
     if (results.failed > 0) {
-      setError(`Failed to remove access from ${results.failed} repositories. See details below.`);
+      setError(`Failed to remove access from ${results.failed} repository entries. See details below.`);
       setSearchProgress(`⚠️ Removal completed with ${results.failed} failures. Check details below.`);
     }
     
@@ -375,36 +426,81 @@ export default function DeleteUserAccess({
                     <span className="text-blue-700">Search Scope:</span> 
                     {selectedScope === 'user' && <span className="ml-2 text-blue-600">👤 Your personal repositories</span>}
                     {selectedScope === 'org' && <span className="ml-2 text-purple-600">🏢 {selectedOrg} organization</span>}
+                    {selectedScope === 'multi-org' && selectedOrgs && (
+                      <span className="ml-2 text-purple-600">
+                        🏢 {selectedOrgs.length} organizations: {selectedOrgs.join(', ')}
+                      </span>
+                    )}
                     {selectedScope === 'all' && <span className="ml-2 text-green-600">🌐 All repositories + organizations</span>}
                   </p>
                 </div>
               </div>
             </div>
             
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={targetUsername}
-                  onChange={(e) => setTargetUsername(e.target.value)}
-                  placeholder="Enter GitHub username to search..."
-                  className="block w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500 text-gray-900 font-medium transition-all duration-300 hover:bg-white/90"
-                  onKeyPress={(e) => e.key === 'Enter' && !searching && searchUserAccess()}
+            
+            {/* Multi-User Input Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  <span className="text-red-600">👥</span> Target Users
+                </h3>
+                <button
+                  onClick={addUserField}
+                  className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
                   disabled={searching}
-                />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
+                >
+                  + Add User
+                </button>
               </div>
+              
+              {targetUsernames.map((username, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => updateUsername(index, e.target.value)}
+                      placeholder={`Enter GitHub username ${index + 1}...`}
+                      className="block w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500 text-gray-900 font-medium transition-all duration-300 hover:bg-white/90"
+                      onKeyPress={(e) => e.key === 'Enter' && !searching && searchUserAccess()}
+                      disabled={searching}
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  {targetUsernames.length > 1 && (
+                    <button
+                      onClick={() => removeUserField(index)}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300"
+                      disabled={searching}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex gap-4 mt-6">
+              <div className="flex-1">
+                {/* Additional info or status */}
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">💡 Tip:</span> You can search for multiple users at once to bulk manage their repository access.
+                </p>
+              </div>
+              
               <button
                 onClick={searchUserAccess}
-                disabled={searching}
-                className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all duration-300 disabled:opacity-50 disabled:transform-none overflow-hidden"
+                disabled={searching || getValidUsernames().length === 0}
+                className="group relative px-8 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative flex items-center">
+                <div className="flex items-center">
                   {searching ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
@@ -415,7 +511,7 @@ export default function DeleteUserAccess({
                       <svg className="w-5 h-5 mr-2 group-hover:scale-105 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      Search
+                      Search ({getValidUsernames().length} user{getValidUsernames().length !== 1 ? 's' : ''})
                     </>
                   )}
                 </div>
@@ -554,7 +650,7 @@ export default function DeleteUserAccess({
                   </div>
                   <div>
                     <h3 className="text-xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
-                      Repositories with "{targetUsername}" access
+                      Repositories with User Access
                     </h3>
                     <p className="text-gray-600 text-sm mt-1">Found {userRepos.length} repositories with user access</p>
                   </div>
@@ -594,11 +690,21 @@ export default function DeleteUserAccess({
                         </div>
                         <div className="flex flex-col">
                           <span className="text-gray-900 font-medium">{repoAccess.repo}</span>
-                          <div className="flex items-center mt-1">
-                            <span className="text-lg mr-1">{repoAccess.permissionIcon}</span>
-                            <span className={`text-xs px-2 py-1 rounded-full font-semibold border ${repoAccess.permissionColor}`}>
-                              {repoAccess.permission.toUpperCase()}
-                            </span>
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center">
+                              <span className="text-lg mr-1">{repoAccess.permissionIcon}</span>
+                              <span className={`text-xs px-2 py-1 rounded-full font-semibold border ${repoAccess.permissionColor}`}>
+                                {repoAccess.permission.toUpperCase()}
+                              </span>
+                            </div>
+                            {repoAccess.user && (
+                              <div className="text-xs text-gray-600 ml-2">
+                                <span className="font-medium">User:</span> 
+                                <span className="ml-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full font-semibold">
+                                  {repoAccess.user}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -697,7 +803,7 @@ export default function DeleteUserAccess({
         <div className="mt-8 text-center">
           <button
             onClick={() => {
-              setTargetUsername('');
+              setTargetUsernames(['']);
               setUserRepos([]);
               setError('');
               setSuccess('');
