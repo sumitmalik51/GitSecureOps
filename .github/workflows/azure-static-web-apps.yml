@@ -17,57 +17,52 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v3
+      - name: 📦 Checkout repo
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: github-repo-manager/package-lock.json
 
-      - name: Install Dependencies
-        working-directory: github-repo-manager
+      - name: 🧹 Clean and install dependencies
         run: |
-          npm ci
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          cd github-repo-manager
+          npm install
 
-      - name: Debug Versions
-        working-directory: github-repo-manager
+      - name: 🧪 Verify Node.js and Vite
         run: |
           node --version
           npm --version
           npx vite --version
-
-      - name: Build with Vite
         working-directory: github-repo-manager
-        run: |
-          npx tsc -b
-          npx vite build --mode production
+
+      - name: 🧱 TypeScript compilation
+        run: npx tsc -b
+        working-directory: github-repo-manager
+
+      - name: 🚀 Build with Vite
+        run: npx vite build --mode production
         env:
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
           VITE_GITHUB_REDIRECT_URI: ${{ secrets.VITE_GITHUB_REDIRECT_URI }}
           VITE_GITHUB_CLIENT_SECRET: ${{ secrets.VITE_GITHUB_CLIENT_SECRET }}
           NODE_OPTIONS: "--max-old-space-size=4096"
+        working-directory: github-repo-manager
 
-      - name: List Build Output
+      - name: 📁 List build output
         run: ls -la github-repo-manager/dist/
 
-      - name: Get Id Token
-        uses: actions/github-script@v6
-        id: idtoken
-        with:
-          script: |
-            return await core.getIDToken()
-          result-encoding: string
-
-
-      - name: Deploy to Azure Static Web App
+      - name: 🚀 Deploy to Azure Static Web App
+        id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_PEBBLE_03A66440F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "github-repo-manager"
           output_location: "github-repo-manager/dist"
           skip_app_build: true
-          github_id_token: ${{ steps.idtoken.outputs.result }}
