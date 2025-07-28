@@ -179,7 +179,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
               </h2>
               <div className="max-w-2xl mx-auto">
                 <p className="text-xl text-gray-800 dark:text-gray-200 font-semibold mb-6">
-                  Select the scope where you want to perform this operation.
+                  Select the scope where you want GitSecureOps to operate.
                 </p>
                 <div className="bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-gray-600 shadow-lg">
                   <p className="text-gray-700 dark:text-gray-300 font-medium mb-4">
@@ -209,7 +209,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
                       <div>
                         <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">Important Note</p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          This selection determines where the application will scan for user access and apply changes.
+                          This selection determines where GitSecureOps will scan for user access and apply changes.
                           For organization-level actions, make sure your token has the necessary permissions.
                         </p>
                       </div>
@@ -303,17 +303,17 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
                       >
                         {isMultiSelectMode ? (
                           <div className="flex items-center">
-                            <svg className="w-5 h-5 mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            <span className="text-white">Cancel Selection</span>
+                            Cancel Selection
                           </div>
                         ) : (
                           <div className="flex items-center">
-                            <svg className="w-5 h-5 mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                             </svg>
-                            <span className="text-white">Multi-Select Mode</span>
+                            Multi-Select Mode
                           </div>
                         )}
                       </button>

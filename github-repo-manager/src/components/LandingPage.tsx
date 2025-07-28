@@ -32,16 +32,16 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
         `
       }} />
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50">
+      <nav className="fixed top-0 w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            {/* Logo - Left Corner */}
+            <div className="flex items-center space-x-3 flex-shrink-0">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
                 <span className="text-white text-lg font-bold">🔒</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Repository Management</p>
               </div>
             </div>

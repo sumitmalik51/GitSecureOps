@@ -67,24 +67,6 @@
       .glow-hover:hover {
         box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.5);
       }
-      .cursor-dot.hovered {
-        background-color: rgba(34, 197, 94, 0.8); /* Green tint on hover */
-        transform: scale(1.5); /* Enlarged cursor */
-      }
-      body.custom-cursor {
-        cursor: none;
-      }
-      .cursor-dot {
-        width: 12px; /* Slightly larger cursor */
-        height: 12px;
-        border-radius: 50%;
-        background-color: rgba(59, 130, 246, 0.8); /* Blue tint */
-        position: fixed;
-        pointer-events: none;
-        transform: translate(-50%, -50%);
-        z-index: 9999;
-        transition: transform 0.15s ease, background-color 0.3s ease;
-      }
       .floating-cta {
         position: fixed;
         bottom: 30px;
@@ -429,9 +411,6 @@
     <div id="popup-greeting" class="hidden fixed top-20 right-4 text-white px-4 py-2 rounded-lg shadow-lg z-50 max-w-sm text-sm">
     </div>
     
-    <!-- Custom Cursor -->
-    <div class="cursor-dot"></div>
-    
     <!-- Floating CTA -->
     <div class="floating-cta hidden">
       🚀 Streamline Your Repos
@@ -474,23 +453,6 @@
       if (backToTop) {
         backToTop.addEventListener('click', () => {
           window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-      }
-      
-      // Custom cursor functionality
-      const cursor = document.querySelector('.cursor-dot');
-      if (cursor) {
-        document.addEventListener('mousemove', (e) => {
-          cursor.style.left = e.clientX + 'px';
-          cursor.style.top = e.clientY + 'px';
-        });
-        
-        document.addEventListener('mousedown', () => {
-          cursor.classList.add('hovered');
-        });
-        
-        document.addEventListener('mouseup', () => {
-          cursor.classList.remove('hovered');
         });
       }
     </script>

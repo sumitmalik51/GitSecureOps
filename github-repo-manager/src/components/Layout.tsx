@@ -116,7 +116,18 @@ export default function Layout({ children, username, onLogout, currentView, onNa
                 </svg>
               </button>
               
-              <div>
+              {/* GitSecureOps Logo - Left Corner */}
+              <div className="flex items-center space-x-3 lg:hidden">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">🔒</span>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+                </div>
+              </div>
+              
+              {/* Current View Info */}
+              <div className="lg:block">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
                   {currentView === 'dashboard' 
                     ? `Welcome ${username}` 
