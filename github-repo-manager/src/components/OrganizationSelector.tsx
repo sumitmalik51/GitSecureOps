@@ -166,12 +166,44 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
         <div className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl p-8">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mb-4">
-              <span className="text-2xl">🎯</span>
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
             </div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              Select Your Scope
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
+              Choose Where to Perform This Action
             </h2>
-            <p className="text-gray-600 mt-2">Choose where you'd like to perform this action</p>
+            <div className="max-w-2xl mx-auto">
+              <p className="text-lg text-gray-700 font-medium mb-4">
+                Select the scope where you want GitSecureOps to operate.
+              </p>
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
+                <p className="text-gray-600 mb-4">
+                  You can choose to search and manage user access in:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span className="text-gray-700">Your personal repositories</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    <span className="text-gray-700">A specific GitHub organization</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span className="text-gray-700">All accessible repositories (personal + orgs)</span>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-blue-200">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">💡 Note:</span> This selection determines where GitSecureOps will scan for user access and apply changes.
+                    For organization-level actions, make sure your token has the necessary permissions.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-6">
@@ -238,8 +270,8 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
                       onClick={toggleMultiSelectMode}
                       className={`px-4 py-2 font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md ${
                         isMultiSelectMode 
-                          ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700' 
-                          : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
+                          ? 'bg-gradient-to-r from-red-500 to-red-600 text-black hover:from-red-600 hover:to-red-700' 
+                          : 'bg-gradient-to-r from-purple-500 to-pink-500 text-black hover:from-purple-600 hover:to-pink-600'
                       }`}
                     >
                       {isMultiSelectMode ? '✕ Cancel' : '📋 Multi-Select'}

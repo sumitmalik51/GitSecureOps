@@ -110,7 +110,9 @@ function App() {
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
             title="Delete User Access"
-            description="Choose where to search for user access to remove"
+            description="Select the GitHub organization(s) where you want to scan and remove user access.
+
+GitSecureOps will search across all repositories within the selected org(s) and identify where the specified user has access. Once identified, you'll have the option to review and remove access in bulk."
           />
         </Layout>
       );
