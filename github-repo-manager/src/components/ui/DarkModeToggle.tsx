@@ -8,10 +8,10 @@ export function useDarkMode() {
       if (stored !== null) {
         return JSON.parse(stored);
       }
-      // Default to system preference
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Default to dark mode instead of system preference
+      return true;
     }
-    return false;
+    return true; // Default to dark mode
   });
 
   useEffect(() => {

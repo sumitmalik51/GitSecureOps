@@ -13,8 +13,8 @@ export default function Layout({ children, username, onLogout, currentView, onNa
   const navigationItems = [
     {
       id: 'dashboard',
-      label: 'Dashboard',
-      icon: '🏠',
+      label: `Welcome ${username}`,
+      icon: '👋',
       description: 'Main overview'
     },
     {
@@ -118,7 +118,10 @@ export default function Layout({ children, username, onLogout, currentView, onNa
               
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-                  {currentView.replace(/-/g, ' ').replace('list ', '')}
+                  {currentView === 'dashboard' 
+                    ? `Welcome ${username}` 
+                    : currentView.replace(/-/g, ' ').replace('list ', '')
+                  }
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                   {getCurrentViewDescription(currentView)}
@@ -166,7 +169,7 @@ export default function Layout({ children, username, onLogout, currentView, onNa
 function getCurrentViewDescription(view: string): string {
   switch (view) {
     case 'dashboard':
-      return 'Overview of all available operations';
+      return 'Choose from the options below to manage your repositories';
     case 'delete-user-access':
       return 'Remove user access from repositories';
     case 'list-private-repos':

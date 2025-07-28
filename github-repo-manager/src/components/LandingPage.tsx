@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DarkModeToggle from './ui/DarkModeToggle';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -16,9 +17,9 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-gray-200 z-50">
+      <nav className="fixed top-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
@@ -27,8 +28,8 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 <span className="text-white text-lg font-bold">🔒</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">GitHub AccessOps</h1>
-                <p className="text-xs text-gray-600">Repository Management</p>
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white">GitHub AccessOps</h1>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Repository Management</p>
               </div>
             </div>
 
@@ -36,22 +37,23 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
             <div className="hidden md:flex items-center space-x-8">
               <button 
                 onClick={() => scrollToSection('features')}
-                className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
               >
                 Features
               </button>
               <button 
                 onClick={() => scrollToSection('about')}
-                className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
               >
                 About
               </button>
               <button 
                 onClick={() => scrollToSection('contact')}
-                className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
               >
                 Contact
               </button>
+              <DarkModeToggle />
               <button
                 onClick={onGetStarted}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
@@ -61,10 +63,11 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center space-x-2">
+              <DarkModeToggle />
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-gray-600 hover:text-gray-900 focus:outline-none"
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:outline-none"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -75,23 +78,23 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
+            <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
               <div className="flex flex-col space-y-4">
                 <button 
                   onClick={() => scrollToSection('features')}
-                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors text-left"
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-left"
                 >
                   Features
                 </button>
                 <button 
                   onClick={() => scrollToSection('about')}
-                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors text-left"
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-left"
                 >
                   About
                 </button>
                 <button 
                   onClick={() => scrollToSection('contact')}
-                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors text-left"
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-left"
                 >
                   Contact
                 </button>
@@ -108,13 +111,13 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <section className="pt-24 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              GitHub <span className="text-blue-600">AccessOps</span>
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+              GitHub <span className="text-blue-600 dark:text-blue-400">AccessOps</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
               Professional GitHub repository management with enterprise-grade security. 
               Streamline user access, automate permissions, and maintain compliance.
             </p>
@@ -127,7 +130,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
               </button>
               <button 
                 onClick={() => scrollToSection('features')}
-                className="text-blue-600 hover:text-blue-700 px-8 py-4 rounded-lg font-semibold text-lg transition-colors border border-blue-600 hover:bg-blue-50"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-8 py-4 rounded-lg font-semibold text-lg transition-colors border border-blue-600 dark:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
               >
                 Learn More
               </button>
@@ -137,54 +140,54 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               What GitHub AccessOps Does
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Comprehensive repository management tools for modern development teams
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">🔐</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Automated Access Control</h3>
-              <p className="text-gray-600 leading-relaxed">Streamline user permissions across repositories with intelligent automation</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Automated Access Control</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Streamline user permissions across repositories with intelligent automation</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">⚡</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Lightning Fast</h3>
-              <p className="text-gray-600 leading-relaxed">Process thousands of repositories in minutes with optimized batch operations</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Lightning Fast</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Process thousands of repositories in minutes with optimized batch operations</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">🛡️</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Enterprise Security</h3>
-              <p className="text-gray-600 leading-relaxed">Bank-grade security with OAuth integration and zero data persistence</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Enterprise Security</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Bank-grade security with OAuth integration and zero data persistence</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-20 bg-gray-50">
+      <section id="about" className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
                 Built for Modern Development Teams
               </h2>
-              <p className="text-lg text-gray-600 mb-6">
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
                 GitHub AccessOps simplifies repository management with enterprise-grade security and automation. 
                 Whether you&apos;re managing user permissions, auditing access, or exporting data for compliance, 
                 our platform handles it all with precision and speed.
@@ -192,36 +195,36 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
               <div className="space-y-4">
                 <div className="flex items-center">
                   <span className="text-green-500 mr-3">✓</span>
-                  <span className="text-gray-700">Zero data storage - your token stays secure</span>
+                  <span className="text-gray-700 dark:text-gray-300">Zero data storage - your token stays secure</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-green-500 mr-3">✓</span>
-                  <span className="text-gray-700">Lightning-fast batch operations</span>
+                  <span className="text-gray-700 dark:text-gray-300">Lightning-fast batch operations</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-green-500 mr-3">✓</span>
-                  <span className="text-gray-700">Enterprise-ready security features</span>
+                  <span className="text-gray-700 dark:text-gray-300">Enterprise-ready security features</span>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <div className="bg-white dark:bg-gray-700 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-600">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Key Features</h3>
               <ul className="space-y-3">
                 <li className="flex items-center">
-                  <span className="text-blue-600 mr-3">🗑️</span>
-                  <span>Delete User Access</span>
+                  <span className="text-blue-600 dark:text-blue-400 mr-3">🗑️</span>
+                  <span className="text-gray-700 dark:text-gray-300">Delete User Access</span>
                 </li>
                 <li className="flex items-center">
-                  <span className="text-blue-600 mr-3">🔒</span>
-                  <span>List Private Repositories</span>
+                  <span className="text-blue-600 dark:text-blue-400 mr-3">🔒</span>
+                  <span className="text-gray-700 dark:text-gray-300">List Private Repositories</span>
                 </li>
                 <li className="flex items-center">
-                  <span className="text-blue-600 mr-3">🌍</span>
-                  <span>List Public Repositories</span>
+                  <span className="text-blue-600 dark:text-blue-400 mr-3">🌍</span>
+                  <span className="text-gray-700 dark:text-gray-300">List Public Repositories</span>
                 </li>
                 <li className="flex items-center">
-                  <span className="text-blue-600 mr-3">📊</span>
-                  <span>Export Username Data</span>
+                  <span className="text-blue-600 dark:text-blue-400 mr-3">📊</span>
+                  <span className="text-gray-700 dark:text-gray-300">Export Username Data</span>
                 </li>
               </ul>
             </div>
@@ -230,17 +233,17 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-blue-600 dark:bg-blue-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Streamline Your GitHub Management?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-2xl mx-auto">
             Join development teams who trust GitHub AccessOps for their repository management needs.
           </p>
           <button
             onClick={onGetStarted}
-            className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="bg-white hover:bg-gray-100 text-blue-600 dark:text-blue-700 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
             Get Started Now
           </button>
@@ -248,7 +251,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* Contact/Footer Section */}
-      <footer id="contact" className="bg-gray-900 text-white py-16">
+      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>

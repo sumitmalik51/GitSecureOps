@@ -88,25 +88,25 @@ export const DASHBOARD_OPTIONS = [
     id: 'delete-user-access',
     title: 'Delete User Access',
     description: 'Remove specific users access from repositories by username',
-    icon: '🗑️'
+    icon: '🗑️ DELETE'
   },
   {
     id: 'list-private-repos',
     title: 'Get All Private Repositories',
     description: 'View all your private repositories',
-    icon: '🔒'
+    icon: '🔒 PRIVATE'
   },
   {
     id: 'list-public-repos',
     title: 'Get All Public Repositories',
     description: 'View all your public repositories',
-    icon: '🌍'
+    icon: '🌍 PUBLIC'
   },
   {
     id: 'export-usernames',
     title: 'Get All Usernames',
     description: 'Export all users with repository access to Excel',
-    icon: '📊'
+    icon: '📊 EXPORT'
   }
 ];
 
