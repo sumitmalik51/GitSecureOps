@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '20.19.0'
+  NODE_VERSION: '18.x'
 
 jobs:
   build_and_deploy_job:
@@ -21,24 +21,17 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: Clean up any existing Node.js installations
-        run: |
-          echo "Cleaning up existing Node.js installations..."
-          rm -rf ~/.nvm
-          rm -rf /opt/hostedtoolcache/node
-        continue-on-error: true
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.0'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Verify Node.js version
         run: |
           echo "Node.js version:"
           node --version
-          echo "Expected: v20.19.0 or higher"
+          echo "Expected: v18.x (compatible with Azure Static Web Apps)"
           echo "NPM version:"
           npm --version
 
