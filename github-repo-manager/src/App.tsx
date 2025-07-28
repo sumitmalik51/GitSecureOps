@@ -22,6 +22,10 @@ function App() {
     setCurrentPage('auth');
   };
 
+  const handleBackToLanding = () => {
+    setCurrentPage('landing');
+  };
+
   const handleAuthSuccess = (authToken: string, authUsername: string) => {
     setToken(authToken);
     setUsername(authUsername);
@@ -95,7 +99,7 @@ function App() {
   }
 
   if (currentPage === 'auth') {
-    return <Auth onAuthSuccess={handleAuthSuccess} />;
+    return <Auth onAuthSuccess={handleAuthSuccess} onBack={handleBackToLanding} />;
   }
 
   switch (currentView) {

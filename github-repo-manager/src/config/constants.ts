@@ -111,7 +111,7 @@ export const DASHBOARD_OPTIONS = [
 ];
 
 export const APP_CONFIG = {
-  name: 'GitHub AccessOps',
+  name: 'GitSecureOps',
   version: '1.0.0',
   description: 'Repository Management',
   theme: {

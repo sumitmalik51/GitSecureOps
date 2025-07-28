@@ -2,9 +2,10 @@ import { useState } from 'react';
 
 interface AuthProps {
   onAuthSuccess: (token: string, username: string) => void;
+  onBack?: () => void;
 }
 
-export default function Auth({ onAuthSuccess }: AuthProps) {
+export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
   const [token, setToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,7 +59,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
             <span className="text-2xl">🔧</span>
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            GitHub AccessOps
+            GitSecureOps
           </h2>
           <p className="mt-4 text-lg text-gray-600 font-medium">
             ✨ Manage repository access with style ✨
@@ -68,6 +69,20 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative">
         <div className="bg-white/80 backdrop-blur-sm py-8 px-4 shadow-2xl border border-white/20 sm:rounded-2xl sm:px-10 transition-all duration-300 hover:shadow-3xl">
+          {/* Back Button */}
+          {onBack && (
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={onBack}
+                className="group inline-flex items-center space-x-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200"
+              >
+                <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
+                <span>Back to Homepage</span>
+              </button>
+            </div>
+          )}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="token" className="block text-sm font-semibold text-gray-700 mb-2">

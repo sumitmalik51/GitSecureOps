@@ -54,7 +54,7 @@ export default function Layout({ children, username, onLogout, currentView, onNa
               <span className="text-white text-lg">🔒</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitHub AccessOps</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">Repository Management</p>
             </div>
           </div>

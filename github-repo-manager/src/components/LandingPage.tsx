@@ -28,7 +28,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 <span className="text-white text-lg font-bold">🔒</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white">GitHub AccessOps</h1>
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Repository Management</p>
               </div>
             </div>
@@ -115,7 +115,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              GitHub <span className="text-blue-600 dark:text-blue-400">AccessOps</span>
+              Git<span className="text-blue-600 dark:text-blue-400">SecureOps</span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
               Professional GitHub repository management with enterprise-grade security. 
@@ -144,7 +144,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              What GitHub AccessOps Does
+              What GitSecureOps Does
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Comprehensive repository management tools for modern development teams
@@ -173,7 +173,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 <span className="text-2xl">🛡️</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Enterprise Security</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Bank-grade security with OAuth integration and zero data persistence</p>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Secure GitHub access using PATs with zero data storage. OAuth support coming soon for advanced enterprise workflows.</p>
             </div>
           </div>
         </div>
@@ -188,7 +188,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 Built for Modern Development Teams
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                GitHub AccessOps simplifies repository management with enterprise-grade security and automation. 
+                GitSecureOps simplifies repository management with enterprise-grade security and automation. 
                 Whether you&apos;re managing user permissions, auditing access, or exporting data for compliance, 
                 our platform handles it all with precision and speed.
               </p>
@@ -239,7 +239,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
             Ready to Streamline Your GitHub Management?
           </h2>
           <p className="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-2xl mx-auto">
-            Join development teams who trust GitHub AccessOps for their repository management needs.
+            Join development teams who trust GitSecureOps for their repository management needs.
           </p>
           <button
             onClick={onGetStarted}
@@ -260,7 +260,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                   <span className="text-white text-lg font-bold">🔒</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold">GitHub AccessOps</h3>
+                  <h3 className="text-lg font-bold">GitSecureOps</h3>
                   <p className="text-sm text-gray-400">Repository Management</p>
                 </div>
               </div>
@@ -312,7 +312,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
             <p className="text-gray-400">
-              © 2025 GitHub AccessOps. Built with React & TypeScript. 
+              © 2025 GitSecureOps. Built with React & TypeScript. 
               <span className="ml-2">🔒 Secure • ⚡ Fast • 🛡️ Reliable</span>
             </p>
           </div>
