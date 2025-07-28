@@ -34,12 +34,12 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Show build output (for debugging)
+      - name: Debug build output
         run: |
-          echo "Listing files in root:"
+          echo "Folders in root:"
           ls -la
-          echo "Listing files in build folder:"
-          ls -la build || echo "No build folder found"
+          echo "Folders under dist/:"
+          ls -la dist || echo "dist folder not found"
 
       - name: Build and Deploy to Azure Static Web App
         id: builddeploy
@@ -47,6 +47,6 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_PLANT_03319EE0F }}
           action: "upload"
-          app_location: "/"             # Root of your project
-          output_location: "build"      # Folder produced by npm run build
-          api_location: ""              # Leave empty if not using APIs
+          app_location: "/"             # If Vite project is in root
+          output_location: "dist"       # ✅ This is the actual folder created by vite build
+          api_location: ""              # No backend APIs
