@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import Auth from './components/Auth';
+import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import OrganizationSelector from './components/OrganizationSelector';
 import DeleteUserAccess from './components/DeleteUserAccess';
@@ -39,6 +40,14 @@ function App() {
     setCurrentView(`org-selector-${option}`);
   };
 
+  const handleNavigate = (view: string) => {
+    if (view === 'dashboard') {
+      setCurrentView('dashboard');
+    } else {
+      setCurrentView(`org-selector-${view}`);
+    }
+  };
+
   const handleScopeSelection = (scope: 'user' | 'org' | 'all', orgLogin?: string) => {
     if (scope === 'org' && orgLogin) {
       setSelectedScope('org');
@@ -75,89 +84,107 @@ function App() {
   switch (currentView) {
     case 'org-selector-delete-user-access':
       return (
-        <OrganizationSelector
-          onBack={handleBack}
-          onSelectScope={handleScopeSelection}
-          title="Select Scope for Delete User Access"
-          description="Choose where to search for user access to remove"
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <OrganizationSelector
+            onBack={handleBack}
+            onSelectScope={handleScopeSelection}
+            title="Select Scope for Delete User Access"
+            description="Choose where to search for user access to remove"
+          />
+        </Layout>
       );
     case 'org-selector-list-private-repos':
       return (
-        <OrganizationSelector
-          onBack={handleBack}
-          onSelectScope={handleScopeSelection}
-          title="Select Scope for Private Repositories"
-          description="Choose which private repositories to list"
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <OrganizationSelector
+            onBack={handleBack}
+            onSelectScope={handleScopeSelection}
+            title="Select Scope for Private Repositories"
+            description="Choose which private repositories to list"
+          />
+        </Layout>
       );
     case 'org-selector-list-public-repos':
       return (
-        <OrganizationSelector
-          onBack={handleBack}
-          onSelectScope={handleScopeSelection}
-          title="Select Scope for Public Repositories"
-          description="Choose which public repositories to list"
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <OrganizationSelector
+            onBack={handleBack}
+            onSelectScope={handleScopeSelection}
+            title="Select Scope for Public Repositories"
+            description="Choose which public repositories to list"
+          />
+        </Layout>
       );
     case 'org-selector-export-usernames':
       return (
-        <OrganizationSelector
-          onBack={handleBack}
-          onSelectScope={handleScopeSelection}
-          title="Select Scope for Username Export"
-          description="Choose which repositories to scan for usernames"
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <OrganizationSelector
+            onBack={handleBack}
+            onSelectScope={handleScopeSelection}
+            title="Select Scope for Username Export"
+            description="Choose which repositories to scan for usernames"
+          />
+        </Layout>
       );
     case 'delete-user-access':
       return (
-        <DeleteUserAccess
-          token={token}
-          username={username}
-          onBack={handleBack}
-          selectedScope={selectedScope}
-          selectedOrg={selectedOrg}
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <DeleteUserAccess
+            token={token}
+            username={username}
+            onBack={handleBack}
+            selectedScope={selectedScope}
+            selectedOrg={selectedOrg}
+          />
+        </Layout>
       );
     case 'list-private-repos':
       return (
-        <RepositoryListView
-          token={token}
-          username={username}
-          onBack={handleBack}
-          repoType="private"
-          selectedScope={selectedScope}
-          selectedOrg={selectedOrg}
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <RepositoryListView
+            token={token}
+            username={username}
+            onBack={handleBack}
+            repoType="private"
+            selectedScope={selectedScope}
+            selectedOrg={selectedOrg}
+          />
+        </Layout>
       );
     case 'list-public-repos':
       return (
-        <RepositoryListView
-          token={token}
-          username={username}
-          onBack={handleBack}
-          repoType="public"
-          selectedScope={selectedScope}
-          selectedOrg={selectedOrg}
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <RepositoryListView
+            token={token}
+            username={username}
+            onBack={handleBack}
+            repoType="public"
+            selectedScope={selectedScope}
+            selectedOrg={selectedOrg}
+          />
+        </Layout>
       );
     case 'export-usernames':
       return (
-        <ExportUsernames
-          token={token}
-          username={username}
-          onBack={handleBack}
-          selectedScope={selectedScope}
-          selectedOrg={selectedOrg}
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <ExportUsernames
+            token={token}
+            username={username}
+            onBack={handleBack}
+            selectedScope={selectedScope}
+            selectedOrg={selectedOrg}
+          />
+        </Layout>
       );
     default:
       return (
-        <Dashboard
-          username={username}
-          onLogout={handleLogout}
-          onSelectOption={handleSelectOption}
-        />
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <Dashboard
+            username={username}
+            onLogout={handleLogout}
+            onSelectOption={handleSelectOption}
+          />
+        </Layout>
       );
   }
 }

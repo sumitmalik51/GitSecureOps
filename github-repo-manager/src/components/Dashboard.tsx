@@ -4,7 +4,7 @@ interface DashboardProps {
   onSelectOption: (option: string) => void;
 }
 
-export default function Dashboard({ username, onLogout, onSelectOption }: DashboardProps) {
+export default function Dashboard({ onSelectOption }: DashboardProps) {
   const dashboardOptions = [
     {
       id: 'delete-user-access',
@@ -45,43 +45,15 @@ export default function Dashboard({ username, onLogout, onSelectOption }: Dashbo
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="p-6">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-200 rounded-full opacity-10 animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-purple-200 rounded-full opacity-10 animate-pulse delay-1000"></div>
       </div>
 
-      {/* Header */}
-      <div className="relative bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-8">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">🚀</span>
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  GitHub AccessOps
-                </h1>
-                <p className="text-lg text-gray-600 mt-1">
-                  Welcome back, <span className="font-semibold text-blue-600">{username}</span>! 👋
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={onLogout}
-              className="group inline-flex items-center px-6 py-3 border-2 border-gray-200 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white/80 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all duration-200"
-            >
-              <span className="mr-2">🚪</span>
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="relative max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mb-6 animate-bounce">
             <span className="text-2xl">✨</span>
