@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
 
 jobs:
   build_and_deploy_job:
@@ -30,15 +30,36 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Clear npm cache and install dependencies
+        run: |
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install
 
-      - name: Build application
-        run: npm run build
+      - name: Debug Node.js and npm versions
+        run: |
+          node --version
+          npm --version
+          npx vite --version
+
+      - name: Run build environment check
+        run: node debug-build.js
+
+      - name: TypeScript compilation
+        run: npx tsc -b
+
+      - name: Build application with Vite
+        run: npx vite build --mode production
         env:
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
           VITE_GITHUB_REDIRECT_URI: ${{ secrets.VITE_GITHUB_REDIRECT_URI }}
           VITE_GITHUB_CLIENT_SECRET: ${{ secrets.VITE_GITHUB_CLIENT_SECRET }}
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: List build output
+        run: |
+          echo "Build output contents:"
+          ls -la dist/ || echo "dist folder not found"
 
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
