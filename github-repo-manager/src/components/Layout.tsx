@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import DarkModeToggle from './ui/DarkModeToggle';
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,8 +13,8 @@ export default function Layout({ children, username, onLogout, currentView, onNa
   const navigationItems = [
     {
       id: 'dashboard',
-      label: 'Dashboard',
-      icon: '🏠',
+      label: `Welcome ${username}`,
+      icon: '👋',
       description: 'Main overview'
     },
     {
@@ -43,18 +44,18 @@ export default function Layout({ children, username, onLogout, currentView, onNa
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+      <div className="hidden lg:flex lg:w-64 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 flex-col">
         {/* Logo/Brand */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
               <span className="text-white text-lg">🔒</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">GitHub AccessOps</h1>
-              <p className="text-xs text-gray-500">Repository Management</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Repository Management</p>
             </div>
           </div>
         </div>
@@ -67,18 +68,18 @@ export default function Layout({ children, username, onLogout, currentView, onNa
               onClick={() => onNavigate(item.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group ${
                 currentView === item.id || currentView.includes(item.id)
-                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <span className="text-lg">{item.icon}</span>
               <div className="flex-1 min-w-0">
                 <div className={`font-medium ${
-                  currentView === item.id || currentView.includes(item.id) ? 'text-blue-700' : 'text-gray-900'
+                  currentView === item.id || currentView.includes(item.id) ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
                 }`}>
                   {item.label}
                 </div>
-                <div className="text-xs text-gray-500 truncate">{item.description}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.description}</div>
               </div>
               {(currentView === item.id || currentView.includes(item.id)) && (
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -88,8 +89,8 @@ export default function Layout({ children, username, onLogout, currentView, onNa
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="text-xs text-gray-400 text-center">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="text-xs text-gray-400 dark:text-gray-500 text-center">
             <div className="flex items-center justify-center space-x-1 mb-2">
               <span>🛡️</span>
               <span>Secure & Private</span>
@@ -102,21 +103,48 @@ export default function Layout({ children, username, onLogout, currentView, onNa
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 capitalize">
-                  {currentView.replace(/-/g, ' ').replace('list ', '')}
+              {/* Mobile menu button - only show on small screens */}
+              <button
+                onClick={() => {/* TODO: Add mobile menu toggle */}}
+                className="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              
+              {/* GitSecureOps Logo - Left Corner */}
+              <div className="flex items-center space-x-3 lg:hidden">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">🔒</span>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+                </div>
+              </div>
+              
+              {/* Current View Info */}
+              <div className="lg:block">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                  {currentView === 'dashboard' 
+                    ? `Welcome ${username}` 
+                    : currentView.replace(/-/g, ' ').replace('list ', '')
+                  }
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                   {getCurrentViewDescription(currentView)}
                 </p>
               </div>
             </div>
 
-            {/* User Info & Logout */}
-            <div className="flex items-center space-x-4">
+            {/* User Info & Controls */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Dark Mode Toggle */}
+              <DarkModeToggle />
+              
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-bold">
@@ -124,17 +152,17 @@ export default function Layout({ children, username, onLogout, currentView, onNa
                   </span>
                 </div>
                 <div className="hidden sm:block">
-                  <div className="text-sm font-medium text-gray-900">{username}</div>
-                  <div className="text-xs text-gray-500">GitHub User</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{username}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">GitHub User</div>
                 </div>
               </div>
               
               <button
                 onClick={onLogout}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
+                className="inline-flex items-center px-3 sm:px-4 py-2 border border-red-200 dark:border-red-500/50 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-300 dark:hover:border-red-400 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <span className="mr-2">🚪</span>
-                Logout
+                <span>Logout</span>
               </button>
             </div>
           </div>
@@ -152,7 +180,7 @@ export default function Layout({ children, username, onLogout, currentView, onNa
 function getCurrentViewDescription(view: string): string {
   switch (view) {
     case 'dashboard':
-      return 'Overview of all available operations';
+      return 'Choose from the options below to manage your repositories';
     case 'delete-user-access':
       return 'Remove user access from repositories';
     case 'list-private-repos':

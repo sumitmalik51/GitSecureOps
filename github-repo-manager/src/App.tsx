@@ -7,22 +7,32 @@ import OrganizationSelector from './components/OrganizationSelector';
 import DeleteUserAccess from './components/DeleteUserAccess';
 import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
+import githubService from './services/githubService';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'app'>('landing');
   const [token, setToken] = useState('');
   const [username, setUsername] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
-  const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'all'>('user');
+  const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'all' | 'multi-org'>('user');
   const [selectedOrg, setSelectedOrg] = useState<string>('');
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
 
   const handleGetStarted = () => {
     setCurrentPage('auth');
   };
 
+  const handleBackToLanding = () => {
+    setCurrentPage('landing');
+  };
+
   const handleAuthSuccess = (authToken: string, authUsername: string) => {
     setToken(authToken);
     setUsername(authUsername);
+    
+    // Set the token in the github service so it can make API calls
+    githubService.setToken(authToken);
+    
     setCurrentPage('app');
     setCurrentView('dashboard');
   };
@@ -30,6 +40,10 @@ function App() {
   const handleLogout = () => {
     setToken('');
     setUsername('');
+    
+    // Clear the token from the github service
+    githubService.setToken('');
+    
     setCurrentPage('landing');
     setCurrentView('dashboard');
     setSelectedScope('user');
@@ -48,16 +62,23 @@ function App() {
     }
   };
 
-  const handleScopeSelection = (scope: 'user' | 'org' | 'all', orgLogin?: string) => {
+  const handleScopeSelection = (scope: 'user' | 'org' | 'all' | 'multi-org', orgLogin?: string, selectedOrgsList?: string[]) => {
     if (scope === 'org' && orgLogin) {
       setSelectedScope('org');
       setSelectedOrg(orgLogin);
+      setSelectedOrgs([]);
+    } else if (scope === 'multi-org' && selectedOrgsList && selectedOrgsList.length > 0) {
+      setSelectedScope('multi-org');
+      setSelectedOrgs(selectedOrgsList);
+      setSelectedOrg('');
     } else if (scope === 'all') {
       setSelectedScope('all');
       setSelectedOrg('');
+      setSelectedOrgs([]);
     } else {
       setSelectedScope('user');
       setSelectedOrg('');
+      setSelectedOrgs([]);
     }
     
     // Extract the original option from the current view
@@ -78,7 +99,7 @@ function App() {
   }
 
   if (currentPage === 'auth') {
-    return <Auth onAuthSuccess={handleAuthSuccess} />;
+    return <Auth onAuthSuccess={handleAuthSuccess} onBack={handleBackToLanding} />;
   }
 
   switch (currentView) {
@@ -88,8 +109,10 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Delete User Access"
-            description="Choose where to search for user access to remove"
+            title="Delete User Access"
+            description="Select the GitHub organization(s) where you want to scan and remove user access.
+
+GitSecureOps will search across all repositories within the selected org(s) and identify where the specified user has access. Once identified, you'll have the option to review and remove access in bulk."
           />
         </Layout>
       );
@@ -99,7 +122,7 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Private Repositories"
+            title="List Private Repos"
             description="Choose which private repositories to list"
           />
         </Layout>
@@ -110,7 +133,7 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Public Repositories"
+            title="List Public Repos"
             description="Choose which public repositories to list"
           />
         </Layout>
@@ -121,7 +144,7 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Username Export"
+            title="Export User Details"
             description="Choose which repositories to scan for usernames"
           />
         </Layout>
@@ -135,6 +158,7 @@ function App() {
             onBack={handleBack}
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );
@@ -148,6 +172,7 @@ function App() {
             repoType="private"
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );
@@ -161,6 +186,7 @@ function App() {
             repoType="public"
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );
@@ -173,6 +199,7 @@ function App() {
             onBack={handleBack}
             selectedScope={selectedScope}
             selectedOrg={selectedOrg}
+            selectedOrgs={selectedOrgs}
           />
         </Layout>
       );

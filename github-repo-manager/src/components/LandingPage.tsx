@@ -1,77 +1,86 @@
 import { useState } from 'react';
+import DarkModeToggle from './ui/DarkModeToggle';
 
 interface LandingPageProps {
   onGetStarted: () => void;
 }
 
-export default function LandingPage({ onGetStarted }: LandingPageProps) {
+const LandingPage = ({ onGetStarted }: LandingPageProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const features = [
-    {
-      icon: "🔐",
-      title: "Automated Access Control",
-      description: "Streamline user permissions across all your repositories with intelligent automation"
-    },
-    {
-      icon: "⚡",
-      title: "Lightning Fast",
-      description: "Process thousands of repositories in minutes with our optimized batch operations"
-    },
-    {
-      icon: "🛡️",
-      title: "Enterprise Security",
-      description: "Bank-grade security with OAuth integration and zero data persistence"
-    },
-    {
-      icon: "📊",
-      title: "Advanced Analytics",
-      description: "Comprehensive reporting and audit trails for compliance and oversight"
-    },
-    {
-      icon: "🚀",
-      title: "Easy Integration",
-      description: "Seamlessly integrates with your existing GitHub workflow and CI/CD pipelines"
-    },
-    {
-      icon: "🎯",
-      title: "Precision Control",
-      description: "Granular permissions management with role-based access controls"
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
     }
-  ];
+    setIsMenuOpen(false);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Custom CSS for bounce animation */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes customBounce {
+            0%, 6.25% { transform: translateY(0); }
+            3.125% { transform: translateY(-25px); }
+            12.5%, 100% { transform: translateY(0); }
+          }
+          .custom-bounce {
+            animation: customBounce 32s infinite;
+          }
+        `
+      }} />
       {/* Navigation */}
-      <nav className="relative bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50">
+      <nav className="fixed top-0 w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl flex items-center justify-center shadow-lg">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                    <span className="text-gray-800 text-lg font-bold">🔒</span>
-                  </div>
-                </div>
+            {/* Logo - Left Corner */}
+            <div className="flex items-center space-x-3 flex-shrink-0">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-white text-lg font-bold">🔒</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">GitHub AccessOps</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Repository Management</p>
               </div>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Pricing</a>
-              <a href="#contact" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Contact</a>
+              <button 
+                onClick={() => scrollToSection('features')}
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Features
+              </button>
+              <button 
+                onClick={() => scrollToSection('about')}
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                About
+              </button>
+              <button 
+                onClick={() => scrollToSection('contact')}
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Contact
+              </button>
+              <DarkModeToggle />
+              <button
+                onClick={onGetStarted}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              >
+                Get Started
+              </button>
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center space-x-2">
+              <DarkModeToggle />
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-gray-600 hover:text-gray-900 focus:outline-none"
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:outline-none"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -82,11 +91,32 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
+            <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
               <div className="flex flex-col space-y-4">
-                <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Features</a>
-                <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Pricing</a>
-                <a href="#contact" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Contact</a>
+                <button 
+                  onClick={() => scrollToSection('features')}
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-left"
+                >
+                  Features
+                </button>
+                <button 
+                  onClick={() => scrollToSection('about')}
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-left"
+                >
+                  About
+                </button>
+                <button 
+                  onClick={() => scrollToSection('contact')}
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-left"
+                >
+                  Contact
+                </button>
+                <button
+                  onClick={onGetStarted}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors text-left"
+                >
+                  Get Started
+                </button>
               </div>
             </div>
           )}
@@ -94,167 +124,228 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24">
+      <section className="pt-24 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            {/* Main Heading */}
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              Automate GitHub
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Access Management
-              </span>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 custom-bounce bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+              Git<span className="bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent">SecureOps</span>
             </h1>
-
-            {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Control and secure your GitHub access at scale with our cutting-edge automated solutions.
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+              Professional GitHub repository management with enterprise-grade security. 
+              Streamline user access, automate permissions, and maintain compliance.
             </p>
-
-            {/* CTA Button */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
               <button
                 onClick={onGetStarted}
-                className="group relative inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 text-lg min-w-[200px]"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <span className="relative flex items-center">
-                  Get Started
-                  <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </span>
+                Start Managing Access
               </button>
-              
-              <button className="inline-flex items-center justify-center px-8 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all duration-300 text-lg min-w-[200px]">
-                Watch Demo
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m-5-9a9 9 0 110 18 9 9 0 010-18z" />
-                </svg>
+              <button 
+                onClick={() => scrollToSection('features')}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-8 py-4 rounded-lg font-semibold text-lg transition-colors border border-blue-600 dark:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                Learn More
               </button>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 text-sm text-gray-500">
-              <div className="flex items-center">
-                <span className="text-green-500 mr-2">✓</span>
-                Enterprise Ready
-              </div>
-              <div className="flex items-center">
-                <span className="text-green-500 mr-2">✓</span>
-                OAuth Secure
-              </div>
-              <div className="flex items-center">
-                <span className="text-green-500 mr-2">✓</span>
-                Zero Data Storage
-              </div>
-              <div className="flex items-center">
-                <span className="text-green-500 mr-2">✓</span>
-                99.9% Uptime SLA
-              </div>
             </div>
           </div>
         </div>
-
-        {/* Background Decorations */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-blue-100 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-24 h-24 bg-purple-100 rounded-full opacity-30 animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-gray-100 rounded-full opacity-40 animate-pulse delay-2000"></div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative py-24 bg-gray-50">
+      <section id="features" className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Powerful Features for Modern Teams
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              💡 What GitSecureOps Does
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need to manage GitHub access at enterprise scale
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Comprehensive GitHub access automation for modern DevSecOps teams.
             </p>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl">{feature.icon}</span>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl">🔐</span>
               </div>
-            ))}
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">🔐 Automated Access Control</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Automatically manage user permissions across all your repositories.</p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl">⚡</span>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">⚡ Lightning Fast Operations</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Process thousands of repositories in parallel with optimized batching.</p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl">🛡️</span>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">🛡️ Enterprise-Grade Security</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                Secure access via PAT (Personal Access Tokens) with zero data persistence.<br />
+                <span className="text-blue-600 dark:text-blue-400 font-medium">OAuth integration — coming soon.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="py-20 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+                👨‍💻 Built for Modern Teams
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+                Whether you&apos;re auditing access, cleaning up stale collaborators, or exporting data for compliance, GitSecureOps does the heavy lifting — securely and reliably.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-3">✅</span>
+                  <span className="text-gray-700 dark:text-gray-300">No data storage — token is used in-memory only</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-3">✅</span>
+                  <span className="text-gray-700 dark:text-gray-300">Batch operations — handle access at scale</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-3">✅</span>
+                  <span className="text-gray-700 dark:text-gray-300">Enterprise-ready — built with security-first principles</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-700 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-600">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🔑 Key Features</h3>
+              <div className="space-y-6">
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🗑️</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Delete User Access</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Revoke access for any GitHub username quickly.</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🔒</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Private Repositories</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">See all private repos you have access to.</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🌍</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Public Repositories</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Explore your public repo footprint.</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">📊</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Export User Data</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Generate a clean list of users with repo access.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready to Transform Your Workflow?
+      <section className="py-20 bg-blue-600 dark:bg-blue-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Ready to Streamline Your GitHub Management?
           </h2>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-            Join thousands of developers who trust GitHub AccessOps for their repository management needs.
+          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-2xl mx-auto">
+            Join development teams who trust GitSecureOps for their repository management needs.
           </p>
           <button
             onClick={onGetStarted}
-            className="inline-flex items-center justify-center px-10 py-4 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 text-lg"
+            className="bg-white hover:bg-gray-100 text-blue-600 dark:text-blue-700 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
-            Start Free Trial
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+            Get Started Now
           </button>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      {/* Contact/Footer Section */}
+      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-gray-800 text-sm font-bold">🔒</span>
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg font-bold">🔒</span>
                 </div>
-                <span className="text-xl font-bold">GitHub AccessOps</span>
+                <div>
+                  <h3 className="text-lg font-bold">GitSecureOps</h3>
+                  <p className="text-sm text-gray-400">Repository Management</p>
+                </div>
               </div>
               <p className="text-gray-400 mb-4">
-                Automate GitHub access management with enterprise-grade security and precision control.
+                Professional GitHub repository management with enterprise-grade security and automation.
               </p>
             </div>
             
             <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Enterprise</a></li>
+              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => scrollToSection('features')} className="text-gray-400 hover:text-white transition-colors">Features</button></li>
+                <li><button onClick={() => scrollToSection('about')} className="text-gray-400 hover:text-white transition-colors">About</button></li>
+                <li><button onClick={onGetStarted} className="text-gray-400 hover:text-white transition-colors">Get Started</button></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#contact" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API Reference</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
-              </ul>
+              <h4 className="text-lg font-semibold mb-4">Developer</h4>
+              <p className="text-gray-400 mb-2">Created by Sumit Malik</p>
+              <div className="flex space-x-4">
+                <a 
+                  href="https://github.com/sumitmalik51" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  GitHub
+                </a>
+                <a 
+                  href="https://linkedin.com/in/sumitmalik51" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  LinkedIn
+                </a>
+                <a 
+                  href="https://sumitmalik51.github.io/sumitmalik51/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Portfolio
+                </a>
+              </div>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 GitHub AccessOps. All rights reserved.</p>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p className="text-gray-400">
+              © 2025 GitSecureOps. Built with React & TypeScript. 
+              <span className="ml-2">🔒 Secure • ⚡ Fast • 🛡️ Reliable</span>
+            </p>
           </div>
         </div>
       </footer>
     </div>
   );
-}
+};
+
+export default LandingPage;

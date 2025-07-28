@@ -1,4 +1,4 @@
-// Utility functions for GitHub AccessOps
+// Utility functions for GitSecureOps
 
 export const formatError = (error: unknown): string => {
   if (error instanceof Error) {

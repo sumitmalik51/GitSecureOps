@@ -7,8 +7,9 @@ interface RepositoryListViewProps {
   username: string;
   onBack: () => void;
   repoType: 'private' | 'public';
-  selectedScope?: 'user' | 'org' | 'all';
+  selectedScope?: 'user' | 'org' | 'all' | 'multi-org';
   selectedOrg?: string;
+  selectedOrgs?: string[];
 }
 
 export default function RepositoryListView({ 
@@ -16,7 +17,8 @@ export default function RepositoryListView({
   onBack, 
   repoType, 
   selectedScope = 'user', 
-  selectedOrg = '' 
+  selectedOrg = '',
+  selectedOrgs: _selectedOrgs = []
 }: RepositoryListViewProps) {
   const [repositories, setRepositories] = useState<GitHubRepo[]>([]);
   const [loading, setLoading] = useState(true);

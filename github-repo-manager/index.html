@@ -1,13 +1,460 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GitHub AccessOps</title>
+    <title>GitHub AccessOps | Cloud Repository Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.remove('opacity-0');
+        // Ensure dark mode is set by default
+        document.documentElement.classList.add('dark');
+        const icon = document.getElementById('theme-icon');
+        if (icon) icon.textContent = '🌙';
+
+        const greetingPopup = document.getElementById('popup-greeting');
+        if (greetingPopup) {
+          const hour = new Date().getHours();
+          let message = '';
+          if (hour < 12) message = '🌄 Good morning! Ready to manage your repositories ⚡';
+          else if (hour < 18) message = '🚀 Let\'s organize some GitHub access this afternoon';
+          else message = '🌙 Still working? That\'s dedication. Let\'s streamline those repos!';
+
+          setTimeout(() => {
+            greetingPopup.textContent = message;
+            greetingPopup.classList.remove('hidden');
+            setTimeout(() => greetingPopup.classList.add('hidden'), 10000);
+          }, 5000);
+
+          setInterval(() => {
+            greetingPopup.classList.remove('hidden');
+            setTimeout(() => greetingPopup.classList.add('hidden'), 10000);
+          }, 60000);
+        }
+      });
+    </script>
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <link href="https://unpkg.com/aos@next/dist/aos.css" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+        transition: background-color 0.5s, color 0.5s;
+      }
+      body {
+        transition: background-color 0.5s, color 0.5s;
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif;
+      }
+      a:hover {
+        text-shadow: 0 0 5px rgba(255,255,255,0.5);
+      }
+      .glow-hover:hover {
+        box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.5);
+      }
+      .floating-cta {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        background-color: #1e40af;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 9999px;
+        font-size: 14px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        animation: pulse 2s infinite;
+        z-index: 50;
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+      }
+      @keyframes fade-in {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.6s ease-out;
+      }
+      .technology-button {
+        padding: 0.5rem 1rem;
+        color: white;
+        border-radius: 0.25rem;
+        background-color: #2563eb;
+        cursor: pointer;
+        transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+        flex: 1 1 auto;
+        max-width: 150px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+      .technology-button:hover {
+        text-decoration: underline;
+        background-color: #1e3a8a;
+        color: #93c5fd;
+        transform: none;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+      }
+      .technology-group {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 1rem 0;
+      }
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
+        z-index: -1;
+        pointer-events: none;
+        animation: gradient-shift 10s infinite alternate;
+      }
+
+      @keyframes gradient-shift {
+        0% {
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
+        }
+        100% {
+          background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(168, 85, 247, 0.1));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .technology-button {
+          flex: 1 1 100%;
+          max-width: none;
+        }
+      }
+
+      @keyframes header-gradient {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      header {
+        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        animation: header-gradient 10s ease infinite;
+      }
+
+      /* Refine gradient colors for light theme */
+      body.light #backToTop,
+      body.light #popup-greeting,
+      body.light .floating-cta {
+        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        animation: gradient-shift 5s ease infinite, pulse 2s infinite;
+      }
+
+      /* Ensure vibrant header gradient in light theme */
+      body.light header {
+        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        animation: header-gradient 10s ease infinite;
+      }
+
+      /* Add gradient color to Back to Top button */
+      #backToTop {
+        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        animation: gradient-shift 5s ease infinite, pulse 2s infinite;
+      }
+
+      /* Add gradient color to message popup */
+      #popup-greeting {
+        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        animation: gradient-shift 5s ease infinite;
+      }
+
+      /* Restore gradient for Let's Build Together button */
+      .floating-cta {
+        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        animation: gradient-shift 5s ease infinite, pulse 2s infinite;
+      }
+
+      /* Add advanced hover effects */
+      .fun-fact-card:hover {
+        transform: rotateY(15deg) scale(1.1);
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
+      }
+
+      .technology-button:hover {
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.8), rgba(34, 197, 94, 0.8));
+        color: white;
+        transform: scale(1.2);
+      }
+
+      body.light {
+        background-color: #f9fafb;
+        color: #1f2937;
+      }
+
+      body.light header {
+        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        animation: header-gradient 10s ease infinite;
+      }
+
+      body.light .tag {
+        background-color: rgba(147, 197, 253, 0.3);
+        color: #1e40af;
+      }
+
+      body.light .tag:hover {
+        background-color: rgba(59, 130, 246, 0.4);
+        color: #1e3a8a;
+      }
+
+      body.light .technology-button {
+        background-color: #2563eb;
+        color: white;
+      }
+
+      body.light .technology-button:hover {
+        background-color: #1e3a8a;
+        color: #93c5fd;
+      }
+
+      /* Ensure shadows are visible in both light and dark themes */
+      .fun-fact-card {
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .fun-fact-card:hover {
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
+      }
+
+      .technology-button {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .technology-button:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Responsive navigation menu */
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      nav .menu {
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      nav .menu-button {
+        display: none;
+        background-color: #2563eb;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+      }
+
+      @media (max-width: 768px) {
+        nav .menu-button {
+          display: block;
+        }
+
+        nav .menu {
+          display: flex;
+        }
+      }
+
+      /* Add ripple effect to buttons */
+      button {
+        position: relative;
+        overflow: hidden;
+      }
+
+      button::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(59, 130, 246, 0.5);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+      }
+
+      button:active::after {
+        width: 200px;
+        height: 200px;
+        opacity: 1;
+      }
+
+      /* Add hover effects for links and icons */
+      a, .icon {
+        transition: color 0.3s ease, transform 0.3s ease;
+      }
+
+      a:hover, .icon:hover {
+        color: #2563eb;
+        transform: scale(1.1);
+      }
+
+      /* GitHub AccessOps specific enhancements */
+      .repo-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+      }
+
+      .repo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .access-badge {
+        background: linear-gradient(45deg, #2563eb, #9333ea);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .progress-bar {
+        background: linear-gradient(90deg, #2563eb, #9333ea, #16a34a);
+        background-size: 200% 100%;
+        animation: progress-flow 2s ease-in-out infinite;
+      }
+
+      @keyframes progress-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      /* Enhanced form elements */
+      .form-input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: white;
+        transition: all 0.3s ease;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .form-input::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      /* Dark mode enhancements */
+      body.dark {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f8fafc;
+      }
+
+      body.dark .form-input {
+        background: rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #f8fafc;
+      }
+
+      body.dark .repo-card {
+        background: rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+    </style>
   </head>
-  <body>
+  <body class="opacity-0 dark">
+    <!-- Greeting Popup -->
+    <div id="popup-greeting" class="hidden fixed top-20 right-4 text-white px-4 py-2 rounded-lg shadow-lg z-50 max-w-sm text-sm">
+    </div>
+    
+    <!-- Floating CTA -->
+    <div class="floating-cta hidden">
+      🚀 Streamline Your Repos
+    </div>
+    
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="hidden fixed bottom-6 right-6 text-white p-3 rounded-full shadow-lg z-50 hover:scale-110 transition-transform">
+      ↑
+    </button>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Initialize AOS -->
+    <script>
+      AOS.init({
+        duration: 800,
+        once: true
+      });
+      
+      // Show floating CTA after 10 seconds
+      setTimeout(() => {
+        const cta = document.querySelector('.floating-cta');
+        if (cta) cta.classList.remove('hidden');
+      }, 10000);
+      
+      // Back to top functionality
+      window.addEventListener('scroll', () => {
+        const backToTop = document.getElementById('backToTop');
+        if (backToTop) {
+          if (window.scrollY > 300) {
+            backToTop.classList.remove('hidden');
+          } else {
+            backToTop.classList.add('hidden');
+          }
+        }
+      });
+      
+      const backToTop = document.getElementById('backToTop');
+      if (backToTop) {
+        backToTop.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+    </script>
   </body>
 </html>

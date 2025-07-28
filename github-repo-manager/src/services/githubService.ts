@@ -37,6 +37,7 @@ export interface RepoAccess {
   permission: 'admin' | 'write' | 'read' | 'public' | 'unknown';
   permissionIcon: string;
   permissionColor: string;
+  user?: string;
 }
 
 export interface GitHubOrg {
@@ -51,7 +52,7 @@ class GitHubService {
   private token: string | null = null;
 
   setToken(token: string) {
-    this.token = token;
+    this.token = token.trim() || null;
   }
 
   private async makeRequest<T>(endpoint: string): Promise<T> {
@@ -145,14 +146,62 @@ class GitHubService {
     return results;
   }
 
+  // Helper method to get all paginated results with retry logic
+  private async getAllPaginatedResultsWithRetry<T>(endpoint: string, maxRetries: number = 3): Promise<T[]> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.getAllPaginatedResults<T>(endpoint);
+      } catch (error: any) {
+        lastError = error;
+        
+        // Don't retry on auth/permission errors (401, 403)
+        if (error.message?.includes('401') || error.message?.includes('forbidden') || error.message?.includes('invalid')) {
+          throw error;
+        }
+        
+        // Don't retry on the last attempt
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        console.warn(`GitHub API attempt ${attempt} failed, retrying in ${delay}ms...`, error.message);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    throw lastError || new Error('Maximum retry attempts exceeded');
+  }
+
   // Get authenticated user info
   async getAuthenticatedUser(): Promise<GitHubUser> {
     return this.makeRequest<GitHubUser>('/user');
   }
 
-  // Get user's organizations
+  // Get user's organizations with improved error handling
   async getUserOrganizations(): Promise<GitHubOrg[]> {
-    return this.getAllPaginatedResults<GitHubOrg>('/user/orgs');
+    try {
+      // Try to get organizations with retry logic
+      return await this.getAllPaginatedResultsWithRetry<GitHubOrg>('/user/orgs', 3);
+    } catch (error: any) {
+      // If organizations endpoint fails, try the memberships endpoint as fallback
+      if (error.message?.includes('403') || error.message?.includes('forbidden')) {
+        console.warn('Organization access limited, trying alternative endpoint...');
+        try {
+          return await this.getAllPaginatedResultsWithRetry<GitHubOrg>('/user/memberships/orgs?state=active', 2);
+        } catch (fallbackError) {
+          console.warn('Alternative endpoint also failed, returning empty array');
+          return [];
+        }
+      }
+      
+      // For other errors, still return empty array instead of crashing
+      console.error('Failed to fetch organizations:', error);
+      return [];
+    }
   }
 
   // Get user's repositories
