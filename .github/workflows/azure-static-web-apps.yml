@@ -13,8 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -27,31 +28,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Verify Node.js version
-        run: |
-          echo "Node.js version:"
-          node --version
-          echo "Expected: v18.x (compatible with Azure Static Web Apps)"
-          echo "NPM version:"
-          npm --version
-
       - name: Clear npm cache and install dependencies
         run: |
           npm cache clean --force
           rm -rf node_modules package-lock.json
           npm install
+        working-directory: github-repo-manager
 
-      - name: Debug Node.js and npm versions
+      - name: Debug Node.js and Vite versions
         run: |
           node --version
           npm --version
           npx vite --version
+        working-directory: github-repo-manager
 
       - name: Run build environment check
         run: node debug-build.js
+        working-directory: github-repo-manager
 
       - name: TypeScript compilation
         run: npx tsc -b
+        working-directory: github-repo-manager
 
       - name: Build application with Vite
         run: npx vite build --mode production
@@ -60,36 +57,19 @@ jobs:
           VITE_GITHUB_REDIRECT_URI: ${{ secrets.VITE_GITHUB_REDIRECT_URI }}
           VITE_GITHUB_CLIENT_SECRET: ${{ secrets.VITE_GITHUB_CLIENT_SECRET }}
           NODE_OPTIONS: "--max-old-space-size=4096"
+        working-directory: github-repo-manager
 
-      - name: List build output
+      - name: Copy dist to build (Oryx workaround)
         run: |
-          echo "Build output contents:"
-          ls -la dist/ || echo "dist folder not found"
+          mkdir -p github-repo-manager/build
+          cp -r github-repo-manager/dist/* github-repo-manager/build/
 
-      - name: Install OIDC Client from Core Package
-        run: npm install @actions/core@1.6.0 @actions/http-client
-
-      - name: Get Id Token
-        uses: actions/github-script@v6
-        id: idtoken
-        with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
-
-      - name: Build And Deploy
-        id: builddeploy
+      - name: Build and Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "github-repo-manager" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist" # Built app content directory - optional
-          skip_app_build: true # We're building manually above
-          github_id_token: ${{ steps.idtoken.outputs.result }}
-          ###### End of Repository/Build Configurations ######
+          app_location: "github-repo-manager"
+          output_location: "github-repo-manager/build"
+          skip_app_build: true
