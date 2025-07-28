@@ -26,11 +26,9 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        working-directory: github-repo-manager
         run: npm install
 
       - name: Build with Vite
-        working-directory: github-repo-manager
         run: npm run build
         env:
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
@@ -43,6 +41,6 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "github-repo-manager"
-          output_location: "github-repo-manager/dist"
+          app_location: "." # now at root
+          output_location: "dist"
           skip_app_build: true
