@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import LandingPage from './components/LandingPage';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import OrganizationSelector from './components/OrganizationSelector';
@@ -7,24 +8,28 @@ import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'app'>('landing');
   const [token, setToken] = useState('');
   const [username, setUsername] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'all'>('user');
   const [selectedOrg, setSelectedOrg] = useState<string>('');
 
+  const handleGetStarted = () => {
+    setCurrentPage('auth');
+  };
+
   const handleAuthSuccess = (authToken: string, authUsername: string) => {
     setToken(authToken);
     setUsername(authUsername);
-    setIsAuthenticated(true);
+    setCurrentPage('app');
     setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
     setToken('');
     setUsername('');
-    setIsAuthenticated(false);
+    setCurrentPage('landing');
     setCurrentView('dashboard');
     setSelectedScope('user');
     setSelectedOrg('');
@@ -59,7 +64,11 @@ function App() {
     }
   };
 
-  if (!isAuthenticated) {
+  if (currentPage === 'landing') {
+    return <LandingPage onGetStarted={handleGetStarted} />;
+  }
+
+  if (currentPage === 'auth') {
     return <Auth onAuthSuccess={handleAuthSuccess} />;
   }
 

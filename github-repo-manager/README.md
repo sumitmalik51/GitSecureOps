@@ -7,9 +7,9 @@ Currently, two official plugins are available:
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-# GitHub Repository Access Manager
+# GitHub AccessOps
 
-A React-based web application for managing GitHub repository collaborator access. This tool allows you to view all your repositories and their collaborators, and remove access for selected users across multiple repositories.
+A React-based web application for automating GitHub repository access management. This tool allows you to view all your repositories and their collaborators, and remove access for selected users across multiple repositories with enterprise-grade security.
 
 ## Features
 

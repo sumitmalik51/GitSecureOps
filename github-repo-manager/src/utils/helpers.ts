@@ -1,4 +1,4 @@
-// Utility functions for the GitHub Repo Access Manager
+// Utility functions for GitHub AccessOps
 
 export const formatError = (error: unknown): string => {
   if (error instanceof Error) {

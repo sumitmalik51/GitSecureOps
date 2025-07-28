@@ -54,11 +54,11 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
 
       <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <div className="mx-auto w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
-            <span className="text-3xl">🔧</span>
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-6 animate-bounce flex-shrink-0">
+            <span className="text-2xl">🔧</span>
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            GitHub Repo Access Manager
+            GitHub AccessOps
           </h2>
           <p className="mt-4 text-lg text-gray-600 font-medium">
             ✨ Manage repository access with style ✨

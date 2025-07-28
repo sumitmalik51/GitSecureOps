@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Logo constraints to prevent overflow */
+img[alt*="Logo"] {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
