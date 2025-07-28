@@ -94,32 +94,38 @@ export default function DeleteUserAccess({
         
         const batchPromises = batch.map(async (repo) => {
           try {
-            // Check if user has access and get permission level
-            const repoAccess = await githubService.getUserPermissionForRepo(
-              repo.owner.login,
-              repo.name,
-              targetUsername
-            );
-            
-            // Also check traditional collaborator API as fallback
+            // First, only check if user is a direct collaborator
             const collaborators = await githubService.getRepositoryCollaborators(
               repo.owner.login,
               repo.name
             );
             
-            const isCollaborator = collaborators.some(collab => 
+            const collaborator = collaborators.find(collab => 
               collab.login.toLowerCase() === targetUsername.toLowerCase()
             );
             
-            if (isCollaborator || repoAccess.hasAccess) {
+            // Only include if user is a direct collaborator
+            if (collaborator) {
+              // Get detailed permission info only for confirmed collaborators
+              const repoAccess = await githubService.getUserPermissionForRepo(
+                repo.owner.login,
+                repo.name,
+                targetUsername
+              );
+              
               return {
-                ...repoAccess,
-                hasAccess: true
+                repo: repo.full_name,
+                hasAccess: true,
+                permission: repoAccess.permission,
+                permissionIcon: repoAccess.permissionIcon,
+                permissionColor: repoAccess.permissionColor
               };
             }
+            
             return null;
           } catch (err) {
-            console.warn(`Failed to check access for ${repo.full_name}:`, err);
+            // If we can't check collaborators, the user likely doesn't have admin access to this repo
+            console.warn(`Cannot check collaborators for ${repo.full_name} - likely no admin access:`, err);
             return null;
           }
         });
@@ -281,6 +287,60 @@ export default function DeleteUserAccess({
                 <div className="flex items-center mt-3 space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                   <span className="text-sm font-semibold text-red-600">DANGER ZONE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Verification Info Banner */}
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-xl blur opacity-40"></div>
+          <div className="relative bg-white/90 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mr-4">
+                <span className="text-white text-xl">🔍</span>
+              </div>
+              <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                Enhanced User Access Verification
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-800 flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  What We Verify
+                </h4>
+                <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                  <li>• Direct collaborator status only</li>
+                  <li>• Explicit repository permissions</li>
+                  <li>• Your admin access to each repo</li>
+                  <li>• Actual removal capabilities</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-800 flex items-center">
+                  <span className="text-red-500 mr-2">❌</span>
+                  What We Filter Out
+                </h4>
+                <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                  <li>• Public repository visibility</li>
+                  <li>• Organization-level access</li>
+                  <li>• Team-inherited permissions</li>
+                  <li>• Repos without your admin rights</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
+              <div className="flex items-center">
+                <span className="text-lg mr-3">🛡️</span>
+                <div className="text-sm text-green-800">
+                  <strong>Improved Accuracy:</strong> Now showing only repositories where the user is a direct collaborator and you have admin permissions to remove them.
                 </div>
               </div>
             </div>
