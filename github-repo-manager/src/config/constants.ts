@@ -104,7 +104,7 @@ export const DASHBOARD_OPTIONS = [
   },
   {
     id: 'export-usernames',
-    title: 'Get All Usernames',
+    title: 'Get All Users',
     description: 'Export all users with repository access to Excel',
     icon: '📊 EXPORT'
   }

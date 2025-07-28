@@ -18,6 +18,19 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Custom CSS for bounce animation */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes customBounce {
+            0%, 6.25% { transform: translateY(0); }
+            3.125% { transform: translateY(-25px); }
+            12.5%, 100% { transform: translateY(0); }
+          }
+          .custom-bounce {
+            animation: customBounce 32s infinite;
+          }
+        `
+      }} />
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -114,8 +127,8 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       <section className="pt-24 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Git<span className="text-blue-600 dark:text-blue-400">SecureOps</span>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 custom-bounce bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+              Git<span className="bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent">SecureOps</span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
               Professional GitHub repository management with enterprise-grade security. 
@@ -144,10 +157,10 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              What GitSecureOps Does
+              💡 What GitSecureOps Does
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Comprehensive repository management tools for modern development teams
+              Comprehensive GitHub access automation for modern DevSecOps teams.
             </p>
           </div>
           
@@ -156,24 +169,27 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">🔐</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Automated Access Control</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Streamline user permissions across repositories with intelligent automation</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">🔐 Automated Access Control</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Automatically manage user permissions across all your repositories.</p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">⚡</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Lightning Fast</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Process thousands of repositories in minutes with optimized batch operations</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">⚡ Lightning Fast Operations</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Process thousands of repositories in parallel with optimized batching.</p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">🛡️</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Enterprise Security</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Secure GitHub access using PATs with zero data storage. OAuth support coming soon for advanced enterprise workflows.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">🛡️ Enterprise-Grade Security</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                Secure access via PAT (Personal Access Tokens) with zero data persistence.<br />
+                <span className="text-blue-600 dark:text-blue-400 font-medium">OAuth integration — coming soon.</span>
+              </p>
             </div>
           </div>
         </div>
@@ -185,48 +201,58 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-                Built for Modern Development Teams
+                👨‍💻 Built for Modern Teams
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                GitSecureOps simplifies repository management with enterprise-grade security and automation. 
-                Whether you&apos;re managing user permissions, auditing access, or exporting data for compliance, 
-                our platform handles it all with precision and speed.
+                Whether you&apos;re auditing access, cleaning up stale collaborators, or exporting data for compliance, GitSecureOps does the heavy lifting — securely and reliably.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center">
-                  <span className="text-green-500 mr-3">✓</span>
-                  <span className="text-gray-700 dark:text-gray-300">Zero data storage - your token stays secure</span>
+                  <span className="text-green-500 mr-3">✅</span>
+                  <span className="text-gray-700 dark:text-gray-300">No data storage — token is used in-memory only</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-green-500 mr-3">✓</span>
-                  <span className="text-gray-700 dark:text-gray-300">Lightning-fast batch operations</span>
+                  <span className="text-green-500 mr-3">✅</span>
+                  <span className="text-gray-700 dark:text-gray-300">Batch operations — handle access at scale</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-green-500 mr-3">✓</span>
-                  <span className="text-gray-700 dark:text-gray-300">Enterprise-ready security features</span>
+                  <span className="text-green-500 mr-3">✅</span>
+                  <span className="text-gray-700 dark:text-gray-300">Enterprise-ready — built with security-first principles</span>
                 </div>
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-600">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Key Features</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center">
-                  <span className="text-blue-600 dark:text-blue-400 mr-3">🗑️</span>
-                  <span className="text-gray-700 dark:text-gray-300">Delete User Access</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-600 dark:text-blue-400 mr-3">🔒</span>
-                  <span className="text-gray-700 dark:text-gray-300">List Private Repositories</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-600 dark:text-blue-400 mr-3">🌍</span>
-                  <span className="text-gray-700 dark:text-gray-300">List Public Repositories</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-600 dark:text-blue-400 mr-3">📊</span>
-                  <span className="text-gray-700 dark:text-gray-300">Export Username Data</span>
-                </li>
-              </ul>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🔑 Key Features</h3>
+              <div className="space-y-6">
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🗑️</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Delete User Access</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Revoke access for any GitHub username quickly.</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🔒</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Private Repositories</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">See all private repos you have access to.</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🌍</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Public Repositories</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Explore your public repo footprint.</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">📊</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Export User Data</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Generate a clean list of users with repo access.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

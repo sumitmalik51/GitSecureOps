@@ -109,7 +109,7 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Delete User Access"
+            title="Delete User Access"
             description="Choose where to search for user access to remove"
           />
         </Layout>
@@ -120,7 +120,7 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Private Repositories"
+            title="List Private Repos"
             description="Choose which private repositories to list"
           />
         </Layout>
@@ -131,7 +131,7 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Public Repositories"
+            title="List Public Repos"
             description="Choose which public repositories to list"
           />
         </Layout>
@@ -142,7 +142,7 @@ function App() {
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
-            title="Select Scope for Username Export"
+            title="Export User Details"
             description="Choose which repositories to scan for usernames"
           />
         </Layout>
