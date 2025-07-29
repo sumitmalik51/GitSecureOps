@@ -2,9 +2,19 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.svg" />
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GitHub AccessOps | Cloud Repository Manager</title>
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="description" content="Enterprise GitHub access controls with built-in automation. Manage repository security at scale." />
+    
+    <title>GitSecureOps | Enterprise GitHub Access Controls</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -403,6 +413,86 @@
       body.dark .repo-card {
         background: rgba(0, 0, 0, 0.3);
         border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      /* Moving border animation for Connect to GitHub button */
+      .moving-border-button {
+        position: relative;
+        background: linear-gradient(45deg, #1e40af, #7c3aed) !important;
+        border: none !important;
+      }
+
+      .moving-border-button::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        background: linear-gradient(45deg, #2563eb, #9333ea, #16a34a, #ca8a04, #2563eb, #9333ea, #16a34a, #ca8a04);
+        background-size: 400% 400%;
+        border-radius: inherit;
+        z-index: -1;
+        animation: moving-border-animation 3s ease infinite;
+      }
+
+      @keyframes moving-border-animation {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      .moving-border-button:hover::before {
+        animation-duration: 1.5s;
+      }
+
+      .moving-border-button:disabled::before {
+        display: none;
+      }
+
+      /* Minimal moving border animation for Create GitHub Token button */
+      .minimal-moving-border-button {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .minimal-moving-border-button::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #e5e7eb, #9ca3af, #6b7280, #e5e7eb, #9ca3af, #6b7280);
+        background-size: 300% 300%;
+        border-radius: inherit;
+        z-index: -1;
+        animation: minimal-border-animation 4s ease infinite;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .minimal-moving-border-button:hover::before {
+        opacity: 1;
+        animation-duration: 2s;
+      }
+
+      @keyframes minimal-border-animation {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
       }
     </style>
   </head>

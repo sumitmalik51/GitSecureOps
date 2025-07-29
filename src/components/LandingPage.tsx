@@ -37,11 +37,13 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
           <div className="flex justify-between items-center py-4">
             {/* Logo - Left Corner */}
             <div className="flex items-center space-x-3 flex-shrink-0">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white text-lg font-bold">🔒</span>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-white text-lg font-bold">�️</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 bg-clip-text text-transparent">
+                  GitSecureOps
+                </h1>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Repository Management</p>
               </div>
             </div>
@@ -204,7 +206,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 👨‍💻 Built for Modern Teams
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                Whether you&apos;re auditing access, cleaning up stale collaborators, or exporting data for compliance, GitSecureOps does the heavy lifting — securely and reliably.
+                GitSecureOps was built to solve the pain of managing GitHub repos at scale. Whether you're a solo developer or DevSecOps at an enterprise, we offer tools that make repository security and automation faster, smarter, and safer.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center">
@@ -291,7 +293,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 </div>
               </div>
               <p className="text-gray-400 mb-4">
-                Professional GitHub repository management with enterprise-grade security and automation.
+                Enterprise-grade GitHub access controls with built-in automation.
               </p>
             </div>
             
@@ -338,8 +340,10 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
             <p className="text-gray-400">
-              © 2025 GitSecureOps. Built with React & TypeScript. 
-              <span className="ml-2">🔒 Secure • ⚡ Fast • 🛡️ Reliable</span>
+              © 2025 GitSecureOps. Built with ❤️ using React & TypeScript.
+            </p>
+            <p className="text-gray-400 mt-2">
+              🔒 Secure • ⚡ Fast • 🛡️ Reliable | Version 1.0.0
             </p>
           </div>
         </div>

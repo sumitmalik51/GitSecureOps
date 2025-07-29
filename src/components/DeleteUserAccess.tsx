@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import githubService, { type RepoAccess } from '../services/githubService';
+import notificationService from '../services/notificationService';
 import ProgressBar from './ProgressBar';
 
 interface DeleteUserAccessProps {
@@ -209,9 +210,36 @@ export default function DeleteUserAccess({
       if (reposWithAccess.length === 0) {
         setError(`None of the specified users (${userList}) have access to any of your ${allRepos.length} repositories`);
         setSearchProgress(`❌ Search complete - No access found for users: ${userList}`);
+        
+        // Send notification
+        notificationService.warning(
+          'No Access Found',
+          `No repository access found for users: ${userList}`,
+          'user_access_search',
+          {
+            usersSearched: userList,
+            repositoriesScanned: allRepos.length,
+            scope: selectedScope,
+            organization: selectedOrg || 'All'
+          }
+        );
       } else {
         setSuccess(`Found ${reposWithAccess.length} repository access entries for users: ${userList}`);
         setSearchProgress(`✅ Search complete - Found ${reposWithAccess.length} access entries for users: ${userList}`);
+        
+        // Send notification
+        notificationService.success(
+          'Access Search Complete',
+          `Found ${reposWithAccess.length} repository access entries for users: ${userList}`,
+          'user_access_search',
+          {
+            usersSearched: userList,
+            accessEntriesFound: reposWithAccess.length,
+            repositoriesScanned: allRepos.length,
+            scope: selectedScope,
+            organization: selectedOrg || 'All'
+          }
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search user access');
@@ -288,11 +316,39 @@ export default function DeleteUserAccess({
       setSuccess(`Successfully removed user access from ${results.success} repository entries for users: ${userList}`);
       setUserRepos([]);
       setSearchProgress(`✅ Removal complete! Successfully removed access from ${results.success} repository entries`);
+      
+      // Send success notification
+      notificationService.success(
+        'Access Removal Complete',
+        `Successfully removed user access from ${results.success} repository entries`,
+        'user_access_removed',
+        {
+          usersAffected: userList,
+          repositoriesModified: results.success,
+          failedOperations: results.failed,
+          scope: selectedScope,
+          organization: selectedOrg || 'All'
+        }
+      );
     }
     
     if (results.failed > 0) {
       setError(`Failed to remove access from ${results.failed} repository entries. See details below.`);
       setSearchProgress(`⚠️ Removal completed with ${results.failed} failures. Check details below.`);
+      
+      // Send warning notification for failures
+      notificationService.warning(
+        'Some Access Removals Failed',
+        `${results.failed} access removal operations failed. Check the error details.`,
+        'user_access_removal_failed',
+        {
+          usersAffected: userList,
+          successfulRemovals: results.success,
+          failedRemovals: results.failed,
+          scope: selectedScope,
+          organization: selectedOrg || 'All'
+        }
+      );
     }
     
     setRemoving(false);
