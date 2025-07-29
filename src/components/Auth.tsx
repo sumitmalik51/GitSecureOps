@@ -280,7 +280,7 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
             <span className="text-2xl filter drop-shadow-sm">🔒</span>
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-700 via-zinc-700 to-slate-800 dark:from-slate-200 dark:via-zinc-200 dark:to-slate-300 bg-clip-text text-transparent">
-            GitSecureOps
+            <span title="No bugs here. Just features. 🐛">GitSecureOps</span>
           </h2>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 font-medium">
             Minimal • Secure • Efficient
@@ -314,6 +314,7 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
                   id="token"
                   name="token"
                   type="password"
+                  autoFocus
                   value={token}
                   onChange={(e) => {
                     setToken(e.target.value);

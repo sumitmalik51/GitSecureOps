@@ -273,8 +273,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-fade-in">
-              Professional GitHub repository management with enterprise-grade security. 
-              Streamline user access, automate permissions, and maintain compliance.
+              Professional GitHub repository management with enterprise-grade security
+              Streamline user access, automate permissions, and maintain compliance, all from one sleek dashboard.
             </p>
             <div className="flex justify-center items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <button
@@ -297,6 +297,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 {/* Pulse ring on hover */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-0 group-hover:opacity-20 animate-ping"></div>
               </button>
+            </div>
+            
+            {/* Subtitle text with gradient - centered under button */}
+            <div className="flex justify-center mt-6 animate-fade-in" style={{ animationDelay: '0.7s' }}>
+              <p className="text-lg bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent font-medium">
+                One-click setup. No data storage. Lightning fast.
+              </p>
             </div>
           </div>
         </div>
