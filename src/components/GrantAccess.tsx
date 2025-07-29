@@ -4,11 +4,9 @@ import type { GitHubOrg } from '../services/githubService';
 
 interface GrantAccessProps {
   token: string;
-  username: string;
   onBack: () => void;
 }
 
-type AccessLevel = 'organization' | 'repository';
 type OrgRole = 'member' | 'admin';
 type RepoRole = 'pull' | 'triage' | 'push' | 'maintain' | 'admin';
 
@@ -18,9 +16,8 @@ interface InviteResult {
   inviteUrl?: string;
 }
 
-export default function GrantAccess({ token, username, onBack }: GrantAccessProps) {
-  const [step, setStep] = useState<'select-level' | 'org-flow' | 'repo-flow' | 'result'>('select-level');
-  const [accessLevel, setAccessLevel] = useState<AccessLevel>('organization');
+export default function GrantAccess({ token, onBack }: GrantAccessProps) {
+  const [step, setStep] = useState<'org-selection' | 'org-flow' | 'result' | 'select-level' | 'repo-flow'>('select-level');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -37,37 +34,37 @@ export default function GrantAccess({ token, username, onBack }: GrantAccessProp
   // Result state
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
 
-  const handleAccessLevelSelect = async (level: AccessLevel) => {
-    setAccessLevel(level);
-    setError('');
-    
-    if (level === 'organization') {
-      setIsLoading(true);
-      try {
-        // Fetch user's organizations
-        const orgs = await githubService.getUserOrganizations();
-        setOrganizations(orgs);
-        setStep('org-flow');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch organizations');
-      } finally {
-        setIsLoading(false);
-      }
+  // Utility functions
+  const validateGitHubUsername = (username: string): boolean => {
+    const regex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/;
+    return regex.test(username) && username.length <= 39;
+  };
+
+  const validateRepoPath = (path: string): boolean => {
+    const regex = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
+    return regex.test(path);
+  };
+
+  const handleAccessLevelSelect = (accessType: 'organization' | 'repository') => {
+    if (accessType === 'organization') {
+      loadOrganizations();
     } else {
       setStep('repo-flow');
     }
   };
 
-  const validateGitHubUsername = (username: string): boolean => {
-    // GitHub username validation: alphanumeric, hyphens, max 39 chars
-    const githubUsernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/;
-    return githubUsernameRegex.test(username);
-  };
-
-  const validateRepoPath = (path: string): boolean => {
-    // Validate org/repo format
-    const repoPathRegex = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
-    return repoPathRegex.test(path);
+  const loadOrganizations = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const orgs = await githubService.getUserOrganizations();
+      setOrganizations(orgs);
+      setStep('org-flow');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch organizations');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOrgInvite = async () => {
@@ -187,16 +184,21 @@ export default function GrantAccess({ token, username, onBack }: GrantAccessProp
     setSelectedOrg('');
   };
 
-  const roleDescriptions = {
+  const roleDescriptions: Record<string, string> = {
     // Organization roles
     member: "Can see the organization and its public repositories",
-    admin: "Full access to the organization and its repositories",
     
     // Repository roles
     pull: "Can read and clone the repository",
     triage: "Can read, clone, and manage issues and pull requests",
     push: "Can read, clone, and push to the repository",
-    maintain: "Can read, clone, push, and manage some repository settings",
+    maintain: "Can read, clone, push, and manage some repository settings"
+  };
+
+  const getAdminDescription = (context: 'org' | 'repo') => {
+    return context === 'org' 
+      ? "Full access to the organization and its repositories"
+      : "Full administrative access to the repository";
   };
 
   return (
@@ -342,7 +344,7 @@ export default function GrantAccess({ token, username, onBack }: GrantAccessProp
                         {role}
                       </span>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {roleDescriptions[role]}
+                        {role === 'admin' ? getAdminDescription('org') : roleDescriptions[role] || `${role} permission level`}
                       </p>
                     </div>
                   </label>
@@ -434,7 +436,7 @@ export default function GrantAccess({ token, username, onBack }: GrantAccessProp
                         {role}
                       </span>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {roleDescriptions[role] || `${role} permission level`}
+                        {role === 'admin' ? getAdminDescription('repo') : roleDescriptions[role] || `${role} permission level`}
                       </p>
                     </div>
                   </label>

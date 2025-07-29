@@ -59,6 +59,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       icon: "🛡️",
       title: "🛡️ Enterprise-Grade Security",
       description: "Secure access via PAT (Personal Access Tokens) with zero data persistence. OAuth integration — coming soon."
+    },
+    {
+      icon: "🔒",
+      title: "🔒 Two-Factor Authentication Compliance",
+      description: "Scan organizations and repositories for 2FA compliance. Identify users without 2FA enabled, view compliance rates, and export detailed reports for security auditing."
     }
   ];
 
@@ -383,6 +388,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Key Features</h3>
               <ul className="space-y-3">
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3">🔒</span>
+                  <span className="dark:text-gray-300">Two-Factor Authentication Compliance</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3">🔑</span>
+                  <span className="dark:text-gray-300">Grant GitHub Access</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3">🧬</span>
+                  <span className="dark:text-gray-300">GitHub Actions Management</span>
+                </li>
                 <li className="flex items-center">
                   <span className="text-blue-600 mr-3">🗑️</span>
                   <span className="dark:text-gray-300">Delete User Access</span>

@@ -97,6 +97,18 @@ export const DASHBOARD_OPTIONS = [
     icon: '🔑 GRANT'
   },
   {
+    id: 'actions-manager',
+    title: 'GitHub Actions Permissions Management',
+    description: 'View & manage Action-level permissions per repo, detect secrets exposed to actions, modify GITHUB_TOKEN permissions, flag self-hosted runners',
+    icon: '🧬 ACTIONS'
+  },
+  {
+    id: 'two-factor-checker',
+    title: 'Two-Factor Enforcement Checker',
+    description: 'Scan for users without 2FA, view compliance for orgs that require 2FA, filter and export non-compliant users',
+    icon: '🔐 2FA'
+  },
+  {
     id: 'delete-user-access',
     title: 'Delete User Access',
     description: 'Remove specific users access from repositories by username',

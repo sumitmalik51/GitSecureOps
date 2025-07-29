@@ -5,6 +5,8 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import OrganizationSelector from './components/OrganizationSelector';
 import GrantAccess from './components/GrantAccess';
+import GitHubActionsManager from './components/GitHubActionsManager';
+import TwoFactorChecker from './components/TwoFactorChecker';
 import DeleteUserAccess from './components/DeleteUserAccess';
 import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
@@ -96,6 +98,10 @@ function App() {
       setCurrentView('smart-recommendations');
     } else if (option === 'grant-access') {
       setCurrentView('grant-access');
+    } else if (option === 'actions-manager') {
+      setCurrentView('actions-manager');
+    } else if (option === 'two-factor-checker') {
+      setCurrentView('two-factor-checker');
     } else {
       setCurrentView(`org-selector-${option}`);
     }
@@ -207,7 +213,24 @@ GitSecureOps will search across all repositories within the selected org(s) and 
         <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
           <GrantAccess
             token={token}
-            username={username}
+            onBack={handleBack}
+          />
+        </Layout>
+      );
+    case 'actions-manager':
+      return (
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <GitHubActionsManager
+            token={token}
+            onBack={handleBack}
+          />
+        </Layout>
+      );
+    case 'two-factor-checker':
+      return (
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <TwoFactorChecker
+            token={token}
             onBack={handleBack}
           />
         </Layout>
