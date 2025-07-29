@@ -12,57 +12,9 @@ interface LayoutProps {
   onNavigate: (view: string) => void;
 }
 
-interface NavigationItem {
-  id: string;
-  label: string;
-  icon: string;
-  description: string;
-  action?: () => void;
-}
-
-export default function Layout({ children, username, onLogout, currentView, onNavigate }: LayoutProps) {
+export default function Layout({ children, username, onLogout, currentView }: LayoutProps) {
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-
-  const navigationItems: NavigationItem[] = [
-    {
-      id: 'dashboard',
-      label: `Welcome ${username}`,
-      icon: '👋',
-      description: 'Main overview'
-    },
-    {
-      id: 'delete-user-access',
-      label: 'Delete Access',
-      icon: '🗑️',
-      description: 'Remove user access'
-    },
-    {
-      id: 'list-private-repos',
-      label: 'Private Repos',
-      icon: '🔒',
-      description: 'View private repositories'
-    },
-    {
-      id: 'list-public-repos',
-      label: 'Public Repos',
-      icon: '🌍',
-      description: 'View public repositories'
-    },
-    {
-      id: 'export-usernames',
-      label: 'Export Users',
-      icon: '📊',
-      description: 'Export to Excel'
-    },
-    {
-      id: 'notifications',
-      label: 'Notifications',
-      icon: '🔔',
-      description: 'Configure alerts',
-      action: () => setShowNotificationSettings(true)
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import LandingPage from './components/LandingPage';
+import LandingPage from './components/LandingPage_new';
 import Auth from './components/Auth';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
