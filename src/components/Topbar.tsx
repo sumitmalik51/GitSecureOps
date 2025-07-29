@@ -3,30 +3,9 @@ import DarkModeToggle from './ui/DarkModeToggle';
 interface TopbarProps {
   username: string;
   onLogout: () => void;
-  currentView: string;
 }
 
-export default function Topbar({ username, onLogout, currentView }: TopbarProps) {
-  const getViewTitle = (view: string): string => {
-    switch (view) {
-      case 'dashboard':
-        return 'Dashboard';
-      case 'delete-user-access':
-        return 'Delete User Access';
-      case 'list-private-repos':
-        return 'Private Repositories';
-      case 'list-public-repos':
-        return 'Public Repositories';
-      case 'export-usernames':
-        return 'Export Users';
-      default:
-        if (view.includes('org-selector')) {
-          return 'Select Organization';
-        }
-        return 'Repository Management';
-    }
-  };
-
+export default function Topbar({ username, onLogout }: TopbarProps) {
   return (
     <div className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       {/* Left Side - GitSecureOps Brand */}
