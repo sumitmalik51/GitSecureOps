@@ -37,11 +37,13 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
           <div className="flex justify-between items-center py-4">
             {/* Logo - Left Corner */}
             <div className="flex items-center space-x-3 flex-shrink-0">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white text-lg font-bold">🔒</span>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-white text-lg font-bold">�️</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 bg-clip-text text-transparent">
+                  GitSecureOps
+                </h1>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Repository Management</p>
               </div>
             </div>

@@ -56,11 +56,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-lg font-bold">🔒</span>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-white text-lg font-bold">�️</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">GitHub AccessOps</h1>
+                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 bg-clip-text text-transparent">
+                  GitSecureOps
+                </h1>
                 <p className="text-xs text-gray-600">Repository Management</p>
               </div>
             </div>

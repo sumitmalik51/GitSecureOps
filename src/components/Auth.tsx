@@ -132,10 +132,10 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-black transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                className={`group relative w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 overflow-hidden ${
                   isLoading 
-                    ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.01] hover:shadow-lg'
+                    ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed border-2 border-gray-400' 
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.01] hover:shadow-lg moving-border-button'
                 }`}
               >
                 {isLoading && (
@@ -210,7 +210,7 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
                 href="https://github.com/settings/tokens/new?scopes=repo,read:org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group w-full inline-flex justify-center py-3 px-4 border-2 border-gray-200 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 hover:shadow-md"
+                className="group w-full inline-flex justify-center py-3 px-4 border-2 border-gray-200 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 hover:shadow-md minimal-moving-border-button"
               >
                 <span className="flex items-center space-x-2">
                   <span>🔗</span>
