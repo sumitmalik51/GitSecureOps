@@ -91,6 +91,12 @@ export const DASHBOARD_OPTIONS = [
     icon: '🧠 AI'
   },
   {
+    id: 'grant-access',
+    title: 'Grant GitHub Access',
+    description: 'Invite users to organizations or repositories with specific permissions',
+    icon: '🔑 GRANT'
+  },
+  {
     id: 'delete-user-access',
     title: 'Delete User Access',
     description: 'Remove specific users access from repositories by username',
