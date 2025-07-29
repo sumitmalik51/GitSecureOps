@@ -1,10 +1,30 @@
-import Card from './Card';
 import { DASHBOARD_OPTIONS } from '../config/constants';
 
 interface DashboardProps {
   username: string;
   onLogout: () => void;
   onSelectOption: (option: string) => void;
+}
+
+// Simple inline card component
+interface CardProps {
+  title: string;
+  description: string;
+  icon: string;
+  onClick: () => void;
+}
+
+function Card({ title, description, icon, onClick }: CardProps) {
+  return (
+    <div 
+      onClick={onClick}
+      className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500"
+    >
+      <div className="text-2xl mb-3">{icon}</div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-400 text-sm">{description}</p>
+    </div>
+  );
 }
 
 export default function Dashboard({ onSelectOption }: DashboardProps) {

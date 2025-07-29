@@ -59,6 +59,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       icon: "🛡️",
       title: "🛡️ Enterprise-Grade Security",
       description: "Secure access via PAT (Personal Access Tokens) with zero data persistence. OAuth integration — coming soon."
+    },
+    {
+      icon: "🔒",
+      title: "🔒 Two-Factor Authentication Compliance",
+      description: "Scan organizations and repositories for 2FA compliance. Identify users without 2FA enabled, view compliance rates, and export detailed reports for security auditing."
     }
   ];
 
@@ -273,8 +278,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-fade-in">
-              Professional GitHub repository management with enterprise-grade security. 
-              Streamline user access, automate permissions, and maintain compliance.
+              Professional GitHub repository management with enterprise-grade security
+              Streamline user access, automate permissions, and maintain compliance, all from one sleek dashboard.
             </p>
             <div className="flex justify-center items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <button
@@ -297,6 +302,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 {/* Pulse ring on hover */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-0 group-hover:opacity-20 animate-ping"></div>
               </button>
+            </div>
+            
+            {/* Subtitle text with gradient - centered under button */}
+            <div className="flex justify-center mt-6 animate-fade-in" style={{ animationDelay: '0.7s' }}>
+              <p className="text-lg bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent font-medium">
+                One-click setup. No data storage. Lightning fast.
+              </p>
             </div>
           </div>
         </div>
@@ -374,29 +386,41 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Key Features</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Key Features</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-3">🔒</span>
+                  <span className="dark:text-gray-300">Two-Factor Authentication Compliance</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-3">🔑</span>
+                  <span className="dark:text-gray-300">Grant GitHub Access</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-3">🧬</span>
+                  <span className="dark:text-gray-300">GitHub Actions Management</span>
+                </div>
+                <div className="flex items-center">
                   <span className="text-blue-600 mr-3">🗑️</span>
                   <span className="dark:text-gray-300">Delete User Access</span>
-                </li>
-                <li className="flex items-center">
+                </div>
+                <div className="flex items-center">
                   <span className="text-blue-600 mr-3">🔒</span>
                   <span className="dark:text-gray-300">List Private Repositories</span>
-                </li>
-                <li className="flex items-center">
+                </div>
+                <div className="flex items-center">
                   <span className="text-blue-600 mr-3">🌍</span>
                   <span className="dark:text-gray-300">List Public Repositories</span>
-                </li>
-                <li className="flex items-center">
+                </div>
+                <div className="flex items-center">
                   <span className="text-blue-600 mr-3">📊</span>
                   <span className="dark:text-gray-300">Export Username Data</span>
-                </li>
-                <li className="flex items-center">
+                </div>
+                <div className="flex items-center">
                   <span className="text-blue-600 mr-3">🏢</span>
                   <span className="dark:text-gray-300">Organization Management</span>
-                </li>
-              </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -277,34 +277,41 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-600">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🔑 Key Features</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">�️ Key Features</h3>
               <div className="space-y-6">
                 <div className="flex items-start">
                   <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🗑️</span>
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Delete User Access</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Revoke access for any GitHub username quickly.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Remove users from all repos in one click</p>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🔒</span>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Private Repositories</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">See all private repos you have access to.</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Private Repos</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Get an instant view of sensitive codebases</p>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🌍</span>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Public Repositories</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Explore your public repo footprint.</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">List Public Repos</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Audit all open-source repositories</p>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">📊</span>
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Export User Data</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Generate a clean list of users with repo access.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Download user and access reports</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 mr-4 text-xl flex-shrink-0">🏢</span>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Org Management</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Navigate and manage GitHub organizations easily</p>
                   </div>
                 </div>
               </div>
