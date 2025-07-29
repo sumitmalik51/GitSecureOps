@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import Auth from './components/Auth';
 import Layout from './components/Layout';
@@ -18,6 +18,30 @@ function App() {
   const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'all' | 'multi-org'>('user');
   const [selectedOrg, setSelectedOrg] = useState<string>('');
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
+
+  // Check for persisted authentication state on component mount
+  useEffect(() => {
+    // Clear any persisted authentication state to ensure fresh start
+    localStorage.removeItem('github_token');
+    localStorage.removeItem('github_username');
+    sessionStorage.removeItem('github_token');
+    sessionStorage.removeItem('github_username');
+    
+    // Clear any cookies that might be storing auth state
+    document.cookie.split(";").forEach((c) => {
+      const eqPos = c.indexOf("=");
+      const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    });
+    
+    // Ensure we always start with landing page
+    setCurrentPage('landing');
+    setToken('');
+    setUsername('');
+    githubService.setToken('');
+    
+    console.log('🔄 Authentication state cleared - starting fresh');
+  }, []);
 
   const handleGetStarted = () => {
     setCurrentPage('auth');
@@ -45,10 +69,25 @@ function App() {
     // Clear the token from the github service
     githubService.setToken('');
     
+    // Clear any persisted authentication state
+    localStorage.removeItem('github_token');
+    localStorage.removeItem('github_username');
+    sessionStorage.removeItem('github_token');
+    sessionStorage.removeItem('github_username');
+    
+    // Clear any cookies that might be storing auth state
+    document.cookie.split(";").forEach((c) => {
+      const eqPos = c.indexOf("=");
+      const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    });
+    
     setCurrentPage('landing');
     setCurrentView('dashboard');
     setSelectedScope('user');
     setSelectedOrg('');
+    
+    console.log('🚪 User logged out - authentication state cleared');
   };
 
   const handleSelectOption = (option: string) => {
