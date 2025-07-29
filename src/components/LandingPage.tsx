@@ -204,7 +204,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 👨‍💻 Built for Modern Teams
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                Whether you&apos;re auditing access, cleaning up stale collaborators, or exporting data for compliance, GitSecureOps does the heavy lifting — securely and reliably.
+                GitSecureOps was built to solve the pain of managing GitHub repos at scale. Whether you're a solo developer or DevSecOps at an enterprise, we offer tools that make repository security and automation faster, smarter, and safer.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center">
@@ -291,7 +291,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                 </div>
               </div>
               <p className="text-gray-400 mb-4">
-                Professional GitHub repository management with enterprise-grade security and automation.
+                Enterprise-grade GitHub access controls with built-in automation.
               </p>
             </div>
             
@@ -338,8 +338,10 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
             <p className="text-gray-400">
-              © 2025 GitSecureOps. Built with React & TypeScript. 
-              <span className="ml-2">🔒 Secure • ⚡ Fast • 🛡️ Reliable</span>
+              © 2025 GitSecureOps. Built with ❤️ using React & TypeScript.
+            </p>
+            <p className="text-gray-400 mt-2">
+              🔒 Secure • ⚡ Fast • 🛡️ Reliable | Version 1.0.0
             </p>
           </div>
         </div>

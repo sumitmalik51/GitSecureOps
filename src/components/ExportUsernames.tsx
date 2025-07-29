@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import githubService from '../services/githubService';
+import notificationService from '../services/notificationService';
 import ProgressBar from './ProgressBar';
 
 interface ExportUsernamesProps {
@@ -140,9 +141,33 @@ export default function ExportUsernames({
       setProgressValue(100);
       setProgress(`✅ Analysis complete! Found ${finalCollaborators.length} unique users across ${allRepos.length} repositories`);
       
+      // Send notification
+      notificationService.success(
+        'User Analysis Complete',
+        `Found ${finalCollaborators.length} unique users across ${allRepos.length} repositories`,
+        'user_analysis_completed',
+        {
+          userCount: finalCollaborators.length,
+          repositoryCount: allRepos.length,
+          scope: selectedScope,
+          organization: selectedOrg || 'All'
+        }
+      );
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
       setProgressValue(0);
+      
+      // Send error notification
+      notificationService.error(
+        'User Analysis Failed',
+        err instanceof Error ? err.message : 'Failed to load users',
+        'user_analysis_failed',
+        {
+          scope: selectedScope,
+          organization: selectedOrg || 'All'
+        }
+      );
     } finally {
       setLoading(false);
       // Keep progress visible for a moment after completion
@@ -174,6 +199,20 @@ export default function ExportUsernames({
     a.download = `github-users-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+
+    // Send notification
+    notificationService.success(
+      'Export Complete',
+      `Successfully exported ${collaborators.length} users with repository details to CSV`,
+      'user_data_exported',
+      {
+        exportType: 'full',
+        userCount: collaborators.length,
+        fileName: a.download,
+        scope: selectedScope,
+        organization: selectedOrg || 'All'
+      }
+    );
   };
 
   const exportUsernamesOnly = () => {
@@ -189,6 +228,20 @@ export default function ExportUsernames({
     a.download = `github-usernames-only-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+
+    // Send notification
+    notificationService.success(
+      'Usernames Export Complete',
+      `Successfully exported ${collaborators.length} usernames to CSV`,
+      'usernames_exported',
+      {
+        exportType: 'usernames-only',
+        userCount: collaborators.length,
+        fileName: a.download,
+        scope: selectedScope,
+        organization: selectedOrg || 'All'
+      }
+    );
   };
 
   return (

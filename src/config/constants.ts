@@ -85,6 +85,12 @@ export const UI_CONSTANTS = {
 
 export const DASHBOARD_OPTIONS = [
   {
+    id: 'smart-recommendations',
+    title: '🤖 Smart Recommendations (Preview)',
+    description: 'Preview of AI-powered insights for access optimization (Full AI coming soon!)',
+    icon: '🧠 AI'
+  },
+  {
     id: 'delete-user-access',
     title: 'Delete User Access',
     description: 'Remove specific users access from repositories by username',

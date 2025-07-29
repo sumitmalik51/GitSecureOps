@@ -7,6 +7,7 @@ import OrganizationSelector from './components/OrganizationSelector';
 import DeleteUserAccess from './components/DeleteUserAccess';
 import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
+import SmartRecommendations from './components/SmartRecommendations';
 import githubService from './services/githubService';
 
 function App() {
@@ -51,7 +52,11 @@ function App() {
   };
 
   const handleSelectOption = (option: string) => {
-    setCurrentView(`org-selector-${option}`);
+    if (option === 'smart-recommendations') {
+      setCurrentView('smart-recommendations');
+    } else {
+      setCurrentView(`org-selector-${option}`);
+    }
   };
 
   const handleNavigate = (view: string) => {
@@ -147,6 +152,12 @@ GitSecureOps will search across all repositories within the selected org(s) and 
             title="Export User Details"
             description="Choose which repositories to scan for usernames"
           />
+        </Layout>
+      );
+    case 'smart-recommendations':
+      return (
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <SmartRecommendations onBack={handleBack} />
         </Layout>
       );
     case 'delete-user-access':

@@ -1,5 +1,8 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import DarkModeToggle from './ui/DarkModeToggle';
+import NotificationBell from './NotificationBell';
+import NotificationCenter from './NotificationCenter';
+import NotificationSettings from './NotificationSettings';
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,8 +12,19 @@ interface LayoutProps {
   onNavigate: (view: string) => void;
 }
 
+interface NavigationItem {
+  id: string;
+  label: string;
+  icon: string;
+  description: string;
+  action?: () => void;
+}
+
 export default function Layout({ children, username, onLogout, currentView, onNavigate }: LayoutProps) {
-  const navigationItems = [
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+
+  const navigationItems: NavigationItem[] = [
     {
       id: 'dashboard',
       label: `Welcome ${username}`,
@@ -40,6 +54,13 @@ export default function Layout({ children, username, onLogout, currentView, onNa
       label: 'Export Users',
       icon: '📊',
       description: 'Export to Excel'
+    },
+    {
+      id: 'notifications',
+      label: 'Notifications',
+      icon: '🔔',
+      description: 'Configure alerts',
+      action: () => setShowNotificationSettings(true)
     }
   ];
 
@@ -65,7 +86,7 @@ export default function Layout({ children, username, onLogout, currentView, onNa
           {navigationItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => item.action ? item.action() : onNavigate(item.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group ${
                 currentView === item.id || currentView.includes(item.id)
                   ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 shadow-sm'
@@ -142,6 +163,11 @@ export default function Layout({ children, username, onLogout, currentView, onNa
 
             {/* User Info & Controls */}
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Notification Bell */}
+              <NotificationBell 
+                onClick={() => setShowNotificationCenter(true)}
+              />
+              
               {/* Dark Mode Toggle */}
               <DarkModeToggle />
               
@@ -173,6 +199,19 @@ export default function Layout({ children, username, onLogout, currentView, onNa
           {children}
         </main>
       </div>
+
+      {/* Notification Center */}
+      <NotificationCenter 
+        isOpen={showNotificationCenter}
+        onClose={() => setShowNotificationCenter(false)}
+      />
+
+      {/* Notification Settings */}
+      {showNotificationSettings && (
+        <NotificationSettings 
+          onClose={() => setShowNotificationSettings(false)}
+        />
+      )}
     </div>
   );
 }
