@@ -18,7 +18,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Custom CSS for animations */}
+      {/* Custom CSS for bounce animation */}
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes customBounce {
@@ -314,17 +314,35 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600 dark:bg-blue-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
+      <section className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 dark:from-gray-900 dark:via-purple-900 dark:to-gray-900 relative overflow-hidden">
+        {/* Animated Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-green-600/10 animate-pulse"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-400/20 via-transparent to-transparent"></div>
+          
+          {/* Floating Particles */}
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full opacity-60 animate-bounce" style={{animationDelay: '0s', animationDuration: '3s'}}></div>
+          <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-blue-400 rounded-full opacity-80 animate-bounce" style={{animationDelay: '1s', animationDuration: '4s'}}></div>
+          <div className="absolute bottom-1/3 left-1/3 w-3 h-3 bg-green-400 rounded-full opacity-40 animate-bounce" style={{animationDelay: '2s', animationDuration: '5s'}}></div>
+          <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-yellow-400 rounded-full opacity-50 animate-bounce" style={{animationDelay: '0.5s', animationDuration: '3.5s'}}></div>
+          <div className="absolute bottom-1/4 right-1/5 w-1 h-1 bg-pink-400 rounded-full opacity-70 animate-bounce" style={{animationDelay: '1.5s', animationDuration: '4.5s'}}></div>
+          
+          {/* Moving Gradient Orbs */}
+          <div className="absolute top-0 left-0 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-white via-purple-100 to-white bg-clip-text text-transparent mb-6 animate-fade-in">
             Ready to Streamline Your GitHub Management?
           </h2>
-          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-300 dark:text-slate-400 mb-8 max-w-2xl mx-auto animate-fade-in" style={{animationDelay: '0.2s'}}>
             Join development teams who trust GitSecureOps for their repository management needs.
           </p>
           <button
             onClick={onGetStarted}
-            className="group relative bg-gradient-to-r from-purple-600 via-blue-600 to-green-600 hover:from-purple-700 hover:via-blue-700 hover:to-green-700 text-white px-10 py-5 rounded-2xl font-semibold text-lg transition-all duration-500 transform hover:scale-[1.03] shadow-2xl hover:shadow-purple-500/25 border border-white/10 overflow-hidden backdrop-blur-sm"
+            className="group relative bg-gradient-to-r from-purple-600 via-blue-600 to-green-600 hover:from-purple-700 hover:via-blue-700 hover:to-green-700 text-white px-10 py-5 rounded-2xl font-semibold text-lg transition-all duration-500 transform hover:scale-[1.03] shadow-2xl hover:shadow-purple-500/25 border border-white/10 animate-fade-in overflow-hidden backdrop-blur-sm"
+            style={{animationDelay: '0.4s'}}
           >
             <span className="relative z-10 flex items-center gap-3">
               <span className="transition-all duration-300 group-hover:rotate-12 group-hover:scale-110">✨</span>
@@ -346,42 +364,42 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* Contact/Footer Section */}
-      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-white py-16">
+      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-lg font-bold">🔒</span>
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">🔒</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold">GitSecureOps</h3>
-                  <p className="text-sm text-gray-400">Repository Management</p>
+                  <h3 className="text-sm font-bold">GitSecureOps</h3>
+                  <p className="text-xs text-gray-400">Repository Management</p>
                 </div>
               </div>
-              <p className="text-gray-400 mb-4">
+              <p className="text-gray-400 text-xs mb-2">
                 Enterprise-grade GitHub access controls with built-in automation.
               </p>
             </div>
             
             <div>
-              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li><button onClick={() => scrollToSection('features')} className="text-gray-400 hover:text-white transition-colors">Features</button></li>
-                <li><button onClick={() => scrollToSection('about')} className="text-gray-400 hover:text-white transition-colors">About</button></li>
-                <li><button onClick={onGetStarted} className="text-gray-400 hover:text-white transition-colors">Get Started</button></li>
+              <h4 className="text-sm font-semibold mb-2">Quick Links</h4>
+              <ul className="space-y-1">
+                <li><button onClick={() => scrollToSection('features')} className="text-gray-400 hover:text-white transition-colors text-xs">Features</button></li>
+                <li><button onClick={() => scrollToSection('about')} className="text-gray-400 hover:text-white transition-colors text-xs">About</button></li>
+                <li><button onClick={onGetStarted} className="text-gray-400 hover:text-white transition-colors text-xs">Get Started</button></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="text-lg font-semibold mb-4">Developer</h4>
-              <p className="text-gray-400 mb-2">Created by Sumit Malik</p>
-              <div className="flex space-x-4">
+              <h4 className="text-sm font-semibold mb-2">Developer</h4>
+              <p className="text-gray-400 mb-2 text-xs">Created by Sumit Malik</p>
+              <div className="flex space-x-3">
                 <a 
                   href="https://github.com/sumitmalik51" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors text-xs"
                 >
                   GitHub
                 </a>
@@ -389,7 +407,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                   href="https://linkedin.com/in/sumitmalik51" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors text-xs"
                 >
                   LinkedIn
                 </a>
@@ -397,7 +415,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
                   href="https://sumitmalik51.github.io/sumitmalik51/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors text-xs"
                 >
                   Portfolio
                 </a>
@@ -405,11 +423,11 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p className="text-gray-400">
+          <div className="border-t border-gray-800 mt-4 pt-4 text-center">
+            <p className="text-gray-400 text-xs">
               © 2025 GitSecureOps. Built with ❤️ using React & TypeScript.
             </p>
-            <p className="text-gray-400 mt-2">
+            <p className="text-gray-400 mt-1 text-xs">
               🔒 Secure • ⚡ Fast • 🛡️ Reliable | Version 1.0.0
             </p>
           </div>

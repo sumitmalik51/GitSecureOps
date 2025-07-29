@@ -57,7 +57,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             {/* Logo */}
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white text-lg font-bold">�️</span>
+                <span className="text-white text-lg font-bold">🔒</span>
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 bg-clip-text text-transparent">
@@ -95,9 +95,15 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </button>
               <button
                 onClick={onGetStarted}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] overflow-hidden border border-blue-500/20"
               >
-                Get Started
+                <span className="relative z-10 flex items-center gap-2">
+                  Get Started
+                  <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               </button>
             </div>
 
@@ -144,9 +150,15 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 </button>
                 <button
                   onClick={onGetStarted}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors text-left"
+                  className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg text-left overflow-hidden border border-blue-500/20"
                 >
-                  Get Started
+                  <span className="relative z-10 flex items-center gap-2">
+                    Get Started
+                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                 </button>
               </div>
             </div>
@@ -168,15 +180,35 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
               <button
                 onClick={onGetStarted}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                className="group relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white px-10 py-5 rounded-2xl font-semibold text-lg transition-all duration-500 transform hover:scale-[1.03] shadow-2xl hover:shadow-blue-500/25 border border-white/10 overflow-hidden backdrop-blur-sm"
               >
-                Start Managing Access
+                <span className="relative z-10 flex items-center gap-3">
+                  <span className="transition-transform duration-300 group-hover:scale-110">🚀</span>
+                  Start Managing Access
+                  <svg className="w-5 h-5 transition-all duration-300 group-hover:translate-x-1 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+                
+                {/* Sophisticated layered effects */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/15 to-white/5 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400/10 via-indigo-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+                <div className="absolute inset-[1px] rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-50"></div>
+                
+                {/* Pulse ring on hover */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-0 group-hover:opacity-20 animate-ping"></div>
               </button>
               <button 
                 onClick={() => scrollToSection('features')}
-                className="text-blue-600 hover:text-blue-700 px-8 py-4 rounded-lg font-semibold text-lg transition-colors border border-blue-600 hover:bg-blue-50"
+                className="group relative text-blue-600 hover:text-blue-700 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-blue-600 hover:border-blue-700 hover:bg-blue-50 overflow-hidden"
               >
-                Learn More
+                <span className="relative z-10 flex items-center gap-2">
+                  Learn More
+                  <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 via-blue-50/50 to-blue-50/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               </button>
             </div>
           </div>
@@ -311,19 +343,50 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
+      <section className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+        {/* Animated Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-green-600/10 animate-pulse"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-400/20 via-transparent to-transparent"></div>
+          
+          {/* Floating Particles */}
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full opacity-60 animate-bounce" style={{animationDelay: '0s', animationDuration: '3s'}}></div>
+          <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-blue-400 rounded-full opacity-80 animate-bounce" style={{animationDelay: '1s', animationDuration: '4s'}}></div>
+          <div className="absolute bottom-1/3 left-1/3 w-3 h-3 bg-green-400 rounded-full opacity-40 animate-bounce" style={{animationDelay: '2s', animationDuration: '5s'}}></div>
+          <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-yellow-400 rounded-full opacity-50 animate-bounce" style={{animationDelay: '0.5s', animationDuration: '3.5s'}}></div>
+          <div className="absolute bottom-1/4 right-1/5 w-1 h-1 bg-pink-400 rounded-full opacity-70 animate-bounce" style={{animationDelay: '1.5s', animationDuration: '4.5s'}}></div>
+          
+          {/* Moving Gradient Orbs */}
+          <div className="absolute top-0 left-0 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-white via-purple-100 to-white bg-clip-text text-transparent mb-6">
             Ready to Streamline Your GitHub Management?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join hundreds of development teams who trust GitHub AccessOps for their repository management needs.
+          <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
+            Join development teams who trust GitSecureOps for their repository management needs.
           </p>
           <button
             onClick={onGetStarted}
-            className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="group relative bg-gradient-to-r from-purple-600 via-blue-600 to-green-600 hover:from-purple-700 hover:via-blue-700 hover:to-green-700 text-white px-10 py-5 rounded-2xl font-semibold text-lg transition-all duration-500 transform hover:scale-[1.03] shadow-2xl hover:shadow-purple-500/25 border border-white/10 overflow-hidden backdrop-blur-sm"
           >
-            Get Started Now
+            <span className="relative z-10 flex items-center gap-3">
+              <span className="transition-all duration-300 group-hover:rotate-12 group-hover:scale-110">✨</span>
+              Get Started Now
+              <svg className="w-5 h-5 transition-all duration-300 group-hover:translate-x-1 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </span>
+            
+            {/* Advanced layered effects */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/15 to-white/5 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400/10 via-blue-400/10 to-green-400/10 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+            <div className="absolute inset-[1px] rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-50"></div>
+            
+            {/* Rotating gradient border effect */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500 via-blue-500 to-green-500 opacity-0 group-hover:opacity-30 animate-pulse"></div>
           </button>
         </div>
       </section>
