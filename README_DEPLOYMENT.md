@@ -2,7 +2,7 @@
 
 Your GitHub Repository Manager is now configured for deployment to your existing Azure Static Web App using GitHub Actions.
 
-## 🎯 What's Been Configured
+## 🎯 What's Been Configured 
 
 ### ✅ GitHub Actions Workflow
 - **File**: `.github/workflows/azure-static-web-apps.yml`

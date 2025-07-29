@@ -143,12 +143,6 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
               >
                 Start Managing Access
               </button>
-              <button 
-                onClick={() => scrollToSection('features')}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-8 py-4 rounded-lg font-semibold text-lg transition-colors border border-blue-600 dark:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              >
-                Learn More
-              </button>
             </div>
           </div>
         </div>

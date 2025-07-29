@@ -19,7 +19,7 @@ export default function Layout({ children, username, onLogout, currentView, onNa
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <Topbar username={username} onLogout={onLogout} currentView={currentView} />
+        <Topbar username={username} onLogout={onLogout} />
         
         {/* Page Content */}
         <main className="flex-1 overflow-auto">
