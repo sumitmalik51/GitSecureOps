@@ -132,30 +132,43 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`group relative w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 overflow-hidden ${
+                className={`group relative w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 overflow-hidden ${
                   isLoading 
-                    ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed border-2 border-gray-400' 
+                    ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 animate-pulse border-2 border-blue-300 cursor-not-allowed' 
                     : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.01] hover:shadow-lg moving-border-button'
                 }`}
               >
+                {/* Loading wave effect */}
+                {isLoading && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                )}
+                
+                {/* Loading spinner */}
                 {isLoading && (
                   <div className="absolute left-4 inset-y-0 flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   </div>
                 )}
-                <span className="flex items-center space-x-2">
+                
+                {/* Main button content */}
+                <span className={`flex items-center space-x-2 transition-all duration-300 ${isLoading ? 'transform scale-95' : ''}`}>
                   {isLoading ? (
                     <>
-                      <span>🔄</span>
+                      <span className="animate-bounce">🔄</span>
                       <span>Authenticating...</span>
                     </>
                   ) : (
                     <>
-                      <span>🚀</span>
+                      <span className="group-hover:animate-bounce">🚀</span>
                       <span>Connect to GitHub</span>
                     </>
                   )}
                 </span>
+                
+                {/* Success ripple effect (shows briefly when successful) */}
+                {!isLoading && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400/0 via-green-400/20 to-green-400/0 transform scale-x-0 group-active:scale-x-100 transition-transform duration-300 origin-center"></div>
+                )}
               </button>
             </div>
           </form>
