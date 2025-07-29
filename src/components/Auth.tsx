@@ -78,6 +78,97 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
             50% { opacity: 0.6; }
           }
           
+          @keyframes aiShimmer {
+            0% { 
+              background-position: -200% 0;
+              opacity: 0.4;
+            }
+            50% { 
+              opacity: 0.8;
+            }
+            100% { 
+              background-position: 200% 0;
+              opacity: 0.4;
+            }
+          }
+          
+          @keyframes neuralPulse {
+            0%, 100% { 
+              box-shadow: 0 0 0 0 rgba(71, 85, 105, 0.3),
+                          0 0 0 0 rgba(71, 85, 105, 0.2),
+                          0 0 0 0 rgba(71, 85, 105, 0.1);
+            }
+            25% { 
+              box-shadow: 0 0 0 4px rgba(71, 85, 105, 0.2),
+                          0 0 0 8px rgba(71, 85, 105, 0.1),
+                          0 0 0 12px rgba(71, 85, 105, 0.05);
+            }
+            50% { 
+              box-shadow: 0 0 0 8px rgba(71, 85, 105, 0.1),
+                          0 0 0 16px rgba(71, 85, 105, 0.05),
+                          0 0 0 24px rgba(71, 85, 105, 0.02);
+            }
+            75% { 
+              box-shadow: 0 0 0 4px rgba(71, 85, 105, 0.2),
+                          0 0 0 8px rgba(71, 85, 105, 0.1),
+                          0 0 0 12px rgba(71, 85, 105, 0.05);
+            }
+          }
+          
+          @keyframes aiScan {
+            0% { 
+              transform: translateX(-100%);
+              opacity: 0;
+            }
+            10% { 
+              opacity: 1;
+            }
+            90% { 
+              opacity: 1;
+            }
+            100% { 
+              transform: translateX(100%);
+              opacity: 0;
+            }
+          }
+          
+          @keyframes dataFlow {
+            0% { 
+              transform: scaleX(0);
+              opacity: 0;
+            }
+            50% { 
+              opacity: 1;
+            }
+            100% { 
+              transform: scaleX(1);
+              opacity: 0;
+            }
+          }
+          
+          @keyframes smartHover {
+            0% { 
+              transform: scale(1) rotate(0deg);
+              filter: brightness(1);
+            }
+            25% { 
+              transform: scale(1.02) rotate(0.5deg);
+              filter: brightness(1.1);
+            }
+            50% { 
+              transform: scale(1.05) rotate(0deg);
+              filter: brightness(1.2);
+            }
+            75% { 
+              transform: scale(1.02) rotate(-0.5deg);
+              filter: brightness(1.1);
+            }
+            100% { 
+              transform: scale(1) rotate(0deg);
+              filter: brightness(1);
+            }
+          }
+          
           .gentle-float {
             animation: gentleFloat 8s ease-in-out infinite;
           }
@@ -88,6 +179,97 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
           
           .minimal-pulse {
             animation: minimalPulse 3s ease-in-out infinite;
+          }
+          
+          .ai-button {
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .ai-button:hover {
+            animation: smartHover 2s ease-in-out infinite;
+          }
+          
+          .ai-button:not(:disabled):hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+              45deg,
+              transparent 30%,
+              rgba(255, 255, 255, 0.2) 50%,
+              transparent 70%
+            );
+            background-size: 200% 200%;
+            animation: aiShimmer 2s ease-in-out infinite;
+            pointer-events: none;
+          }
+          
+          .ai-button:not(:disabled):hover {
+            animation: neuralPulse 3s ease-in-out infinite;
+          }
+          
+          .ai-scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(34, 197, 94, 0.8),
+              rgba(59, 130, 246, 0.8),
+              rgba(147, 51, 234, 0.8),
+              transparent
+            );
+            animation: aiScan 4s ease-in-out infinite;
+            opacity: 0;
+          }
+          
+          .ai-button:not(:disabled):hover .ai-scan-line {
+            opacity: 1;
+          }
+          
+          .data-streams {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+          }
+          
+          .ai-button:not(:disabled):hover .data-streams {
+            opacity: 1;
+          }
+          
+          .data-stream {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(34, 197, 94, 0.6),
+              transparent
+            );
+            animation: dataFlow 2s ease-in-out infinite;
+          }
+          
+          .data-stream:nth-child(1) {
+            top: 25%;
+            animation-delay: 0s;
+          }
+          
+          .data-stream:nth-child(2) {
+            top: 50%;
+            animation-delay: 0.5s;
+          }
+          
+          .data-stream:nth-child(3) {
+            top: 75%;
+            animation-delay: 1s;
           }
         `
       }} />
@@ -132,9 +314,14 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
                   id="token"
                   name="token"
                   type="password"
-                  required
                   value={token}
-                  onChange={(e) => setToken(e.target.value)}
+                  onChange={(e) => {
+                    setToken(e.target.value);
+                    // Clear the validation error when user starts typing
+                    if (error === 'Please provide a GitHub Personal Access Token') {
+                      setError('');
+                    }
+                  }}
                   className="appearance-none block w-full px-4 py-4 border border-slate-200 dark:border-slate-700 rounded-2xl placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 focus:border-transparent sm:text-sm transition-all duration-300 bg-slate-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 group-hover:border-slate-300 dark:group-hover:border-slate-600"
                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                   disabled={isLoading}
@@ -143,6 +330,24 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
                   <div className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full minimal-pulse"></div>
                 </div>
               </div>
+              
+              {/* Custom validation message */}
+              {!token.trim() && error === 'Please provide a GitHub Personal Access Token' && (
+                <div className="mt-3 relative group">
+                  <div className="absolute inset-0 bg-amber-50 dark:bg-amber-900/20 rounded-2xl animate-pulse opacity-50"></div>
+                  <div className="relative bg-amber-50/80 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 flex items-start space-x-3 backdrop-blur-sm">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className="w-4 h-4 bg-amber-100 dark:bg-amber-800 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-amber-600 dark:text-amber-400">!</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">Personal Access Token Required</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Please enter your GitHub token to continue</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   <span className="font-medium text-slate-700 dark:text-slate-300">Required permissions:</span> 'repo' and 'read:org'
@@ -152,7 +357,7 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
               </div>
             </div>
 
-            {error && (
+            {error && error !== 'Please provide a GitHub Personal Access Token' && (
               <div className="relative group">
                 <div className="absolute inset-0 bg-red-50 dark:bg-red-900/20 rounded-2xl animate-pulse opacity-50"></div>
                 <div className="relative bg-red-50/80 dark:bg-red-900/40 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start space-x-3 backdrop-blur-sm">
@@ -173,12 +378,22 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`group relative w-full flex justify-center py-4 px-6 rounded-2xl text-sm font-semibold transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:focus:ring-slate-400 overflow-hidden ${
+                className={`ai-button group relative w-full flex justify-center py-4 px-6 rounded-2xl text-sm font-semibold transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:focus:ring-slate-400 overflow-hidden ${
                   isLoading 
                     ? 'bg-gradient-to-r from-slate-400 via-zinc-400 to-slate-400 text-white cursor-not-allowed animate-pulse border border-slate-300 dark:border-slate-600' 
                     : 'bg-gradient-to-r from-slate-700 via-zinc-700 to-slate-800 dark:from-slate-600 dark:via-zinc-600 dark:to-slate-700 hover:from-slate-800 hover:via-zinc-800 hover:to-slate-900 dark:hover:from-slate-500 dark:hover:via-zinc-500 dark:hover:to-slate-600 text-white transform hover:scale-[1.02] hover:shadow-xl shadow-lg'
                 }`}
               >
+                {/* AI Scan Line */}
+                <div className="ai-scan-line"></div>
+                
+                {/* Data Streams */}
+                <div className="data-streams">
+                  <div className="data-stream"></div>
+                  <div className="data-stream"></div>
+                  <div className="data-stream"></div>
+                </div>
+
                 {/* Minimal loading effect */}
                 {isLoading && (
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
@@ -192,7 +407,7 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
                 )}
                 
                 {/* Main button content */}
-                <span className={`flex items-center space-x-3 transition-all duration-300 ${isLoading ? 'transform scale-95 opacity-80' : ''}`}>
+                <span className={`flex items-center space-x-3 transition-all duration-300 relative z-10 ${isLoading ? 'transform scale-95 opacity-80' : ''}`}>
                   {isLoading ? (
                     <>
                       <span className="text-base opacity-80">●</span>
