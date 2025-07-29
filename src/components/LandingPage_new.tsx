@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -6,6 +6,43 @@ interface LandingPageProps {
 
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [showPopup, setShowPopup] = useState(true);
+
+  const darkModeMessages = [
+    "Where's the light mode? Buried next to our sleep schedule. Welcome to the dark side.",
+    "Light mode? That's a feature we left in the sun too long.",
+    "Only Dark Mode? Yes. Because real developers squint proudly."
+  ];
+
+  const [isMessageVisible, setIsMessageVisible] = useState(true);
+
+  // Cycle through messages: show for 5 seconds, hide for 10 seconds
+  useEffect(() => {
+    let showTimer: NodeJS.Timeout;
+    let hideTimer: NodeJS.Timeout;
+
+    const startCycle = () => {
+      // Show message for 5 seconds
+      setIsMessageVisible(true);
+      showTimer = setTimeout(() => {
+        // Hide message for 10 seconds
+        setIsMessageVisible(false);
+        hideTimer = setTimeout(() => {
+          // Move to next message and start cycle again
+          setCurrentMessageIndex((prev) => (prev + 1) % darkModeMessages.length);
+          startCycle();
+        }, 10000); // 10 seconds hidden
+      }, 5000); // 5 seconds visible
+    };
+
+    startCycle();
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [darkModeMessages.length]);
 
   const features = [
     {
@@ -27,6 +64,77 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Floating Dark Mode Message Popup */}
+      {showPopup && isMessageVisible && (
+        <div className="fixed top-20 left-4 z-50 animate-fade-in">
+          <div className="relative bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-xl text-white rounded-2xl p-6 shadow-2xl border border-gray-700/30 max-w-sm group hover:scale-[1.02] transition-all duration-300">
+            {/* Glow effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            {/* Inner glow border */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 opacity-50"></div>
+            
+            <div className="relative flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="relative">
+                    <span className="text-2xl animate-bounce">🌙</span>
+                    <div className="absolute -inset-1 bg-blue-400/20 rounded-full blur-sm"></div>
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                      GitSecureOps Says
+                    </span>
+                    <div className="w-8 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-1"></div>
+                  </div>
+                </div>
+                
+                {/* Message content visible to users */}
+                <p className="text-sm text-gray-300 leading-relaxed mb-4 font-medium">
+                  {darkModeMessages[currentMessageIndex]}
+                </p>
+                
+                {/* Enhanced progress indicators */}
+                <div className="flex gap-2 mb-3">
+                  {darkModeMessages.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-1 rounded-full transition-all duration-500 ${
+                        index === currentMessageIndex 
+                          ? 'w-8 bg-gradient-to-r from-blue-400 to-purple-400 shadow-lg shadow-blue-400/50' 
+                          : 'w-2 bg-gray-600 hover:bg-gray-500'
+                      }`}
+                    />
+                  ))}
+                </div>
+                
+                {/* Status indicator hidden from users */}
+                <div className="flex items-center gap-2 text-xs text-gray-400 opacity-0">
+                  <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+                  <span>System activity</span>
+                </div>
+              </div>
+              
+              {/* Enhanced close button */}
+              <button
+                onClick={() => setShowPopup(false)}
+                className="relative text-gray-400 hover:text-white transition-all duration-300 ml-3 flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-700/50 group/close"
+              >
+                <svg className="w-4 h-4 group-hover/close:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <div className="absolute inset-0 bg-red-400/20 rounded-lg opacity-0 group-hover/close:opacity-100 transition-opacity duration-300"></div>
+              </button>
+            </div>
+            
+            {/* Floating particles */}
+            <div className="absolute -top-2 -right-2 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-bounce" style={{animationDelay: '0s'}}></div>
+            <div className="absolute -bottom-1 -left-1 w-1 h-1 bg-purple-400 rounded-full opacity-80 animate-bounce" style={{animationDelay: '1s'}}></div>
+            <div className="absolute top-1/2 -right-1 w-1.5 h-1.5 bg-cyan-400 rounded-full opacity-50 animate-bounce" style={{animationDelay: '2s'}}></div>
+          </div>
+        </div>
+      )}
+      
       {/* Custom CSS for animations */}
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -62,6 +170,28 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           
           .animate-shimmer {
             animation: shimmer 2s infinite;
+          }
+          
+          @keyframes minimalGradient {
+            0% { 
+              background-position: 0% 50%;
+            }
+            50% { 
+              background-position: 100% 50%;
+            }
+            100% { 
+              background-position: 0% 50%;
+            }
+          }
+          
+          .minimal-gradient-text {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4, #3b82f6);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: minimalGradient 3s ease-in-out infinite;
+            font-weight: 800;
           }
         `
       }} />
@@ -137,8 +267,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 custom-bounce">
-              Git<span className="text-blue-600">SecureOps</span>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 custom-bounce">
+              <span className="minimal-gradient-text">
+                GitSecureOps
+              </span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-fade-in">
               Professional GitHub repository management with enterprise-grade security. 
