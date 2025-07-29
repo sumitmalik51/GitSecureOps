@@ -27,6 +27,44 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Custom CSS for animations */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes customBounce {
+            0%, 6.25% { transform: translateY(0); }
+            3.125% { transform: translateY(-25px); }
+            12.5%, 100% { transform: translateY(0); }
+          }
+          .custom-bounce {
+            animation: customBounce 32s infinite;
+          }
+          
+          @keyframes fadeIn {
+            from { 
+              opacity: 0; 
+              transform: translateY(30px); 
+            }
+            to { 
+              opacity: 1; 
+              transform: translateY(0); 
+            }
+          }
+          
+          .animate-fade-in {
+            animation: fadeIn 1s ease-out forwards;
+            opacity: 0;
+          }
+          
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+          
+          .animate-shimmer {
+            animation: shimmer 2s infinite;
+          }
+        `
+      }} />
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,18 +84,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <button
-                onClick={onGetStarted}
-                className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] overflow-hidden border border-blue-500/20"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  Get Started
-                  <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-              </button>
+              {/* Navigation items can be added here if needed */}
             </div>
 
             {/* Mobile menu button */}
@@ -96,17 +123,28 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative pt-24 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-3 h-3 bg-blue-400 dark:bg-blue-300 rounded-full custom-bounce opacity-20"></div>
+          <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 dark:bg-green-300 rounded-full custom-bounce opacity-30" style={{ animationDelay: '4s' }}></div>
+          <div className="absolute top-60 left-1/3 w-4 h-4 bg-purple-400 dark:bg-purple-300 rounded-full custom-bounce opacity-25" style={{ animationDelay: '8s' }}></div>
+          <div className="absolute bottom-40 right-10 w-3 h-3 bg-yellow-400 dark:bg-yellow-300 rounded-full custom-bounce opacity-20" style={{ animationDelay: '12s' }}></div>
+          <div className="absolute bottom-60 left-20 w-2 h-2 bg-pink-400 dark:bg-pink-300 rounded-full custom-bounce opacity-30" style={{ animationDelay: '16s' }}></div>
+          <div className="absolute top-1/2 right-1/4 w-3 h-3 bg-indigo-400 dark:bg-indigo-300 rounded-full custom-bounce opacity-25" style={{ animationDelay: '20s' }}></div>
+          <div className="absolute top-1/3 left-3/4 w-2 h-2 bg-teal-400 dark:bg-teal-300 rounded-full custom-bounce opacity-20" style={{ animationDelay: '24s' }}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 custom-bounce">
               Git<span className="text-blue-600">SecureOps</span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-fade-in">
               Professional GitHub repository management with enterprise-grade security. 
               Streamline user access, automate permissions, and maintain compliance.
             </p>
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <button
                 onClick={onGetStarted}
                 className="group relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white px-10 py-5 rounded-2xl font-semibold text-lg transition-all duration-500 transform hover:scale-[1.03] shadow-2xl hover:shadow-blue-500/25 border border-white/10 overflow-hidden backdrop-blur-sm"
@@ -120,7 +158,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 </span>
                 
                 {/* Sophisticated layered effects */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/15 to-white/5 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/15 to-white/5 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 animate-shimmer"></div>
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400/10 via-indigo-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
                 <div className="absolute inset-[1px] rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-50"></div>
                 
