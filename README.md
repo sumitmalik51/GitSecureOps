@@ -122,13 +122,8 @@ GitSecureOps is a cutting-edge React-based web application that revolutionizes G
 
 ### GitHub Authentication Setup
 
-#### Option 1: OAuth App (Recommended)
-Create a GitHub OAuth App with the following settings:
-- **Application name**: GitSecureOps
-- **Homepage URL**: `http://localhost:5173` (development) or your production URL
-- **Authorization callback URL**: `http://localhost:5173/oauth/callback`
 
-#### Option 2: Personal Access Token
+#### Option 1: Personal Access Token
 Create a GitHub Personal Access Token with these scopes:
 
 **Essential Scopes:**
@@ -142,6 +137,12 @@ Create a GitHub Personal Access Token with these scopes:
 - `admin:repo_hook` - Repository webhooks management
 - `read:discussion` - Read discussions
 - `write:discussion` - Write discussions
+
+#### Option 2: OAuth App (Coming Soon)
+Create a GitHub OAuth App with the following settings:
+- **Application name**: GitSecureOps
+- **Homepage URL**: `http://localhost:5173` (development) or your production URL
+- **Authorization callback URL**: `http://localhost:5173/oauth/callback`
 
 ## 🏗️ Advanced Architecture
 
