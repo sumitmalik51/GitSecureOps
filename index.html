@@ -142,10 +142,10 @@
 
       @keyframes gradient-shift {
         0% {
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
+          background: linear-gradient(135deg, rgba(55, 65, 81, 0.1), rgba(107, 114, 128, 0.1));
         }
         100% {
-          background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(168, 85, 247, 0.1));
+          background: linear-gradient(135deg, rgba(156, 163, 175, 0.1), rgba(75, 85, 99, 0.1));
         }
       }
 
@@ -168,47 +168,129 @@
         }
       }
 
-      header {
-        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
+      @keyframes landing-header-pulse {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 0 20px rgba(107, 114, 128, 0.3);
+        }
+        50% {
+          transform: scale(1.02);
+          box-shadow: 0 0 30px rgba(156, 163, 175, 0.5);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 20px rgba(107, 114, 128, 0.3);
+        }
+      }
+
+      @keyframes landing-header-shimmer {
+        0% {
+          background-position: -200% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+
+      /* Only apply to landing page header, not authenticated app header */
+      .landing-page-header {
+        background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af, #6b7280, #4b5563, #374151);
+        background-size: 300% 300%;
+        animation: header-gradient 8s ease-in-out infinite, landing-header-pulse 4s ease-in-out infinite;
+        filter: contrast(1.1) brightness(1.05);
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid rgba(156, 163, 175, 0.3);
+      }
+
+      .landing-page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+        background-size: 200% 100%;
+        animation: landing-header-shimmer 3s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      .landing-page-header::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #6b7280, #9ca3af, #6b7280, #4b5563);
         background-size: 400% 400%;
-        animation: header-gradient 10s ease infinite;
+        border-radius: inherit;
+        z-index: -1;
+        animation: header-gradient 6s ease-in-out infinite;
+        opacity: 0.5;
       }
 
       /* Refine gradient colors for light theme */
       body.light #backToTop,
       body.light #popup-greeting,
       body.light .floating-cta {
-        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
-        background-size: 400% 400%;
-        animation: gradient-shift 5s ease infinite, pulse 2s infinite;
+        background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af);
+        background-size: 300% 300%;
+        animation: gradient-shift 6s ease-in-out infinite, pulse 2s infinite;
       }
 
       /* Ensure vibrant header gradient in light theme */
-      body.light header {
-        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
-        background-size: 400% 400%;
-        animation: header-gradient 10s ease infinite;
+      body.light .landing-page-header {
+        background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af, #6b7280, #4b5563, #374151);
+        background-size: 300% 300%;
+        animation: header-gradient 8s ease-in-out infinite, landing-header-pulse 4s ease-in-out infinite;
+        filter: contrast(1.1) brightness(1.05);
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid rgba(156, 163, 175, 0.3);
+      }
+
+      body.light .landing-page-header::before {
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+      }
+
+      body.light .landing-page-header::after {
+        background: linear-gradient(45deg, #6b7280, #9ca3af, #6b7280, #4b5563);
+        opacity: 0.3;
       }
 
       /* Add gradient color to Back to Top button */
       #backToTop {
-        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
-        background-size: 400% 400%;
-        animation: gradient-shift 5s ease infinite, pulse 2s infinite;
+        background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af);
+        background-size: 300% 300%;
+        animation: gradient-shift 6s ease-in-out infinite, pulse 2s infinite;
       }
 
       /* Add gradient color to message popup */
       #popup-greeting {
-        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
-        background-size: 400% 400%;
-        animation: gradient-shift 5s ease infinite;
+        background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af);
+        background-size: 300% 300%;
+        animation: gradient-shift 6s ease-in-out infinite;
       }
 
       /* Restore gradient for Let's Build Together button */
       .floating-cta {
-        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
-        background-size: 400% 400%;
-        animation: gradient-shift 5s ease infinite, pulse 2s infinite;
+        background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af);
+        background-size: 300% 300%;
+        animation: gradient-shift 6s ease-in-out infinite, pulse 2s infinite;
       }
 
       /* Add advanced hover effects */
@@ -226,12 +308,6 @@
       body.light {
         background-color: #f9fafb;
         color: #1f2937;
-      }
-
-      body.light header {
-        background: linear-gradient(270deg, #2563eb, #9333ea, #16a34a, #ca8a04);
-        background-size: 400% 400%;
-        animation: header-gradient 10s ease infinite;
       }
 
       body.light .tag {

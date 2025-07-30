@@ -180,37 +180,41 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           @keyframes minimalGradient {
             0% { 
               background-position: 0% 50%;
+              transform: translateX(0%);
             }
             50% { 
               background-position: 100% 50%;
+              transform: translateX(2%);
             }
             100% { 
               background-position: 0% 50%;
+              transform: translateX(0%);
             }
           }
           
           .minimal-gradient-text {
-            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4, #3b82f6);
-            background-size: 200% 200%;
+            background: linear-gradient(120deg, #1f2937, #374151, #4b5563, #6b7280, #374151, #1f2937);
+            background-size: 300% 300%;
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: minimalGradient 3s ease-in-out infinite;
-            font-weight: 800;
+            animation: minimalGradient 8s ease-in-out infinite;
+            font-weight: 700;
+            filter: contrast(1.1) brightness(1.05);
           }
         `
       }} />
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50">
+      <nav className="landing-page-header fixed top-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 rounded-lg flex items-center justify-center shadow-lg">
+          <div className="flex items-center py-4">
+            {/* Logo - Always in left corner */}
+            <div className="flex items-center space-x-3 mr-auto">
+              <div className="w-10 h-10 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg flex items-center justify-center shadow-md">
                 <span className="text-white text-lg font-bold">🔒</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 bg-clip-text text-transparent">
+                <h1 className="text-lg font-bold minimal-gradient-text">
                   GitSecureOps
                 </h1>
                 <p className="text-xs text-gray-600 dark:text-gray-300">Repository Management</p>
