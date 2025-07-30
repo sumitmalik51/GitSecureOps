@@ -7,19 +7,57 @@ interface TopbarProps {
 
 export default function Topbar({ username, onLogout }: TopbarProps) {
   return (
-    <div className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      {/* Left Side - GitSecureOps Brand */}
-      <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 rounded-lg flex items-center justify-center shadow-lg">
-          <span className="text-white text-sm">🛡️</span>
+    <>
+      {/* Custom CSS for minimalist header animations */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes topbarMinimalGradient {
+            0% { 
+              background-position: 0% 50%;
+              transform: translateX(0%);
+            }
+            50% { 
+              background-position: 100% 50%;
+              transform: translateX(1%);
+            }
+            100% { 
+              background-position: 0% 50%;
+              transform: translateX(0%);
+            }
+          }
+          
+          .topbar-minimal-gradient-text {
+            background: linear-gradient(110deg, #374151, #4b5563, #6b7280, #9ca3af, #6b7280, #4b5563, #374151);
+            background-size: 250% 250%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: topbarMinimalGradient 6s ease-in-out infinite;
+            font-weight: 600;
+            filter: contrast(1.05) brightness(1.02);
+          }
+
+          .topbar-logo-glow {
+            background: linear-gradient(135deg, #4b5563, #6b7280, #9ca3af);
+            animation: topbarMinimalGradient 8s ease-in-out infinite;
+            box-shadow: 0 2px 8px rgba(107, 114, 128, 0.15);
+          }
+        `
+      }} />
+      
+      <div className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        {/* Left Side - GitSecureOps Brand */}
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 topbar-logo-glow rounded-lg flex items-center justify-center">
+            <span className="text-white text-sm">🛡️</span>
+          </div>
+          <div>
+            <h1 className="text-lg topbar-minimal-gradient-text">
+              GitSecureOps
+            </h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Repository Management</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 bg-clip-text text-transparent">
-            GitSecureOps
-          </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Repository Management</p>
-        </div>
-      </div>
       
       {/* Right Side - Menu and Controls */}
       <div className="flex items-center space-x-2 sm:space-x-4">
@@ -36,7 +74,7 @@ export default function Topbar({ username, onLogout }: TopbarProps) {
         <DarkModeToggle />
         
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-r from-gray-500 to-gray-600 rounded-full flex items-center justify-center shadow-sm">
             <span className="text-white text-sm font-bold">
               {username.charAt(0).toUpperCase()}
             </span>
@@ -56,5 +94,6 @@ export default function Topbar({ username, onLogout }: TopbarProps) {
         </button>
       </div>
     </div>
+    </>
   );
 }
