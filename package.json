@@ -1,7 +1,30 @@
 {
   "name": "gitsecureops",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Professional GitHub repository management with enterprise-grade security. Streamline user access, automate permissions, maintain 2FA compliance, and manage repository security at scale.",
+  "author": "Sumit Malik <sumitmalik51@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "github",
+    "repository-management",
+    "access-control",
+    "2fa-compliance",
+    "enterprise-security",
+    "automation",
+    "collaboration",
+    "devsecops",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://github.com/sumitmalik51/GitHub-AccessOps",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sumitmalik51/GitHub-AccessOps.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sumitmalik51/GitHub-AccessOps/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

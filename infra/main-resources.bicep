@@ -60,7 +60,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   location: location
   tags: {
     'azd-env-name': environmentName
-    'azd-service-name': 'github-repo-manager-web'
+    'azd-service-name': 'gitsecureops-web'
   }
   sku: {
     name: 'Free'

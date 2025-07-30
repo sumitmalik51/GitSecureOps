@@ -15,7 +15,7 @@ This guide will help you deploy the GitHub Repository Manager application to Azu
 
 ```bash
 git clone <your-repo-url>
-cd github-repo-manager
+cd GitSecureOps
 ```
 
 ### 2. Install Azure Developer CLI (azd)

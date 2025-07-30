@@ -1,125 +1,304 @@
-# React + TypeScript + Vite
+# GitSecureOps 🔒
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Enterprise GitHub Access Controls with Built-in Automation**
 
-Currently, two official plugins are available:
+GitSecureOps is a professional React-based web application that streamlines GitHub repository management with enterprise-grade security. Manage repository access, automate permissions, maintain compliance, and ensure security across all your GitHub organizations and repositories from one sleek dashboard.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![React](https://img.shields.io/badge/React-19.1.0-blue.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)
 
-# GitSecureOps
+## ✨ Key Features
 
-A React-based web application for automating GitHub repository access management. This tool allows you to view all your repositories and their collaborators, and remove access for selected users across multiple repositories with enterprise-grade security.
+### 🔒 **Two-Factor Authentication Compliance**
+- **Organization Scanning**: Comprehensive 2FA compliance monitoring for entire organizations
+- **Repository Analysis**: Automatic inclusion of repository collaborators in organization scans
+- **Compliance Reports**: Detailed reports showing 2FA status across all users
+- **Export Capabilities**: Export compliance data for security auditing
+- **Real-time Status**: Live updates on user compliance status
 
-## Features
+### 🔑 **Grant GitHub Access**
+- **User Invitations**: Invite users to organizations and repositories
+- **Role Management**: Assign specific roles (admin, write, read) with precision
+- **Bulk Operations**: Invite multiple users across multiple repositories
+- **Validation**: Username and repository path validation
+- **Smart Workflow**: Step-by-step guided invitation process
 
-- **Simplified Authentication**: Only requires GitHub Personal Access Token (username auto-detected)
-- **Repository Discovery**: Lists all accessible repositories (personal and organization)
-- **Collaborator Management**: View and manage collaborators across all repositories
-- **Bulk Operations**: Remove multiple collaborators from multiple repositories
-- **Filtering**: Filter repositories by public/private status and search by name
-- **Modern UI**: Clean, responsive interface built with Tailwind CSS
+### 🧬 **GitHub Actions Management**
+- **Workflow Overview**: Monitor GitHub Actions across all repositories
+- **Security Controls**: Manage action permissions and secrets
+- **Performance Insights**: Track workflow performance and success rates
+- **Automation**: Streamline CI/CD pipeline management
 
-## Prerequisites
+### 🗑️ **Delete User Access**
+- **Bulk Removal**: Remove collaborators from multiple repositories simultaneously
+- **Organization Management**: Remove users from entire organizations
+- **Safety Checks**: Confirmation dialogs prevent accidental removals
+- **Audit Trail**: Complete logging of all access changes
 
-- Node.js (v18 or higher)
-- npm or yarn
-- GitHub Personal Access Token with `repo` and `read:org` permissions
+### 📊 **Repository Management**
+- **Unified View**: List all accessible repositories (personal and organization)
+- **Smart Filtering**: Filter by public/private status, search by name
+- **Collaborator Overview**: View and manage collaborators across all repositories
+- **Permission Details**: Detailed permission levels for each collaborator
 
-## Setup
+### 🤖 **Smart Recommendations**
+- **AI-Powered Insights**: Intelligent suggestions for repository security
+- **Best Practices**: Automated recommendations for access control
+- **Security Alerts**: Proactive identification of potential security issues
+- **Optimization Tips**: Performance and efficiency recommendations
 
-1. **Clone and install dependencies:**
+### 📈 **Export & Analytics**
+- **Data Export**: Export username data and access reports
+- **CSV/JSON Support**: Multiple export formats for integration
+- **Compliance Reports**: Generate detailed compliance documentation
+- **Usage Analytics**: Track application usage and performance
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
+- **GitHub Personal Access Token** with appropriate permissions
+
+### Installation
+
+1. **Clone the repository:**
    ```bash
-   cd github-repo-manager
+   git clone https://github.com/sumitmalik51/GitHub-AccessOps.git
+   cd GitHub-AccessOps
+   ```
+
+2. **Install dependencies:**
+   ```bash
    npm install
    ```
 
-2. **Start the development server:**
+3. **Start the development server:**
    ```bash
    npm run dev
    ```
 
-3. **Open your browser** and navigate to the local development URL (typically `http://localhost:5173`)
+4. **Open your browser** and navigate to `http://localhost:5173`
 
-## Creating a GitHub Personal Access Token
+### GitHub Personal Access Token Setup
 
-1. Go to [GitHub Settings > Personal Access Tokens](https://github.com/settings/tokens/new)
-2. Select the following scopes:
-   - `repo` (Full control of private repositories)
-   - `read:org` (Read org and team membership)
-3. Generate the token and copy it securely
+Create a GitHub Personal Access Token with the following scopes:
 
-## Project Structure
+**For Organization Management:**
+- `repo` (Full control of private repositories)
+- `read:org` (Read org and team membership)
+- `admin:org` (Full control of orgs and teams)
+
+**For User Management:**
+- `user` (Update user information)
+- `read:user` (Read user profile data)
+
+**For Actions Management:**
+- `workflow` (Update GitHub Actions workflows)
+
+## 🏗️ Project Structure
 
 ```
 src/
-├── components/           # React components
-│   ├── Auth.tsx         # Authentication form
-│   └── RepositoryList.tsx # Main repository and collaborator management
-├── services/            # API services
-│   └── githubService.ts # GitHub API integration
-├── utils/               # Utility functions
-│   └── helpers.ts       # Common helper functions
-├── App.tsx              # Main application component
-└── main.tsx             # Application entry point
+├── components/              # React components
+│   ├── Auth.tsx            # Authentication system
+│   ├── Dashboard.tsx       # Main dashboard
+│   ├── TwoFactorChecker.tsx # 2FA compliance monitoring
+│   ├── GrantAccess.tsx     # User invitation system
+│   ├── DeleteUserAccess.tsx # User removal system
+│   ├── GitHubActionsManager.tsx # Actions management
+│   ├── RepositoryListView.tsx # Repository overview
+│   ├── ExportUsernames.tsx # Data export functionality
+│   ├── SmartRecommendations.tsx # AI recommendations
+│   ├── Layout.tsx          # Application layout
+│   ├── Sidebar.tsx         # Navigation sidebar
+│   ├── Topbar.tsx          # Top navigation
+│   └── LandingPage_new.tsx # Marketing landing page
+├── services/               # API services
+│   ├── githubService.ts    # GitHub API integration
+│   ├── oauthService.ts     # OAuth authentication
+│   ├── aiService.ts        # AI recommendations
+│   ├── notificationService.ts # Notification system
+│   └── environmentService.ts # Environment management
+├── utils/                  # Utility functions
+│   └── helpers.ts          # Common helper functions
+├── App.tsx                 # Main application component
+└── main.tsx               # Application entry point
 ```
 
-## Security Notes
+## 🔐 Security Features
 
-- Your GitHub token is stored only in memory and never persisted
-- All API calls are made directly to GitHub's API from your browser
-- No data is sent to any third-party servers
+### **Zero Data Storage**
+- GitHub tokens stored only in memory, never persisted
+- No data sent to third-party servers
+- All operations performed client-side
 
-## GitHub API Endpoints Used
+### **Token Validation**
+- Comprehensive token format validation
+- Support for multiple GitHub token types
+- Secure token handling practices
 
-- `GET /user` - Get authenticated user information
-- `GET /user/orgs` - List user's organizations
-- `GET /user/repos` - List user's repositories
-- `GET /orgs/{org}/repos` - List organization repositories
-- `GET /repos/{owner}/{repo}/collaborators` - List repository collaborators
+### **API Security**
+- Direct GitHub API integration
+- Minimal required permissions
+- Secure HTTPS communications
+
+### **Audit Trail**
+- Complete logging of all operations
+- Detailed operation history
+- Export capabilities for compliance
+
+## 🌐 GitHub API Integration
+
+GitSecureOps integrates with the following GitHub API endpoints:
+
+**User Management:**
+- `GET /user` - Authenticated user information
+- `GET /user/orgs` - User organizations
+- `GET /orgs/{org}/members` - Organization members
+
+**Repository Management:**
+- `GET /user/repos` - User repositories
+- `GET /orgs/{org}/repos` - Organization repositories
+- `GET /repos/{owner}/{repo}/collaborators` - Repository collaborators
+
+**Access Control:**
+- `PUT /repos/{owner}/{repo}/collaborators/{username}` - Add collaborator
 - `DELETE /repos/{owner}/{repo}/collaborators/{username}` - Remove collaborator
+- `GET /repos/{owner}/{repo}/collaborators/{username}/permission` - Check permissions
 
-## Technologies Used
+**2FA Compliance:**
+- `GET /orgs/{org}/members?filter=2fa_disabled` - 2FA status checking
+- `GET /user` - User 2FA status
 
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and development server
-- **Tailwind CSS** - Styling
-- **GitHub REST API** - Data source
+## 🛠️ Development
 
-## Build for Production
+### **Available Scripts**
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+npm run check-config # Validate configuration
+```
+
+### **Technology Stack**
+
+- **Frontend**: React 19 with TypeScript
+- **Styling**: Tailwind CSS with custom animations
+- **Build Tool**: Vite with optimized configuration
+- **Code Quality**: ESLint with TypeScript rules
+- **API**: GitHub REST API integration
+
+### **Development Guidelines**
+
+1. **Code Style**: Follow TypeScript best practices
+2. **Components**: Use functional components with hooks
+3. **State Management**: React Context for global state
+4. **Error Handling**: Comprehensive error boundaries
+5. **Testing**: Component and integration testing
+
+## 🚀 Deployment
+
+### **Build for Production**
 
 ```bash
 npm run build
 ```
 
-The built files will be in the `dist/` directory and can be served by any static web server.
+The built files will be in the `dist/` directory.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### **Azure Static Web Apps**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The project includes Azure deployment configuration:
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```yaml
+# azure.yaml
+name: GitSecureOps
+infra:
+  provider: bicep
+services:
+  gitsecureops-web:
+    project: ./
+    host: staticwebapp
+    language: ts
 ```
+
+### **Environment Variables**
+
+For OAuth integration, create a `.env` file:
+
+```bash
+VITE_GITHUB_CLIENT_ID=your-github-client-id
+VITE_GITHUB_CLIENT_SECRET=your-github-client-secret
+```
+
+## 📖 API Documentation
+
+### **GitHub Service**
+
+The `githubService.ts` provides comprehensive GitHub API integration:
+
+```typescript
+// Key interfaces
+interface GitHubUser {
+  login: string;
+  id: number;
+  avatar_url: string;
+  permissions?: {
+    admin: boolean;
+    maintain: boolean;
+    push: boolean;
+    triage: boolean;
+    pull: boolean;
+  };
+}
+
+interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  private: boolean;
+  owner: GitHubUser;
+  collaborators?: GitHubUser[];
+}
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### **Development Setup**
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **GitHub API** for comprehensive repository management
+- **React Team** for the excellent framework
+- **Tailwind CSS** for beautiful styling
+- **Vite** for lightning-fast development
+
+## 📞 Support
+
+- **Documentation**: [GitHub Wiki](https://github.com/sumitmalik51/GitHub-AccessOps/wiki)
+- **Issues**: [GitHub Issues](https://github.com/sumitmalik51/GitHub-AccessOps/issues)
+- **Developer**: [Sumit Malik](https://github.com/sumitmalik51)
+- **Portfolio**: [sumitmalik51.github.io](https://sumitmalik51.github.io/sumitmalik51/)
+
+---
+
+**Built with ❤️ using React & TypeScript**
+
+*Enterprise GitHub Access Controls • Version 1.0.0*
