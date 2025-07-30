@@ -186,7 +186,7 @@ Content-Security-Policy:
 
 ---
 
-**Last Updated**: January 30, 2025  
+**Last Updated**: July 30, 2025  
 **Version**: 1.0.0
 
 *This security policy is regularly reviewed and updated to reflect current best practices and emerging threats.*
