@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubRepo } from '../services/githubService';
 
@@ -73,7 +73,7 @@ export default function GitHubActionsManager({ token, onBack }: ActionsManagerPr
   const [error, setError] = useState('');
   const [expandedRepo, setExpandedRepo] = useState<string | null>(null);
 
-  const fetchRepositories = async () => {
+  const fetchRepositories = useCallback(async () => {
     setIsLoading(true);
     setError('');
     
@@ -109,7 +109,7 @@ export default function GitHubActionsManager({ token, onBack }: ActionsManagerPr
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedScope, selectedOrg]);
 
   const fetchActionsData = async (repoFullName: string) => {
     setActionsData(prev => ({
@@ -263,7 +263,7 @@ export default function GitHubActionsManager({ token, onBack }: ActionsManagerPr
     if (selectedScope === 'user') {
       fetchRepositories();
     }
-  }, [selectedScope]);
+  }, [selectedScope, fetchRepositories]);
 
   return (
     <div className="max-w-7xl mx-auto p-6">

@@ -23,7 +23,7 @@ export default function ExportUsernames({
   onBack, 
   selectedScope = 'user', 
   selectedOrg = '',
-  selectedOrgs: _selectedOrgs = []
+  selectedOrgs = []
 }: ExportUsernamesProps) {
   const [collaborators, setCollaborators] = useState<CollaboratorData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,6 +57,13 @@ export default function ExportUsernames({
         setProgress(`Loading ${selectedOrg} organization repositories...`);
         allRepos = await githubService.getOrgRepositories(selectedOrg);
         setProgress(`🏢 Loaded ${allRepos.length} ${selectedOrg} organization repositories`);
+      } else if (selectedScope === 'multi-org' && selectedOrgs.length > 0) {
+        setProgress(`Loading repositories from ${selectedOrgs.length} organizations...`);
+        const orgRepoArrays = await Promise.all(
+          selectedOrgs.map(org => githubService.getOrgRepositories(org).catch(() => []))
+        );
+        allRepos = orgRepoArrays.flat();
+        setProgress(`🏢 Loaded ${allRepos.length} repositories from selected organizations`);
       } else {
         setProgress('Loading all repositories + organizations...');
         setProgressValue(10);
@@ -107,7 +114,7 @@ export default function ExportUsernames({
               }
             }
             return { success: true, repo: repo.full_name };
-          } catch (err) {
+          } catch {
             console.warn(`Failed to load collaborators for ${repo.full_name}`);
             return { success: false, repo: repo.full_name };
           }

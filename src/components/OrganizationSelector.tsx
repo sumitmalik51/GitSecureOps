@@ -55,12 +55,14 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
         if (orgsData.length === 0) {
           console.log('No organizations found or organization access limited');
         }
-      } catch (orgError: any) {
-        console.warn('Failed to load organizations:', orgError);
+      } catch (orgError: unknown) {
+        const err = orgError as Error;
+        console.warn('Failed to load organizations:', err.message || 'Unknown error');
         // Don't set error state - just continue with empty organizations
         setOrganizations([]);
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       // Only set error for critical failures (like invalid token)
       if (err.message?.includes('401') || err.message?.includes('invalid') || err.message?.includes('expired')) {
         setError('GitHub token is invalid or expired. Please check your token.');

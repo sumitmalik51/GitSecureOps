@@ -21,7 +21,7 @@ export const isValidGitHubToken = (token: string): boolean => {
   return patterns.some(pattern => pattern.test(token));
 };
 
-export const debounce = <T extends (...args: any[]) => void>(
+export const debounce = <T extends (...args: unknown[]) => void>(
   func: T,
   delay: number
 ): ((...args: Parameters<T>) => void) => {

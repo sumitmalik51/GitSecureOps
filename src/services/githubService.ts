@@ -153,22 +153,23 @@ class GitHubService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await this.getAllPaginatedResults<T>(endpoint);
-      } catch (error: any) {
-        lastError = error;
+      } catch (error: unknown) {
+        const err = error as Error;
+        lastError = err;
         
         // Don't retry on auth/permission errors (401, 403)
-        if (error.message?.includes('401') || error.message?.includes('forbidden') || error.message?.includes('invalid')) {
-          throw error;
+        if (err.message?.includes('401') || err.message?.includes('forbidden') || err.message?.includes('invalid')) {
+          throw err;
         }
         
         // Don't retry on the last attempt
         if (attempt === maxRetries) {
-          throw error;
+          throw err;
         }
         
         // Wait before retrying (exponential backoff)
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-        console.warn(`GitHub API attempt ${attempt} failed, retrying in ${delay}ms...`, error.message);
+        console.warn(`GitHub API attempt ${attempt} failed, retrying in ${delay}ms...`, err.message);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -186,13 +187,14 @@ class GitHubService {
     try {
       // Try to get organizations with retry logic
       return await this.getAllPaginatedResultsWithRetry<GitHubOrg>('/user/orgs', 3);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       // If organizations endpoint fails, try the memberships endpoint as fallback
-      if (error.message?.includes('403') || error.message?.includes('forbidden')) {
+      if (err.message?.includes('403') || err.message?.includes('forbidden')) {
         console.warn('Organization access limited, trying alternative endpoint...');
         try {
           return await this.getAllPaginatedResultsWithRetry<GitHubOrg>('/user/memberships/orgs?state=active', 2);
-        } catch (fallbackError) {
+        } catch {
           console.warn('Alternative endpoint also failed, returning empty array');
           return [];
         }
@@ -300,7 +302,7 @@ class GitHubService {
         permissionColor: 'text-gray-600 bg-gray-50 border-gray-200'
       };
 
-    } catch (error) {
+    } catch {
       return {
         repo: `${owner}/${repo}`,
         hasAccess: false,

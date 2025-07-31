@@ -98,8 +98,9 @@ class AzureOpenAIService {
   */
 
   async generateAccessRecommendations(
-    _activities: RepositoryActivity[],
-    _patterns: AccessPattern[]
+    // TODO: Re-enable these parameters when AI features are ready
+    // activities: RepositoryActivity[],
+    // patterns: AccessPattern[]
   ): Promise<AIRecommendation[]> {
     // TODO: Re-enable when ready to use AI features
     console.log('🚧 AI Service: Using mock data - Real AI coming soon!');

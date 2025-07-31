@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubRepo, GitHubUser } from '../services/githubService';
 
@@ -25,11 +25,57 @@ export default function RepositoryList({ token, username, onLogout }: Repository
   const [removing, setRemoving] = useState(false);
   const [skipCollaborators, setSkipCollaborators] = useState(false);
 
-  useEffect(() => {
-    loadRepositories();
-  }, [token]);
+  const loadCollaborators = useCallback(async (repos: GitHubRepo[]) => {
+    const collaboratorMap = new Map<string, CollaboratorWithRepo>();
+    let processed = 0;
+    
+    // Limit the number of concurrent requests to avoid rate limiting
+    const BATCH_SIZE = 5;
+    
+    for (let i = 0; i < repos.length; i += BATCH_SIZE) {
+      const batch = repos.slice(i, i + BATCH_SIZE);
+      
+      await Promise.all(
+        batch.map(async (repo) => {
+          try {
+            const repoCollaborators = await githubService.getRepositoryCollaborators(
+              repo.owner.login,
+              repo.name
+            );
+            
+            repoCollaborators.forEach((collaborator) => {
+              if (collaborator.login !== username) { // Exclude the authenticated user
+                const existingCollaborator = collaboratorMap.get(collaborator.login);
+                if (existingCollaborator) {
+                  existingCollaborator.repositories.push(repo.full_name);
+                } else {
+                  collaboratorMap.set(collaborator.login, {
+                    ...collaborator,
+                    repositories: [repo.full_name]
+                  });
+                }
+              }
+            });
+          } catch (error) {
+            console.warn(`Failed to load collaborators for ${repo.full_name}:`, error);
+          }
+        })
+      );
+      
+      processed += batch.length;
+      setLoadingStep(`Processing collaborators: ${processed}/${repos.length} repositories completed`);
+      
+      // Small delay between batches to be nice to the API
+      if (i + BATCH_SIZE < repos.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    console.log(`Found ${collaboratorMap.size} unique collaborators`);
+    setCollaborators(Array.from(collaboratorMap.values()));
+  }, [username]);
 
-  const loadRepositories = async () => {
+  const loadRepositories = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -88,58 +134,11 @@ export default function RepositoryList({ token, username, onLogout }: Repository
       setLoading(false);
       setLoadingStep('');
     }
-  };
+  }, [token, loadCollaborators, skipCollaborators]);
 
-  const loadCollaborators = async (repos: GitHubRepo[]) => {
-    const collaboratorMap = new Map<string, CollaboratorWithRepo>();
-    let processed = 0;
-    
-    // Limit the number of concurrent requests to avoid rate limiting
-    const BATCH_SIZE = 5;
-    
-    for (let i = 0; i < repos.length; i += BATCH_SIZE) {
-      const batch = repos.slice(i, i + BATCH_SIZE);
-      
-      await Promise.all(
-        batch.map(async (repo) => {
-          try {
-            const repoCollaborators = await githubService.getRepositoryCollaborators(
-              repo.owner.login,
-              repo.name
-            );
-            
-            repoCollaborators.forEach(collaborator => {
-              if (collaborator.login !== username) { // Exclude the authenticated user
-                const existing = collaboratorMap.get(collaborator.login);
-                if (existing) {
-                  existing.repositories.push(repo.full_name);
-                } else {
-                  collaboratorMap.set(collaborator.login, {
-                    ...collaborator,
-                    repositories: [repo.full_name]
-                  });
-                }
-              }
-            });
-            
-            processed++;
-            console.log(`Processed ${processed}/${repos.length} repositories`);
-          } catch (err) {
-            console.warn(`Failed to load collaborators for ${repo.full_name}:`, err);
-            processed++;
-          }
-        })
-      );
-      
-      // Small delay between batches to be respectful to the API
-      if (i + BATCH_SIZE < repos.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-    
-    console.log(`Found ${collaboratorMap.size} unique collaborators`);
-    setCollaborators(Array.from(collaboratorMap.values()));
-  };
+  useEffect(() => {
+    loadRepositories();
+  }, [loadRepositories]);
 
   const handleCollaboratorToggle = (collaboratorLogin: string) => {
     const newSelected = new Set(selectedCollaborators);
@@ -166,7 +165,7 @@ export default function RepositoryList({ token, username, onLogout }: Repository
         try {
           await githubService.removeCollaborator(owner, repoName, collaboratorLogin);
           results.success.push(`${collaboratorLogin} from ${repoFullName}`);
-        } catch (err) {
+        } catch {
           results.failed.push(`${collaboratorLogin} from ${repoFullName}`);
         }
       }

@@ -1,34 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ToastContainer } from './AlertBanner';
-
-interface ToastData {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title?: string;
-  message: string;
-  onRemove: (id: string) => void;
-  autoClose?: boolean;
-  autoCloseDelay?: number;
-  icon?: ReactNode;
-}
-
-interface ToastContextType {
-  showToast: (toast: Omit<ToastData, 'id' | 'onRemove'>) => void;
-  showSuccess: (message: string, title?: string) => void;
-  showError: (message: string, title?: string) => void;
-  showWarning: (message: string, title?: string) => void;
-  showInfo: (message: string, title?: string) => void;
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-export function useToast() {
-  const context = useContext(ToastContext);
-  if (context === undefined) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-}
+import { ToastContext, type ToastData } from '../../contexts/ToastContext';
 
 interface ToastProviderProps {
   children: ReactNode;

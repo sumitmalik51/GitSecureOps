@@ -7,7 +7,7 @@ export interface NotificationConfig {
   enabled: boolean;
   webhook?: string;
   channel?: string;
-  settings?: Record<string, any>;
+  settings?: Record<string, string | number | boolean>;
 }
 
 export interface Notification {
@@ -17,7 +17,7 @@ export interface Notification {
   message: string;
   timestamp: Date;
   action?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
   read?: boolean;
 }
 
@@ -174,9 +174,10 @@ class NotificationService {
 
     // Auto-close after configured time
     if (config.settings?.autoClose) {
+      const delay = Number(config.settings.autoClose) || 5000;
       setTimeout(() => {
         browserNotif.close();
-      }, config.settings.autoClose);
+      }, delay);
     }
 
     browserNotif.onclick = () => {
@@ -256,7 +257,24 @@ class NotificationService {
     if (!config || !config.webhook) return;
 
     const color = this.getTeamsColor(notification.type);
-    const payload: any = {
+    const payload: {
+      '@type': string;
+      '@context': string;
+      summary: string;
+      themeColor: string;
+      sections: Array<{
+        activityTitle: string;
+        activitySubtitle: string;
+        activityImage: string;
+        text: string;
+        facts: Array<{ name: string; value: string }>;
+      }>;
+      potentialAction?: Array<{
+        '@type': string;
+        name: string;
+        targets: Array<{ os: string; uri: string }>;
+      }>;
+    } = {
       '@type': 'MessageCard',
       '@context': 'https://schema.org/extensions',
       summary: notification.title,
@@ -411,7 +429,7 @@ class NotificationService {
     };
 
     const notificationSeverity = severityMap[notification.type] || 'low';
-    return rule.conditions.severity.includes(notificationSeverity as any);
+    return rule.conditions.severity.includes(notificationSeverity as 'low' | 'medium' | 'high' | 'critical');
   }
 
   // Configuration Management API
@@ -475,7 +493,7 @@ class NotificationService {
   }
 
   // Quick notification methods for common use cases
-  success(title: string, message: string, action?: string, metadata?: Record<string, any>) {
+  success(title: string, message: string, action?: string, metadata?: Record<string, string | number | boolean>) {
     return this.notify({
       type: 'success',
       title,
@@ -485,7 +503,7 @@ class NotificationService {
     });
   }
 
-  warning(title: string, message: string, action?: string, metadata?: Record<string, any>) {
+  warning(title: string, message: string, action?: string, metadata?: Record<string, string | number | boolean>) {
     return this.notify({
       type: 'warning',
       title,
@@ -495,7 +513,7 @@ class NotificationService {
     });
   }
 
-  error(title: string, message: string, action?: string, metadata?: Record<string, any>) {
+  error(title: string, message: string, action?: string, metadata?: Record<string, string | number | boolean>) {
     return this.notify({
       type: 'error',
       title,
@@ -505,7 +523,7 @@ class NotificationService {
     });
   }
 
-  info(title: string, message: string, action?: string, metadata?: Record<string, any>) {
+  info(title: string, message: string, action?: string, metadata?: Record<string, string | number | boolean>) {
     return this.notify({
       type: 'info',
       title,

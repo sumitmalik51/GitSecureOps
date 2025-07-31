@@ -20,6 +20,14 @@ interface OrgMember {
   permission?: string;
 }
 
+interface RawMemberData {
+  login: string;
+  id: number;
+  avatar_url: string;
+  type: string;
+  site_admin: boolean;
+}
+
 interface OrganizationData {
   org: GitHubOrg;
   requiresTwoFactor: boolean;
@@ -139,7 +147,7 @@ export default function TwoFactorChecker({ token, onBack }: TwoFactorCheckerProp
         
         // For each member, get their role and 2FA status
         const membersWithDetails = await Promise.all(
-          allMembersData.map(async (member: any) => {
+          allMembersData.map(async (member: RawMemberData) => {
             // Check if user is in non-compliant list
             const isNonCompliant = nonCompliantMembers.some(nc => nc.login === member.login);
             
