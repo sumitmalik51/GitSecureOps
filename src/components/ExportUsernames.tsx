@@ -252,22 +252,22 @@ export default function ExportUsernames({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-black">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-emerald-400 to-teal-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-teal-400 to-green-600 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse" style={{animationDelay: '4s'}}></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-teal-600/20 to-green-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
 
       {/* Header */}
-      <div className="relative bg-white/90 backdrop-blur-md shadow-lg border-b border-white/20">
+      <div className="relative bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-700/50 dark:border-gray-600/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-8">
             <div className="flex items-center">
               <button
                 onClick={onBack}
-                className="mr-6 group inline-flex items-center px-4 py-2 text-gray-600 hover:text-white bg-white/50 hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 rounded-lg transition-all duration-300 transform hover:scale-[1.01] backdrop-blur-sm border border-white/20 hover:border-transparent"
+                className="mr-6 group inline-flex items-center px-4 py-2 text-white hover:text-white bg-gray-800/80 hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 rounded-lg transition-all duration-300 transform hover:scale-[1.01] backdrop-blur-sm border border-gray-700/50 hover:border-transparent font-semibold"
               >
                 <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -278,10 +278,10 @@ export default function ExportUsernames({
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent">
                   📊 Export All Usernames
                 </h1>
-                <p className="text-gray-600 mt-2 text-lg">Get all users with repository access</p>
+                <p className="text-white mt-2 text-lg font-medium">Get all users with repository access</p>
                 <div className="flex items-center mt-3 space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-semibold text-green-600">DATA EXPORT</span>
+                  <span className="text-sm font-semibold text-green-400">DATA EXPORT</span>
                 </div>
               </div>
             </div>
@@ -293,17 +293,17 @@ export default function ExportUsernames({
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Current Scope Display */}
         <div className="relative group mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-teal-200 rounded-xl blur opacity-50"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-xl border border-white/30">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-teal-600/30 rounded-xl blur opacity-50"></div>
+          <div className="relative bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-teal-600 rounded-full flex items-center justify-center mr-3">
                 <span className="text-white text-sm">📍</span>
               </div>
-              <p className="text-sm font-semibold text-gray-800">
-                <span className="text-blue-700">Export Scope:</span> 
-                {selectedScope === 'user' && <span className="ml-2 text-blue-600">👤 Your personal repositories</span>}
-                {selectedScope === 'org' && <span className="ml-2 text-purple-600">🏢 {selectedOrg} organization</span>}
-                {selectedScope === 'all' && <span className="ml-2 text-green-600">🌐 All repositories + organizations</span>}
+              <p className="text-sm font-semibold text-white">
+                <span className="text-blue-400">Export Scope:</span> 
+                {selectedScope === 'user' && <span className="ml-2 text-blue-300">👤 Your personal repositories</span>}
+                {selectedScope === 'org' && <span className="ml-2 text-purple-300">🏢 {selectedOrg} organization</span>}
+                {selectedScope === 'all' && <span className="ml-2 text-green-300">🌐 All repositories + organizations</span>}
               </p>
             </div>
           </div>
@@ -313,14 +313,14 @@ export default function ExportUsernames({
         {collaborators.length === 0 && !loading && (
           <div className="relative group mb-8">
             <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20 text-center">
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/50 text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-white text-2xl">🚀</span>
               </div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+              <h2 className="text-2xl font-bold text-white mb-4">
                 Load All Users
               </h2>
-              <p className="text-gray-600 mb-8 text-lg">
+              <p className="text-white mb-8 text-lg font-medium">
                 This will scan all your repositories and collect usernames of all collaborators.
               </p>
               <button
@@ -343,16 +343,16 @@ export default function ExportUsernames({
         {loading && (
           <div className="relative group mb-8">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl blur-lg opacity-75"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/50">
               <div className="flex items-center mb-6">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
                   <span className="text-white text-xl">🔄</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h3 className="text-xl font-bold text-white">
                     {currentPhase || 'Loading Data'}
                   </h3>
-                  <p className="text-gray-600 text-sm mt-1">Please wait while we process your request...</p>
+                  <p className="text-white text-sm mt-1 font-medium">Please wait while we process your request...</p>
                 </div>
               </div>
               
@@ -379,12 +379,12 @@ export default function ExportUsernames({
         {error && (
           <div className="relative group mb-8">
             <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-500 rounded-xl blur opacity-75"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-xl p-6 border border-red-200">
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-red-500/50">
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
                   <span className="text-white text-xl">❌</span>
                 </div>
-                <div className="text-red-700 font-medium">{error}</div>
+                <div className="text-red-300 font-semibold">{error}</div>
               </div>
             </div>
           </div>
@@ -396,41 +396,41 @@ export default function ExportUsernames({
             {/* Summary */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/50">
                 <div className="flex items-center mb-6">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mr-4">
                     <span className="text-white text-xl">📊</span>
                   </div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  <h2 className="text-2xl font-bold text-white">
                     Summary
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="relative group text-center">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-purple-200 rounded-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                    <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-xl border border-white/30">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                    <div className="relative bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50">
+                      <div className="text-4xl font-bold text-white mb-2">
                         {collaborators.length}
                       </div>
-                      <div className="text-sm text-gray-600 font-semibold">Total Users</div>
+                      <div className="text-sm text-white font-semibold">Total Users</div>
                     </div>
                   </div>
                   <div className="relative group text-center">
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-200 to-emerald-200 rounded-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                    <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-xl border border-white/30">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-600/30 to-emerald-600/30 rounded-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                    <div className="relative bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50">
+                      <div className="text-4xl font-bold text-white mb-2">
                         {collaborators.reduce((total, user) => total + user.repositories.length, 0)}
                       </div>
-                      <div className="text-sm text-gray-600 font-semibold">Total Access Grants</div>
+                      <div className="text-sm text-white font-semibold">Total Access Grants</div>
                     </div>
                   </div>
                   <div className="relative group text-center">
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-pink-200 rounded-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                    <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-xl border border-white/30">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                    <div className="relative bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl border border-gray-600/30">
+                      <div className="text-4xl font-bold text-white mb-2">
                         {Math.round(collaborators.reduce((total, user) => total + user.repositories.length, 0) / collaborators.length * 10) / 10}
                       </div>
-                      <div className="text-sm text-gray-600 font-semibold">Avg Repos per User</div>
+                      <div className="text-sm text-white font-semibold">Avg Repos per User</div>
                     </div>
                   </div>
                 </div>
@@ -440,12 +440,12 @@ export default function ExportUsernames({
             {/* Export Options */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/50">
                 <div className="flex items-center mb-6">
                   <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mr-4">
                     <span className="text-white text-xl">📤</span>
                   </div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                  <h2 className="text-2xl font-bold text-white">
                     Export Options
                   </h2>
                 </div>
@@ -477,13 +477,13 @@ export default function ExportUsernames({
             {/* User List Preview */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
+              <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-700/50">
                 <div className="px-6 py-6 sm:p-8">
                   <div className="flex items-center mb-6">
                     <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
                       <span className="text-white text-xl">👥</span>
                     </div>
-                    <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    <h3 className="text-2xl font-bold text-white">
                       User Preview
                     </h3>
                   </div>
@@ -491,15 +491,15 @@ export default function ExportUsernames({
                     <div className="space-y-3">
                       {collaborators.slice(0, 50).map((user, index) => (
                         <div key={user.login} className="group relative">
-                          <div className="absolute inset-0 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                          <div className="relative flex justify-between items-center p-4 bg-white/80 backdrop-blur-sm rounded-lg border border-white/30 hover:border-indigo-200 transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/30 to-purple-600/30 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                          <div className="relative flex justify-between items-center p-4 bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg border border-gray-700/50 hover:border-indigo-500/50 transition-all duration-300">
                             <div className="flex items-center">
                               <div className="w-8 h-8 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full flex items-center justify-center mr-3 text-white text-sm font-bold">
                                 {index + 1}
                               </div>
-                              <span className="text-gray-900 font-medium">{user.login}</span>
+                              <span className="text-white font-medium">{user.login}</span>
                             </div>
-                            <span className="text-sm px-3 py-1 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 font-semibold rounded-full">
+                            <span className="text-sm px-3 py-1 bg-gradient-to-r from-indigo-600/50 to-purple-600/50 text-white font-semibold rounded-full">
                               {user.repositories.length} repo{user.repositories.length !== 1 ? 's' : ''}
                             </span>
                           </div>
@@ -509,9 +509,9 @@ export default function ExportUsernames({
                     {collaborators.length > 50 && (
                       <div className="text-center py-6">
                         <div className="relative inline-block">
-                          <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-slate-200 rounded-xl opacity-50"></div>
-                          <div className="relative bg-white/80 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/30">
-                            <span className="text-gray-600 font-medium">
+                          <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-slate-700 rounded-xl opacity-50"></div>
+                          <div className="relative bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm px-6 py-3 rounded-xl border border-gray-600/30">
+                            <span className="text-white font-semibold">
                               ... and {collaborators.length - 50} more users
                             </span>
                           </div>

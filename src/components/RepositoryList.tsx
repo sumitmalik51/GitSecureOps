@@ -197,15 +197,15 @@ export default function RepositoryList({ token, username, onLogout }: Repository
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">{loadingStep}</p>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-4 text-gray-200 dark:text-gray-300 font-medium">{loadingStep}</p>
+          <p className="mt-2 text-sm text-gray-300 dark:text-gray-400">
             This may take a moment for accounts with many repositories...
           </p>
           {repositories.length > 0 && (
-            <p className="mt-2 text-sm text-green-600">
+            <p className="mt-2 text-sm text-green-400">
               Found {repositories.length} repositories so far
             </p>
           )}
@@ -217,7 +217,7 @@ export default function RepositoryList({ token, username, onLogout }: Repository
                 setLoading(false);
                 setLoadingStep('');
               }}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="mt-4 inline-flex items-center px-4 py-2 border border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700"
             >
               Skip Collaborator Loading
             </button>
@@ -229,9 +229,9 @@ export default function RepositoryList({ token, username, onLogout }: Repository
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 text-lg font-medium">{error}</div>
+          <div className="text-red-400 text-lg font-medium">{error}</div>
           <button
             onClick={onLogout}
             className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
@@ -244,17 +244,17 @@ export default function RepositoryList({ token, username, onLogout }: Repository
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
+    <div className="min-h-screen bg-gray-900 dark:bg-gray-950">
+      <div className="bg-gray-800 dark:bg-gray-900 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Repository Access Manager</h1>
-              <p className="text-gray-600">Managing repositories for {username}</p>
+              <h1 className="text-3xl font-bold text-gray-100 dark:text-white">Repository Access Manager</h1>
+              <p className="text-gray-200 dark:text-gray-300 font-medium">Managing repositories for {username}</p>
             </div>
             <button
               onClick={onLogout}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700"
             >
               Logout
             </button>
@@ -271,7 +271,7 @@ export default function RepositoryList({ token, username, onLogout }: Repository
               placeholder="Search repositories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-gray-200 placeholder-gray-400"
             />
           </div>
           <div className="flex space-x-4">
@@ -285,7 +285,7 @@ export default function RepositoryList({ token, username, onLogout }: Repository
                 }}
                 className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
               />
-              <span className="ml-2 text-sm text-gray-700">Public only</span>
+              <span className="ml-2 text-sm text-gray-300">Public only</span>
             </label>
             <label className="inline-flex items-center">
               <input
@@ -295,19 +295,19 @@ export default function RepositoryList({ token, username, onLogout }: Repository
                   setShowPrivateOnly(e.target.checked);
                   if (e.target.checked) setShowPublicOnly(false);
                 }}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                className="rounded border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
               />
-              <span className="ml-2 text-sm text-gray-700">Private only</span>
+              <span className="ml-2 text-sm text-gray-300">Private only</span>
             </label>
           </div>
         </div>
 
         {/* Collaborators Section */}
         <div className="mb-8">
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-gray-800 dark:bg-gray-900 shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                <h3 className="text-lg leading-6 font-medium text-gray-200 dark:text-white">
                   Collaborators ({collaborators.length})
                 </h3>
                 {selectedCollaborators.size > 0 && (
@@ -323,13 +323,13 @@ export default function RepositoryList({ token, username, onLogout }: Repository
               
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {collaborators.map((collaborator) => (
-                  <div key={collaborator.login} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div key={collaborator.login} className="border border-gray-600 rounded-lg p-4 hover:bg-gray-700 bg-gray-800/50">
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
                         checked={selectedCollaborators.has(collaborator.login)}
                         onChange={() => handleCollaboratorToggle(collaborator.login)}
-                        className="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50"
+                        className="rounded border-gray-600 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50"
                       />
                       <img
                         src={collaborator.avatar_url}
@@ -337,16 +337,16 @@ export default function RepositoryList({ token, username, onLogout }: Repository
                         className="h-10 w-10 rounded-full"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-200 dark:text-white truncate">
                           {collaborator.login}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-300 dark:text-gray-400 font-medium">
                           Access to {collaborator.repositories.length} repo(s)
                         </p>
                       </div>
                     </div>
                     <div className="mt-2">
-                      <div className="text-xs text-gray-500 space-y-1">
+                      <div className="text-xs text-gray-400 dark:text-gray-500 space-y-1 font-medium">
                         {collaborator.repositories.slice(0, 3).map(repo => (
                           <div key={repo}>• {repo}</div>
                         ))}
@@ -363,26 +363,26 @@ export default function RepositoryList({ token, username, onLogout }: Repository
         </div>
 
         {/* Repositories Section */}
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-gray-800 dark:bg-gray-900 shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            <h3 className="text-lg leading-6 font-medium text-gray-200 dark:text-white mb-4">
               Repositories ({filteredRepositories.length})
             </h3>
             
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredRepositories.map((repo) => (
-                <div key={repo.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                <div key={repo.id} className="border border-gray-600 rounded-lg p-4 hover:bg-gray-700 bg-gray-800/50">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-gray-900 truncate">{repo.name}</h4>
+                    <h4 className="text-sm font-medium text-gray-200 dark:text-white truncate">{repo.name}</h4>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      repo.private ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                      repo.private ? 'bg-red-900/30 text-red-300 border border-red-600/50' : 'bg-green-900/30 text-green-300 border border-green-600/50'
                     }`}>
                       {repo.private ? 'Private' : 'Public'}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">{repo.full_name}</p>
+                  <p className="text-sm text-gray-300 dark:text-gray-400 mt-1 font-medium">{repo.full_name}</p>
                   {repo.description && (
-                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">{repo.description}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 line-clamp-2 font-medium">{repo.description}</p>
                   )}
                   <a
                     href={repo.html_url}

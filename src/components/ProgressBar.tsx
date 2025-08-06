@@ -106,7 +106,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
             </div>
           )}
           {subMessage && (
-            <div className={`text-gray-600 ${currentSize.text === 'text-xs' ? 'text-xs' : 'text-sm'}`}>
+            <div className={`text-gray-800 font-medium ${currentSize.text === 'text-xs' ? 'text-xs' : 'text-sm'}`}>
               {subMessage}
             </div>
           )}
