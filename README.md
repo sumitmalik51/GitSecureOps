@@ -29,6 +29,14 @@ GitSecureOps is a cutting-edge React-based web application that revolutionizes G
 - **Guided Workflows**: Step-by-step invitation process with progress tracking and rollback capabilities
 - **Access Templates**: Save and reuse common access patterns for streamlined management
 
+### 🚁 **GitHub Copilot Management**
+- **Organization-Level Control**: Manage GitHub Copilot access across entire organizations
+- **Seat Management**: View and manage Copilot seat allocations with real-time billing information
+- **User Access Control**: Grant or revoke Copilot access for specific users with bulk operations
+- **Usage Analytics**: Track Copilot usage patterns and activity across organization members
+- **Billing Overview**: Comprehensive billing dashboard with seat breakdown and cost tracking
+- **Access Auditing**: Complete audit trail of Copilot access changes and user activity
+
 ### 🧬 **GitHub Actions Intelligence**
 - **Comprehensive Workflow Overview**: Monitor GitHub Actions across all repositories with performance metrics
 - **Advanced Security Controls**: Manage action permissions, secrets, and security policies
@@ -152,6 +160,7 @@ src/
 │   ├── Dashboard.tsx             # Advanced analytics dashboard
 │   ├── TwoFactorChecker.tsx      # Enterprise 2FA compliance monitoring
 │   ├── GrantAccess.tsx           # Intelligent user invitation system
+│   ├── CopilotManager.tsx        # GitHub Copilot access management
 │   ├── DeleteUserAccess.tsx      # Smart access removal with AI insights
 │   ├── GitHubActionsManager.tsx  # Comprehensive GitHub Actions management
 │   ├── RepositoryListView.tsx    # Advanced repository analytics view
@@ -243,6 +252,13 @@ GitSecureOps leverages the complete GitHub API ecosystem:
 - `GET /repos/{owner}/{repo}/actions/runs` - Workflow run analytics
 - `GET /repos/{owner}/{repo}/actions/secrets` - Secrets management
 - `POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches` - Workflow triggering
+
+**GitHub Copilot Management:**
+- `GET /orgs/{org}/copilot/billing` - Copilot billing information and seat breakdown
+- `GET /orgs/{org}/copilot/billing/seats` - List all users with Copilot access
+- `POST /orgs/{org}/copilot/billing/selected_users` - Grant Copilot access to users
+- `DELETE /orgs/{org}/copilot/billing/selected_users` - Revoke Copilot access from users
+- `GET /orgs/{org}/copilot/usage` - Copilot usage statistics and analytics
 
 **Advanced Analytics & Monitoring:**
 - `GET /repos/{owner}/{repo}/stats/contributors` - Contributor analytics
@@ -425,6 +441,46 @@ interface Notification {
   read: boolean;
   actions?: NotificationAction[];
   metadata?: Record<string, any>;
+}
+
+// GitHub Copilot Interfaces
+interface CopilotSeat {
+  created_at: string;
+  updated_at: string;
+  pending_cancellation_date?: string;
+  last_activity_at?: string;
+  last_activity_editor?: string;
+  assignee: GitHubUser;
+  assigning_team?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
+interface CopilotBilling {
+  seat_breakdown: {
+    total: number;
+    added_this_cycle: number;
+    pending_invitation: number;
+    pending_cancellation: number;
+    active_this_cycle: number;
+    inactive_this_cycle: number;
+  };
+  seat_management_setting: 'assign_all' | 'assign_selected' | 'disabled';
+  public_code_suggestions: 'allow' | 'block' | 'unconfigured';
+}
+
+interface CopilotUsageStats {
+  day: string;
+  total_suggestions_count?: number;
+  total_acceptances_count?: number;
+  total_lines_suggested?: number;
+  total_lines_accepted?: number;
+  total_active_users?: number;
+  total_chat_acceptances?: number;
+  total_chat_turns?: number;
+  total_active_chat_users?: number;
 }
 
 // Analytics Interface

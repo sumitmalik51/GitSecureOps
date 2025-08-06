@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import OrganizationSelector from './components/OrganizationSelector';
 import GrantAccess from './components/GrantAccess';
+import CopilotManager from './components/CopilotManager';
 import GitHubActionsManager from './components/GitHubActionsManager';
 import TwoFactorChecker from './components/TwoFactorChecker';
 import DeleteUserAccess from './components/DeleteUserAccess';
@@ -96,6 +97,8 @@ function App() {
   const handleSelectOption = (option: string) => {
     if (option === 'smart-recommendations') {
       setCurrentView('smart-recommendations');
+    } else if (option === 'copilot-manager') {
+      setCurrentView('copilot-manager');
     } else if (option === 'grant-access') {
       setCurrentView('grant-access');
     } else if (option === 'actions-manager') {
@@ -206,6 +209,14 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       return (
         <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
           <SmartRecommendations onBack={handleBack} />
+        </Layout>
+      );
+    case 'copilot-manager':
+      return (
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <CopilotManager
+            onBack={handleBack}
+          />
         </Layout>
       );
     case 'grant-access':
