@@ -47,6 +47,45 @@ export interface GitHubOrg {
   description: string | null;
 }
 
+export interface CopilotSeat {
+  created_at: string;
+  updated_at: string;
+  pending_cancellation_date?: string;
+  last_activity_at?: string;
+  last_activity_editor?: string;
+  assignee: GitHubUser;
+  assigning_team?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
+export interface CopilotBilling {
+  seat_breakdown: {
+    total: number;
+    added_this_cycle: number;
+    pending_invitation: number;
+    pending_cancellation: number;
+    active_this_cycle: number;
+    inactive_this_cycle: number;
+  };
+  seat_management_setting: 'assign_all' | 'assign_selected' | 'disabled';
+  public_code_suggestions: 'allow' | 'block' | 'unconfigured';
+}
+
+export interface CopilotUsageStats {
+  day: string;
+  total_suggestions_count?: number;
+  total_acceptances_count?: number;
+  total_lines_suggested?: number;
+  total_lines_accepted?: number;
+  total_active_users?: number;
+  total_chat_acceptances?: number;
+  total_chat_turns?: number;
+  total_active_chat_users?: number;
+}
+
 class GitHubService {
   private baseUrl = 'https://api.github.com';
   private token: string | null = null;
@@ -343,6 +382,124 @@ class GitHubService {
       }
       
       throw new Error(errorMessage);
+    }
+  }
+
+  // GitHub Copilot Management Methods
+  
+  // Get Copilot billing information for an organization
+  async getCopilotBilling(org: string): Promise<CopilotBilling> {
+    return this.makeRequest<CopilotBilling>(`/orgs/${org}/copilot/billing`);
+  }
+
+  // Get Copilot seat assignments for an organization
+  async getCopilotSeats(org: string): Promise<{ seats: CopilotSeat[] }> {
+    const seats = await this.getAllPaginatedResults<CopilotSeat>(`/orgs/${org}/copilot/billing/seats`);
+    return { seats };
+  }
+
+  // Add users to Copilot in an organization
+  async addCopilotUsers(org: string, usernames: string[]): Promise<{ seats_created: CopilotSeat[] }> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/copilot/billing/selected_users`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        selected_usernames: usernames
+      })
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Failed to add Copilot users: ${response.status} ${response.statusText}`;
+      
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = `${response.status}: ${errorData.message}`;
+        }
+        if (errorData.documentation_url) {
+          errorMessage += ` (See: ${errorData.documentation_url})`;
+        }
+      } catch {
+        // If we can't parse the error response, use the basic error message
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  }
+
+  // Remove users from Copilot in an organization
+  async removeCopilotUsers(org: string, usernames: string[]): Promise<{ seats_cancelled: CopilotSeat[] }> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/copilot/billing/selected_users`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        selected_usernames: usernames
+      })
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Failed to remove Copilot users: ${response.status} ${response.statusText}`;
+      
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = `${response.status}: ${errorData.message}`;
+        }
+        if (errorData.documentation_url) {
+          errorMessage += ` (See: ${errorData.documentation_url})`;
+        }
+      } catch {
+        // If we can't parse the error response, use the basic error message
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  }
+
+  // Get Copilot usage statistics for an organization
+  async getCopilotUsage(org: string, since?: string, until?: string): Promise<CopilotUsageStats[]> {
+    let endpoint = `/orgs/${org}/copilot/usage`;
+    const params = new URLSearchParams();
+    
+    if (since) params.append('since', since);
+    if (until) params.append('until', until);
+    
+    if (params.toString()) {
+      endpoint += `?${params.toString()}`;
+    }
+
+    const response = await this.makeRequest<CopilotUsageStats[]>(endpoint);
+    return response;
+  }
+
+  // Check if user has Copilot access in organization
+  async checkUserCopilotAccess(org: string, username: string): Promise<boolean> {
+    try {
+      const { seats } = await this.getCopilotSeats(org);
+      return seats.some(seat => seat.assignee.login === username);
+    } catch (error) {
+      console.warn(`Failed to check Copilot access for ${username}:`, error);
+      return false;
     }
   }
 }
