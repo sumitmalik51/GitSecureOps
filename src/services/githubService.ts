@@ -394,8 +394,60 @@ class GitHubService {
 
   // Get Copilot seat assignments for an organization
   async getCopilotSeats(org: string): Promise<{ seats: CopilotSeat[] }> {
-    const seats = await this.getAllPaginatedResults<CopilotSeat>(`/orgs/${org}/copilot/billing/seats`);
-    return { seats };
+    const result = await this.getAllPaginatedCopilotSeats(`/orgs/${org}/copilot/billing/seats`);
+    return { seats: result };
+  }
+
+  // Specialized pagination for Copilot seats API that returns { seats: [], total_seats: number }
+  private async getAllPaginatedCopilotSeats(endpoint: string): Promise<CopilotSeat[]> {
+    const results: CopilotSeat[] = [];
+    let page = 1;
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+      const separator = endpoint.includes('?') ? '&' : '?';
+      const paginatedEndpoint = `${endpoint}${separator}per_page=100&page=${page}`;
+      
+      const response = await fetch(`${this.baseUrl}${paginatedEndpoint}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+          const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+          
+          if (rateLimitRemaining === '0') {
+            const resetTime = rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString() : 'unknown';
+            throw new Error(`GitHub API rate limit exceeded. Rate limit resets at ${resetTime}`);
+          }
+          
+          throw new Error(`GitHub API access forbidden. Please check your token permissions.`);
+        }
+        
+        if (response.status === 401) {
+          throw new Error('GitHub token is invalid or expired');
+        }
+        
+        if (response.status === 404) {
+          throw new Error(`Resource not found: ${endpoint}`);
+        }
+        
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data: { seats: CopilotSeat[]; total_seats: number } = await response.json();
+      results.push(...data.seats);
+
+      // Check if there are more pages
+      hasNextPage = data.seats.length === 100;
+      page++;
+    }
+
+    return results;
   }
 
   // Add users to Copilot in an organization

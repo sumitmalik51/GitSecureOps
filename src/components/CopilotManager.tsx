@@ -47,13 +47,22 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
     setIsLoading(true);
     setError('');
     try {
+      console.log('🔍 Loading Copilot data for org:', orgLogin);
       const [billing, seatsResponse] = await Promise.all([
         githubService.getCopilotBilling(orgLogin),
         githubService.getCopilotSeats(orgLogin)
       ]);
+      
+      console.log('📊 Copilot billing data:', billing);
+      console.log('👥 Copilot seats data:', seatsResponse);
+      console.log('⚠️ Users with pending cancellation:', 
+        seatsResponse.seats.filter(seat => seat.pending_cancellation_date)
+      );
+      
       setCopilotBilling(billing);
       setCopilotSeats(seatsResponse.seats);
     } catch (err) {
+      console.error('❌ Failed to load Copilot data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch Copilot data');
     } finally {
       setIsLoading(false);
@@ -278,6 +287,16 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
             <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
               <p><strong>Seat Management:</strong> {copilotBilling.seat_management_setting.replace('_', ' ')}</p>
               <p><strong>Public Code Suggestions:</strong> {copilotBilling.public_code_suggestions}</p>
+              {copilotBilling.seat_breakdown.pending_cancellation > 0 && (
+                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-yellow-800 dark:text-yellow-300 font-medium">
+                    ⚠️ {copilotBilling.seat_breakdown.pending_cancellation} user(s) have pending cancellations
+                  </p>
+                  <p className="text-yellow-700 dark:text-yellow-400 text-xs mt-1">
+                    Cancelled users will lose access at the beginning of the next billing cycle (typically the 1st of the month)
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -303,11 +322,73 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
             </button>
           </div>
 
+          {/* Pending Cancellations Alert */}
+          {copilotSeats.some(seat => seat.pending_cancellation_date) && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Users with Pending Cancellations
+              </h3>
+              <div className="space-y-2">
+                {copilotSeats
+                  .filter(seat => seat.pending_cancellation_date)
+                  .map(seat => (
+                    <div key={seat.assignee.id} className="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded-lg">
+                      <div className="flex items-center">
+                        <img
+                          src={seat.assignee.avatar_url}
+                          alt={seat.assignee.login}
+                          className="w-8 h-8 rounded-full mr-3"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {seat.assignee.login}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Cancelled on: {formatDate(seat.pending_cancellation_date!)}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 rounded-full">
+                        Access ends next billing cycle
+                      </span>
+                    </div>
+                  ))}
+              </div>
+              <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                  <strong>Note:</strong> Cancelled users will lose Copilot access at the beginning of the next billing cycle (typically the 1st of the month). 
+                  They currently still have access until that date.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Current Copilot Users */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Current Copilot Users ({copilotSeats.length})
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                All Copilot Users ({copilotSeats.length})
+              </h3>
+              {copilotSeats.length > 0 && (
+                <div className="flex items-center space-x-4 text-sm">
+                  <div className="flex items-center">
+                    <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Active: {copilotSeats.filter(seat => !seat.pending_cancellation_date).length}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Pending Cancellation: {copilotSeats.filter(seat => seat.pending_cancellation_date).length}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
             {copilotSeats.length === 0 ? (
               <p className="text-gray-600 dark:text-gray-400">No users currently have Copilot access</p>
             ) : (
@@ -346,11 +427,16 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
                         </td>
                         <td className="py-3">
                           {seat.pending_cancellation_date ? (
-                            <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                              Pending Cancellation
-                            </span>
+                            <div className="flex flex-col">
+                              <span className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 rounded-full mb-1">
+                                Pending Cancellation
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                Cancelled on: {formatDate(seat.pending_cancellation_date)}
+                              </span>
+                            </div>
                           ) : (
-                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                            <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 rounded-full">
                               Active
                             </span>
                           )}
@@ -470,9 +556,14 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
                         </div>
                       </div>
                       {seat.pending_cancellation_date && (
-                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                          Pending Cancellation
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 rounded-full">
+                            Pending Cancellation
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Cancelled: {formatDate(seat.pending_cancellation_date)}
+                          </span>
+                        </div>
                       )}
                     </label>
                   ))}
