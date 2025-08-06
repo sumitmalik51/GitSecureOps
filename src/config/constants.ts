@@ -91,6 +91,12 @@ export const DASHBOARD_OPTIONS = [
     icon: '🧠 AI'
   },
   {
+    id: 'copilot-manager',
+    title: 'GitHub Copilot Management',
+    description: 'Manage GitHub Copilot access and permissions for organization members',
+    icon: '🚁 COPILOT'
+  },
+  {
     id: 'grant-access',
     title: 'Grant GitHub Access',
     description: 'Invite users to organizations or repositories with specific permissions',
