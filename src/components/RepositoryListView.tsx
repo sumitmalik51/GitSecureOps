@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubRepo } from '../services/githubService';
 
@@ -18,18 +18,14 @@ export default function RepositoryListView({
   repoType, 
   selectedScope = 'user', 
   selectedOrg = '',
-  selectedOrgs: _selectedOrgs = []
+  selectedOrgs = []
 }: RepositoryListViewProps) {
   const [repositories, setRepositories] = useState<GitHubRepo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    loadRepositories();
-  }, [token, repoType]);
-
-  const loadRepositories = async () => {
+  const loadRepositories = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -43,6 +39,12 @@ export default function RepositoryListView({
       } else if (selectedScope === 'org' && selectedOrg) {
         // Load specific organization repositories
         allRepos = await githubService.getOrgRepositories(selectedOrg);
+      } else if (selectedScope === 'multi-org' && selectedOrgs.length > 0) {
+        // Load repositories from selected organizations
+        const orgRepoArrays = await Promise.all(
+          selectedOrgs.map(org => githubService.getOrgRepositories(org).catch(() => []))
+        );
+        allRepos = orgRepoArrays.flat();
       } else {
         // Load all repositories including organizations
         const userRepos = await githubService.getUserRepositories();
@@ -66,7 +68,11 @@ export default function RepositoryListView({
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, repoType, selectedScope, selectedOrg, selectedOrgs]);
+
+  useEffect(() => {
+    loadRepositories();
+  }, [loadRepositories]);
 
   const filteredRepositories = repositories.filter(repo =>
     repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
