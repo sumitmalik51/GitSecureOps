@@ -364,22 +364,22 @@ export default function DeleteUserAccess({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-pink-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-black">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-red-400 to-pink-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-pink-400 to-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-purple-400 to-red-600 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse" style={{animationDelay: '4s'}}></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-red-600/20 to-pink-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-pink-600/20 to-purple-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-purple-600/20 to-red-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
 
       {/* Header */}
-      <div className="relative bg-white/90 backdrop-blur-md shadow-lg border-b border-white/20">
+      <div className="relative bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-700/50 dark:border-gray-600/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-8">
             <div className="flex items-center">
               <button
                 onClick={onBack}
-                className="mr-6 group inline-flex items-center px-4 py-2 text-gray-600 hover:text-white bg-white/50 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-600 rounded-lg transition-all duration-300 transform hover:scale-[1.01] backdrop-blur-sm border border-white/20 hover:border-transparent"
+                className="mr-6 group inline-flex items-center px-4 py-2 text-gray-300 hover:text-white bg-gray-800/80 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-600 rounded-lg transition-all duration-300 transform hover:scale-[1.01] backdrop-blur-sm border border-gray-700/50 hover:border-transparent font-semibold"
               >
                 <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -390,10 +390,10 @@ export default function DeleteUserAccess({
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
                   Delete User Access
                 </h1>
-                <p className="text-gray-600 mt-2 text-lg">Remove a specific user's access from all repositories</p>
+                <p className="text-gray-300 dark:text-gray-400 mt-2 text-lg font-medium">Remove a specific user's access from all repositories</p>
                 <div className="flex items-center mt-3 space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-semibold text-red-600">DANGER ZONE</span>
+                  <span className="text-sm font-semibold text-red-400">DANGER ZONE</span>
                 </div>
               </div>
             </div>
@@ -404,24 +404,24 @@ export default function DeleteUserAccess({
       {/* Verification Info Banner */}
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-xl blur opacity-40"></div>
-          <div className="relative bg-white/90 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 rounded-xl blur opacity-40"></div>
+          <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mr-4">
                 <span className="text-white text-xl">🔍</span>
               </div>
-              <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 Enhanced User Access Verification
               </h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <h4 className="font-semibold text-gray-800 flex items-center">
+                <h4 className="font-semibold text-gray-200 dark:text-gray-300 flex items-center">
                   <span className="text-green-500 mr-2">✅</span>
                   What We Verify
                 </h4>
-                <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                <ul className="text-sm text-gray-300 dark:text-gray-400 space-y-1 ml-6 font-medium">
                   <li>• Direct collaborator status only</li>
                   <li>• Explicit repository permissions</li>
                   <li>• Your admin access to each repo</li>
@@ -430,11 +430,11 @@ export default function DeleteUserAccess({
               </div>
               
               <div className="space-y-3">
-                <h4 className="font-semibold text-gray-800 flex items-center">
+                <h4 className="font-semibold text-gray-200 dark:text-gray-300 flex items-center">
                   <span className="text-red-500 mr-2">❌</span>
                   What We Filter Out
                 </h4>
-                <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                <ul className="text-sm text-gray-300 dark:text-gray-400 space-y-1 ml-6 font-medium">
                   <li>• Public repository visibility</li>
                   <li>• Organization-level access</li>
                   <li>• Team-inherited permissions</li>
@@ -460,34 +460,34 @@ export default function DeleteUserAccess({
         {/* Search Form */}
         <div className="relative group mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+          <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/50">
             <div className="flex items-center mb-6">
               <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
                 <span className="text-white text-xl">🔍</span>
               </div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
                 Search User Access
               </h2>
             </div>
             
             {/* Current Scope Display */}
             <div className="mb-6 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-purple-200 rounded-xl blur opacity-50"></div>
-              <div className="relative bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-white/30">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl blur opacity-50"></div>
+              <div className="relative bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 rounded-xl border border-gray-700/50">
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
                     <span className="text-white text-sm">📍</span>
                   </div>
-                  <p className="text-sm font-semibold text-gray-800">
-                    <span className="text-blue-700">Search Scope:</span> 
-                    {selectedScope === 'user' && <span className="ml-2 text-blue-600">👤 Your personal repositories</span>}
-                    {selectedScope === 'org' && <span className="ml-2 text-purple-600">🏢 {selectedOrg} organization</span>}
+                  <p className="text-sm font-semibold text-gray-200 dark:text-gray-300">
+                    <span className="text-blue-400">Search Scope:</span> 
+                    {selectedScope === 'user' && <span className="ml-2 text-blue-300">👤 Your personal repositories</span>}
+                    {selectedScope === 'org' && <span className="ml-2 text-purple-300">🏢 {selectedOrg} organization</span>}
                     {selectedScope === 'multi-org' && selectedOrgs && (
-                      <span className="ml-2 text-purple-600">
+                      <span className="ml-2 text-purple-300">
                         🏢 {selectedOrgs.length} organizations: {selectedOrgs.join(', ')}
                       </span>
                     )}
-                    {selectedScope === 'all' && <span className="ml-2 text-green-600">🌐 All repositories + organizations</span>}
+                    {selectedScope === 'all' && <span className="ml-2 text-green-300">🌐 All repositories + organizations</span>}
                   </p>
                 </div>
               </div>
@@ -497,12 +497,12 @@ export default function DeleteUserAccess({
             {/* Multi-User Input Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  <span className="text-red-600">👥</span> Target Users
+                <h3 className="text-lg font-semibold text-gray-200 dark:text-gray-300">
+                  <span className="text-red-400">👥</span> Target Users
                 </h3>
                 <button
                   onClick={addUserField}
-                  className="px-4 py-2 bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                  className="px-4 py-2 bg-gray-700 border-2 border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                   disabled={searching}
                 >
                   + Add User
@@ -517,7 +517,7 @@ export default function DeleteUserAccess({
                       value={username}
                       onChange={(e) => updateUsername(index, e.target.value)}
                       placeholder={`Enter GitHub username ${index + 1}...`}
-                      className="block w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500 text-gray-900 font-medium transition-all duration-300 hover:bg-white/90"
+                      className="block w-full px-4 py-3 bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-400 text-gray-200 dark:text-gray-300 font-medium transition-all duration-300 hover:bg-gray-800/90 dark:hover:bg-gray-900/90"
                       onKeyPress={(e) => e.key === 'Enter' && !searching && searchUserAccess()}
                       disabled={searching}
                     />
@@ -531,7 +531,7 @@ export default function DeleteUserAccess({
                   {targetUsernames.length > 1 && (
                     <button
                       onClick={() => removeUserField(index)}
-                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300"
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-all duration-300"
                       disabled={searching}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,15 +546,15 @@ export default function DeleteUserAccess({
             <div className="flex gap-4 mt-6">
               <div className="flex-1">
                 {/* Additional info or status */}
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">💡 Tip:</span> You can search for multiple users at once to bulk manage their repository access.
+                <p className="text-sm text-gray-300 dark:text-gray-400 font-medium">
+                  <span className="font-semibold">💡 Tip:</span> You can search for multiple users at once to bulk manage their repository access.
                 </p>
               </div>
               
               <button
                 onClick={searchUserAccess}
                 disabled={searching || getValidUsernames().length === 0}
-                className="group relative px-8 py-3 bg-white border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="group relative px-8 py-3 bg-gray-700 border-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <div className="flex items-center">
                   {searching ? (
@@ -577,17 +577,17 @@ export default function DeleteUserAccess({
             {/* Search/Remove Progress */}
             {(searching || removing) && (
               <div className="mt-6 relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-purple-200 rounded-xl blur opacity-50"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl blur opacity-50"></div>
+                <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
                   <div className="flex items-center mb-4">
                     <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white text-xl">{removing ? '🗑️' : '🔍'}</span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+                      <h3 className="text-lg font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
                         {currentPhase || (removing ? 'Removing User Access' : 'Searching User Access')}
                       </h3>
-                      <p className="text-gray-600 text-sm mt-1">Please wait while we process your request...</p>
+                      <p className="text-gray-300 dark:text-gray-400 text-sm mt-1 font-medium">Please wait while we process your request...</p>
                     </div>
                   </div>
                   
@@ -609,55 +609,55 @@ export default function DeleteUserAccess({
         {/* Permission Legend */}
         {userRepos.length > 0 && (
           <div className="mb-8 relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-purple-200 rounded-xl blur opacity-30"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl blur opacity-30"></div>
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
               <div className="flex items-center mb-4">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
                   <span className="text-white text-xl">🔑</span>
                 </div>
-                <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                   Permission Levels Explained
                 </h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
                   <span className="text-lg mr-3">🟢</span>
                   <div>
-                    <div className="font-semibold text-green-800">ADMIN</div>
-                    <div className="text-xs text-green-600">Can manage all settings</div>
+                    <div className="font-semibold text-green-300">ADMIN</div>
+                    <div className="text-xs text-green-400">Can manage all settings</div>
                   </div>
                 </div>
                 
-                <div className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
                   <span className="text-lg mr-3">🟡</span>
                   <div>
-                    <div className="font-semibold text-yellow-800">WRITE</div>
-                    <div className="text-xs text-yellow-600">Can push but not manage</div>
+                    <div className="font-semibold text-yellow-300">WRITE</div>
+                    <div className="text-xs text-yellow-400">Can push but not manage</div>
                   </div>
                 </div>
                 
-                <div className="flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center p-3 bg-blue-900/30 border border-blue-500/50 rounded-lg">
                   <span className="text-lg mr-3">🔵</span>
                   <div>
-                    <div className="font-semibold text-blue-800">READ</div>
-                    <div className="text-xs text-blue-600">Can view but not modify</div>
+                    <div className="font-semibold text-blue-300">READ</div>
+                    <div className="text-xs text-blue-400">Can view but not modify</div>
                   </div>
                 </div>
                 
-                <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
                   <span className="text-lg mr-3">🌍</span>
                   <div>
-                    <div className="font-semibold text-green-800">PUBLIC</div>
-                    <div className="text-xs text-green-600">Public repository access</div>
+                    <div className="font-semibold text-green-300">PUBLIC</div>
+                    <div className="text-xs text-green-400">Public repository access</div>
                   </div>
                 </div>
               </div>
               
-              <div className="mt-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
+              <div className="mt-4 p-3 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-500/30 rounded-lg">
                 <div className="flex items-center">
                   <span className="text-lg mr-3">💡</span>
-                  <div className="text-sm text-yellow-800">
+                  <div className="text-sm text-gray-300 dark:text-gray-400 font-medium">
                     <strong>Note:</strong> You can only remove access from repositories where you have admin permissions (🟢).
                   </div>
                 </div>
@@ -669,13 +669,13 @@ export default function DeleteUserAccess({
         {/* Results */}
         {error && (
           <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-500 rounded-xl blur opacity-75"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-xl p-6 border border-red-200">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 rounded-xl blur opacity-75"></div>
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-red-500/30">
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
                   <span className="text-white text-xl">❌</span>
                 </div>
-                <div className="text-red-700 font-medium">{error}</div>
+                <div className="text-red-300 font-semibold">{error}</div>
               </div>
             </div>
           </div>
@@ -683,13 +683,13 @@ export default function DeleteUserAccess({
 
         {success && (
           <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl blur opacity-75"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-xl p-6 border border-green-200">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-700 rounded-xl blur opacity-75"></div>
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mr-4">
                   <span className="text-white text-xl">✅</span>
                 </div>
-                <div className="text-green-700 font-medium">{success}</div>
+                <div className="text-green-300 font-semibold">{success}</div>
               </div>
             </div>
           </div>
@@ -697,18 +697,18 @@ export default function DeleteUserAccess({
 
         {userRepos.length > 0 && (
           <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 rounded-2xl blur-lg opacity-75"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-pink-700 to-purple-800 rounded-2xl blur-lg opacity-75"></div>
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/20">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
                     <span className="text-white text-xl">🚨</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
                       Repositories with User Access
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">Found {userRepos.length} repositories with user access</p>
+                    <p className="text-gray-300 dark:text-gray-400 text-sm mt-1 font-medium">Found {userRepos.length} repositories with user access</p>
                   </div>
                 </div>
                 <button
@@ -738,14 +738,14 @@ export default function DeleteUserAccess({
               <div className="grid gap-3 max-h-96 overflow-y-auto">
                 {userRepos.map((repoAccess, index) => (
                   <div key={repoAccess.repo} className="group relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                    <div className="relative flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-lg border border-white/30 hover:border-red-200 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-900/30 to-pink-900/30 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                    <div className="relative flex items-center justify-between p-4 bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg border border-gray-600/30 hover:border-red-500/50 transition-all duration-300">
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-gradient-to-r from-red-400 to-pink-500 rounded-full flex items-center justify-center mr-3 text-white text-sm font-bold">
                           {index + 1}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-gray-900 font-medium">{repoAccess.repo}</span>
+                          <span className="text-gray-100 dark:text-gray-200 font-medium">{repoAccess.repo}</span>
                           <div className="flex items-center justify-between mt-1">
                             <div className="flex items-center">
                               <span className="text-lg mr-1">{repoAccess.permissionIcon}</span>
@@ -754,9 +754,9 @@ export default function DeleteUserAccess({
                               </span>
                             </div>
                             {repoAccess.user && (
-                              <div className="text-xs text-gray-600 ml-2">
+                              <div className="text-xs text-gray-300 dark:text-gray-400 ml-2 font-medium">
                                 <span className="font-medium">User:</span> 
-                                <span className="ml-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full font-semibold">
+                                <span className="ml-1 px-2 py-1 bg-blue-800/50 text-blue-300 rounded-full font-semibold">
                                   {repoAccess.user}
                                 </span>
                               </div>
@@ -770,7 +770,7 @@ export default function DeleteUserAccess({
                             HAS ACCESS
                           </span>
                         ) : (
-                          <span className="text-xs px-3 py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-600 font-semibold rounded-full">
+                          <span className="text-xs px-3 py-1 bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300 font-semibold rounded-full">
                             VISIBLE ONLY
                           </span>
                         )}
@@ -786,13 +786,13 @@ export default function DeleteUserAccess({
         {/* Error Details */}
         {removeErrors.length > 0 && (
           <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-500 rounded-2xl blur-lg opacity-75"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-700 rounded-2xl blur-lg opacity-75"></div>
+            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/20">
               <div className="flex items-center mb-6">
                 <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mr-4">
                   <span className="text-white text-xl">⚠️</span>
                 </div>
-                <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                   Removal Errors ({removeErrors.length})
                 </h3>
               </div>
@@ -800,17 +800,17 @@ export default function DeleteUserAccess({
               <div className="space-y-4 mb-6">
                 {removeErrors.map((errorInfo, index) => (
                   <div key={index} className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-100 to-orange-100 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                    <div className="relative p-4 bg-white/80 backdrop-blur-sm border border-red-200 rounded-lg">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-900/30 to-orange-900/30 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                    <div className="relative p-4 bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm border border-red-500/30 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-red-900 flex items-center">
+                          <p className="text-sm font-semibold text-red-300 flex items-center">
                             <span className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs mr-2">
                               {index + 1}
                             </span>
                             {errorInfo.repo}
                           </p>
-                          <p className="text-xs text-red-700 mt-2 ml-8">{errorInfo.error}</p>
+                          <p className="text-xs text-red-400 mt-2 ml-8">{errorInfo.error}</p>
                         </div>
                       </div>
                     </div>
@@ -819,31 +819,31 @@ export default function DeleteUserAccess({
               </div>
               
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-200 to-orange-200 rounded-xl opacity-50"></div>
-                <div className="relative bg-white/80 backdrop-blur-sm p-4 border border-yellow-300 rounded-xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-900/40 to-orange-900/40 rounded-xl opacity-50"></div>
+                <div className="relative bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 border border-yellow-500/30 rounded-xl">
                   <div className="flex items-start">
                     <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                       <span className="text-white text-sm">💡</span>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-yellow-800 mb-2">
+                      <p className="text-sm font-semibold text-yellow-300 mb-2">
                         Common reasons for failures:
                       </p>
-                      <ul className="text-xs text-yellow-700 space-y-1">
+                      <ul className="text-xs text-yellow-400 space-y-1">
                         <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2"></span>
+                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
                           You don't have admin access to the repository
                         </li>
                         <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2"></span>
+                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
                           The user is the repository owner (cannot remove owner)
                         </li>
                         <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2"></span>
+                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
                           The user is not actually a collaborator (might be org member)
                         </li>
                         <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2"></span>
+                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
                           Repository doesn't exist or is private to you
                         </li>
                       </ul>
