@@ -1,6 +1,20 @@
 // GitHub OAuth Service
 import environmentService from './environmentService';
 
+interface GitHubUser {
+  id: number;
+  login: string;
+  name: string;
+  email: string;
+  avatar_url: string;
+}
+
+interface GitHubTokenResponse {
+  access_token: string;
+  token_type: string;
+  scope: string;
+}
+
 export class GitHubOAuthService {
   private clientId: string;
   private redirectUri: string;
@@ -50,7 +64,7 @@ export class GitHubOAuthService {
   /**
    * Handles the OAuth callback and exchanges code for access token
    */
-  async handleCallback(code: string, state: string): Promise<{ token: string; user: any }> {
+  async handleCallback(code: string, state: string): Promise<{ token: string; user: GitHubUser }> {
     // Verify state parameter
     const storedState = localStorage.getItem('oauth_state');
     if (!storedState || storedState !== state) {
@@ -92,7 +106,7 @@ export class GitHubOAuthService {
    * Exchanges authorization code for access token
    * Note: In production, this should be done on your backend server for security
    */
-  private async exchangeCodeForToken(code: string): Promise<any> {
+  private async exchangeCodeForToken(code: string): Promise<GitHubTokenResponse> {
     // For development/demo purposes, we'll use GitHub's CORS-enabled endpoint
     // In production, this should be handled by your backend server
     const response = await fetch('https://github.com/login/oauth/access_token', {

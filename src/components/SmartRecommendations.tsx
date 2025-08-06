@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { aiService, type AIRecommendation, type RepositoryActivity, type AccessPattern } from '../services/aiService';
+import { aiService, type AIRecommendation, type RepositoryActivity } from '../services/aiService';
 
 interface SmartRecommendationsProps {
   onBack: () => void;
@@ -63,7 +63,8 @@ const SmartRecommendations: React.FC<SmartRecommendationsProps> = ({ onBack }) =
         }
       ];
 
-      const mockPatterns: AccessPattern[] = [
+      // TODO: Remove mock data when AI features are enabled
+      /* const mockPatterns: AccessPattern[] = [
         {
           user: 'john.doe',
           repositories: ['frontend-app', 'legacy-project'],
@@ -80,11 +81,11 @@ const SmartRecommendations: React.FC<SmartRecommendationsProps> = ({ onBack }) =
           role: 'Lead Developer',
           lastActivity: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         }
-      ];
+      ]; */
 
       // Generate AI recommendations
       console.log('🤖 Calling AI service...');
-      const recs = await aiService.generateAccessRecommendations(mockActivities, mockPatterns);
+      const recs = await aiService.generateAccessRecommendations();
       console.log('✅ Received recommendations:', recs);
       setRecommendations(recs);
 
@@ -95,7 +96,8 @@ const SmartRecommendations: React.FC<SmartRecommendationsProps> = ({ onBack }) =
       // TODO: Re-enable when AI features are ready
       // setRiskAnalysis(analysis);
 
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       setError(err.message || 'Failed to load recommendations');
       console.error('Error loading recommendations:', err);
     } finally {

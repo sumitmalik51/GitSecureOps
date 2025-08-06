@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import notificationService, { type Notification } from '../services/notificationService';
+import notificationService from '../services/notificationService';
 
 interface NotificationBellProps {
   onClick: () => void;
@@ -16,7 +16,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onClick, className 
     setUnreadCount(notifications.filter(n => !n.read).length);
 
     // Listen for new notifications
-    const unsubscribe = notificationService.onNotification((_notification: Notification) => {
+    const unsubscribe = notificationService.onNotification(() => {
       setUnreadCount(prev => prev + 1);
       setHasNewNotification(true);
       

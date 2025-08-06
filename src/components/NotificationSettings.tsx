@@ -51,7 +51,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
         'Test Sent!',
         `Test notification sent to ${type}. Check your ${type} channel.`
       );
-    } catch (error) {
+    } catch {
       notificationService.error(
         'Test Failed',
         `Failed to send test notification to ${type}. Please check your configuration.`
@@ -152,7 +152,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={configs.find(c => c.id === 'browser')?.settings?.playSound || false}
+                    checked={Boolean(configs.find(c => c.id === 'browser')?.settings?.playSound) || false}
                     onChange={(e) => {
                       const config = configs.find(c => c.id === 'browser');
                       if (config) {
@@ -170,7 +170,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={configs.find(c => c.id === 'browser')?.settings?.showOnDesktop || false}
+                    checked={Boolean(configs.find(c => c.id === 'browser')?.settings?.showOnDesktop) || false}
                     onChange={(e) => {
                       const config = configs.find(c => c.id === 'browser');
                       if (config) {
@@ -235,7 +235,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={configs.find(c => c.id === 'slack')?.settings?.mentionOnCritical || false}
+                    checked={Boolean(configs.find(c => c.id === 'slack')?.settings?.mentionOnCritical) || false}
                     onChange={(e) => {
                       const config = configs.find(c => c.id === 'slack');
                       if (config) {
@@ -300,7 +300,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={configs.find(c => c.id === 'teams')?.settings?.includeActionCards || false}
+                    checked={Boolean(configs.find(c => c.id === 'teams')?.settings?.includeActionCards) || false}
                     onChange={(e) => {
                       const config = configs.find(c => c.id === 'teams');
                       if (config) {
