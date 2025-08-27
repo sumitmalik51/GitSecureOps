@@ -45,29 +45,40 @@ jobs:
     - name: Deploy Infrastructure
       run: |
         $RESOURCE_GROUP = "rg-gitsecureops-${{ inputs.environment }}"
+        $DEPLOYMENT_NAME = "infra-deployment-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         
-        # Deploy without capturing output to avoid CLI bug
-        Write-Host "Deploying infrastructure..."
-        az deployment sub create `
-          --location ${{ inputs.region }} `
-          --template-file infra/main.bicep `
-          --parameters `
-            environmentName=${{ inputs.environment }} `
-            location=${{ inputs.region }} `
-            resourceGroupName="$RESOURCE_GROUP" `
-            githubClientId='${{ secrets.GH_WEB_APP }}' `
-            githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' `
-            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}'
-        
-        # Get outputs in separate command after deployment completes
-        Write-Host "Getting deployment outputs..."
-        $SWA_URL = az deployment sub show `
-          --name main `
-          --query 'properties.outputs.STATICWEBAPP_URL.value' `
-          -o tsv
-        
-        Write-Host "✅ App deployed: https://$SWA_URL"
-        Write-Host "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
+        # Deploy with explicit name and error handling
+        Write-Host "Deploying infrastructure with name: $DEPLOYMENT_NAME"
+        try {
+          az deployment sub create `
+            --name "$DEPLOYMENT_NAME" `
+            --location ${{ inputs.region }} `
+            --template-file infra/main.bicep `
+            --parameters `
+              environmentName=${{ inputs.environment }} `
+              location=${{ inputs.region }} `
+              resourceGroupName="$RESOURCE_GROUP" `
+              githubClientId='${{ secrets.GH_WEB_APP }}' `
+              githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' `
+              githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' `
+            --no-wait
+          
+          Write-Host "Deployment submitted. Waiting for completion..."
+          az deployment sub wait --name "$DEPLOYMENT_NAME" --created
+          
+          Write-Host "Getting deployment outputs..."
+          $SWA_URL = az deployment sub show `
+            --name "$DEPLOYMENT_NAME" `
+            --query 'properties.outputs.STATICWEBAPP_URL.value' `
+            -o tsv
+          
+          Write-Host "✅ App deployed: https://$SWA_URL"
+          Write-Host "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
+        }
+        catch {
+          Write-Host "❌ Deployment failed: $_"
+          exit 1
+        }
 
     - name: Azure logout
       run: az logout
