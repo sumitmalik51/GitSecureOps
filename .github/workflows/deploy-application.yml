@@ -1,12 +1,6 @@
 name: Deploy Application to Azure Static Web Apps
 
 on:
-  push:
-    branches: [main, sso-integration]
-    paths-ignore:
-      - 'infra/**'
-      - '*.md'
-      - 'scripts/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -18,14 +12,6 @@ on:
         - dev
         - staging
         - prod
-      swa_name:
-        description: 'Static Web App name (from infrastructure deployment)'
-        required: true
-        type: string
-      swa_url:
-        description: 'Static Web App URL (without https://)'
-        required: true
-        type: string
 
 env:
   NODE_VERSION: '20.x'
@@ -49,86 +35,22 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Determine deployment target
-      id: target
+    - name: Deploy Application
       run: |
-        if [ "${{ github.event_name }}" = "push" ]; then
-          # For push events, deploy to dev environment
-          echo "environment=dev" >> $GITHUB_OUTPUT
-          echo "resource_group=rg-gitsecureops-dev" >> $GITHUB_OUTPUT
-          
-          # Get SWA details from Azure for dev environment
-          SWA_NAME=$(az staticwebapp list --resource-group rg-gitsecureops-dev --query "[0].name" -o tsv)
-          SWA_URL=$(az staticwebapp list --resource-group rg-gitsecureops-dev --query "[0].defaultHostname" -o tsv)
-          
-          echo "swa_name=$SWA_NAME" >> $GITHUB_OUTPUT
-          echo "swa_url=$SWA_URL" >> $GITHUB_OUTPUT
-          
-          echo "🚀 Deploying from branch: ${{ github.ref_name }}"
-          echo "📍 Target environment: dev"
-        else
-          # For manual dispatch, use provided inputs
-          echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
-          echo "resource_group=rg-gitsecureops-${{ inputs.environment }}" >> $GITHUB_OUTPUT
-          echo "swa_name=${{ inputs.swa_name }}" >> $GITHUB_OUTPUT
-          echo "swa_url=${{ inputs.swa_url }}" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Build React application
-      run: npm run build
-      env:
-        VITE_GITHUB_CLIENT_ID: ${{ secrets.GH_WEB_APP }}
-        VITE_GITHUB_REDIRECT_URI: https://${{ steps.target.outputs.swa_url }}/oauth-callback
-
-    - name: Install API dependencies
-      run: |
-        cd api
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        SWA_NAME=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+        SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
+        
         npm ci
-
-    - name: Install SWA CLI
-      run: npm install -g @azure/static-web-apps-cli
-
-    - name: Deploy to Azure Static Web App
-      id: deploy_swa
-      run: |
-        echo "🚀 Deploying application to ${{ steps.target.outputs.environment }} environment..."
-        echo "   Target: ${{ steps.target.outputs.swa_name }}"
-        echo "   URL: https://${{ steps.target.outputs.swa_url }}"
+        VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} VITE_GITHUB_REDIRECT_URI=https://$SWA_URL/oauth-callback npm run build
         
-        # Get the SWA deployment token
-        SWA_TOKEN=$(az staticwebapp secrets list \
-          --resource-group ${{ steps.target.outputs.resource_group }} \
-          --name ${{ steps.target.outputs.swa_name }} \
-          --query "properties.apiKey" -o tsv)
+        cd api && npm ci && cd ..
+        npm install -g @azure/static-web-apps-cli
         
-        # Deploy using SWA CLI
-        swa deploy ./dist \
-          --api-location ./api \
-          --deployment-token "$SWA_TOKEN" \
-          --verbose
+        SWA_TOKEN=$(az staticwebapp secrets list --resource-group $RESOURCE_GROUP --name $SWA_NAME --query "properties.apiKey" -o tsv)
+        swa deploy ./dist --api-location ./api --deployment-token "$SWA_TOKEN"
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Application deployed successfully!"
-          echo "🌐 Live at: https://${{ steps.target.outputs.swa_url }}"
-        else
-          echo "❌ Deployment failed!"
-          exit 1
-        fi
-
-    - name: Display Deployment Information
-      run: |
-        echo ""
-        echo "🎉 Application deployment completed!"
-        echo "=================================="
-        echo "� Source branch: ${{ github.ref_name }}"
-        echo "�🌍 Environment: ${{ steps.target.outputs.environment }}"
-        echo "📍 Application URL: https://${{ steps.target.outputs.swa_url }}"
-        echo "🔗 OAuth Redirect URI: https://${{ steps.target.outputs.swa_url }}/oauth-callback"
-        echo ""
-        echo "✅ Your GitSecureOps application is now live!"
+        echo "✅ App deployed: https://$SWA_URL"
 
     - name: Azure logout
       run: |
