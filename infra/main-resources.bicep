@@ -174,7 +174,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         }
         {
           name: 'GH_WEB_APP_SECRET'
-          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=${githubClientSecretKv.name})'
+          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=github-client-secret)'
         }
         {
           name: 'FRONTEND_URL'
@@ -198,7 +198,7 @@ resource githubClientSecretKv 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
-// Key Vault access policy for Function App
+// Key Vault access policy for Function App (both system and user assigned identities)
 resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
   name: 'add'
   parent: keyVault
@@ -213,13 +213,22 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-
           ]
         }
       }
+      {
+        tenantId: subscription().tenantId
+        objectId: userIdentity.properties.principalId
+        permissions: {
+          secrets: [
+            'get'
+          ]
+        }
+      }
     ]
   }
 }
 
 // Diagnostic settings for Function App
 resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'functionapp-diagnostics'
+  name: 'functionapp-diagnostics-${resourceToken}'
   scope: functionApp
   properties: {
     workspaceId: logAnalytics.id
@@ -267,7 +276,6 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
     }
     stagingEnvironmentPolicy: 'Enabled'
     allowConfigFileUpdates: true
-    provider: 'GitHub'
     enterpriseGradeCdnStatus: 'Disabled'
   }
 }
