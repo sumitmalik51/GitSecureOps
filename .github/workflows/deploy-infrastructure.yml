@@ -48,19 +48,28 @@ jobs:
         
         echo "Deploying infrastructure to ${{ inputs.environment }} environment..."
         
-        # Simple deployment - let it complete normally
+        # First compile Bicep to ARM template to avoid CLI JSON streaming issues
+        echo "Compiling Bicep to ARM..."
+        az bicep build --file infra/main.bicep --outfile main-compiled.json
+        
+        # Deploy using ARM template instead of Bicep directly
+        echo "Deploying ARM template..."
         az deployment sub create \
           --location ${{ inputs.region }} \
-          --template-file infra/main.bicep \
+          --template-file main-compiled.json \
           --parameters \
             environmentName=${{ inputs.environment }} \
             location=${{ inputs.region }} \
             resourceGroupName="$RESOURCE_GROUP" \
             githubClientId='${{ secrets.GH_WEB_APP }}' \
             githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' \
-            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}'
+            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' \
+          > /dev/null 2>&1
         
         echo "Deployment completed. Getting Static Web App URL..."
+        
+        # Wait a moment for resources to be fully available
+        sleep 10
         
         # Get the SWA URL from the resource group
         SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv)
@@ -70,6 +79,8 @@ jobs:
           echo "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
         else
           echo "❌ Could not retrieve Static Web App URL"
+          echo "Checking if resource group exists..."
+          az group show --name "$RESOURCE_GROUP" --query "name" -o tsv || echo "Resource group not found"
           exit 1
         fi
 
