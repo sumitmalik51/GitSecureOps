@@ -23,7 +23,7 @@ env:
 
 jobs:
   deploy-infrastructure:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
     - name: 'Checkout GitHub Action'
@@ -44,41 +44,34 @@ jobs:
 
     - name: Deploy Infrastructure
       run: |
-        $RESOURCE_GROUP = "rg-gitsecureops-${{ inputs.environment }}"
-        $DEPLOYMENT_NAME = "infra-deployment-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
         
-        # Deploy with explicit name and error handling
-        Write-Host "Deploying infrastructure with name: $DEPLOYMENT_NAME"
-        try {
-          az deployment sub create `
-            --name "$DEPLOYMENT_NAME" `
-            --location ${{ inputs.region }} `
-            --template-file infra/main.bicep `
-            --parameters `
-              environmentName=${{ inputs.environment }} `
-              location=${{ inputs.region }} `
-              resourceGroupName="$RESOURCE_GROUP" `
-              githubClientId='${{ secrets.GH_WEB_APP }}' `
-              githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' `
-              githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' `
-            --no-wait
-          
-          Write-Host "Deployment submitted. Waiting for completion..."
-          az deployment sub wait --name "$DEPLOYMENT_NAME" --created
-          
-          Write-Host "Getting deployment outputs..."
-          $SWA_URL = az deployment sub show `
-            --name "$DEPLOYMENT_NAME" `
-            --query 'properties.outputs.STATICWEBAPP_URL.value' `
-            -o tsv
-          
-          Write-Host "✅ App deployed: https://$SWA_URL"
-          Write-Host "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
-        }
-        catch {
-          Write-Host "❌ Deployment failed: $_"
+        echo "Deploying infrastructure to ${{ inputs.environment }} environment..."
+        
+        # Simple deployment - let it complete normally
+        az deployment sub create \
+          --location ${{ inputs.region }} \
+          --template-file infra/main.bicep \
+          --parameters \
+            environmentName=${{ inputs.environment }} \
+            location=${{ inputs.region }} \
+            resourceGroupName="$RESOURCE_GROUP" \
+            githubClientId='${{ secrets.GH_WEB_APP }}' \
+            githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' \
+            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}'
+        
+        echo "Deployment completed. Getting Static Web App URL..."
+        
+        # Get the SWA URL from the resource group
+        SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv)
+        
+        if [ -n "$SWA_URL" ]; then
+          echo "✅ App deployed: https://$SWA_URL"
+          echo "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
+        else
+          echo "❌ Could not retrieve Static Web App URL"
           exit 1
-        }
+        fi
 
     - name: Azure logout
       run: az logout
