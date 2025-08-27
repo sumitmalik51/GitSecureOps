@@ -2,11 +2,20 @@
 
 # GitSecureOps Azure Deployment Script
 # This script deploys the GitSecureOps application to Azure Static Web Apps
+# 
+# NOTE: Consider using the GitHub Actions workflows instead:
+# - .github/workflows/deploy-infrastructure.yml (for infrastructure)
+# - .github/workflows/deploy-application.yml (for application)
 
 set -e
 
 echo "🚀 GitSecureOps Azure Deployment Script"
 echo "========================================"
+echo ""
+echo "💡 TIP: You can also use GitHub Actions workflows:"
+echo "   1. Deploy Infrastructure workflow (one-time per environment)"
+echo "   2. Deploy Application workflow (regular deployments)"
+echo ""
 
 # Check prerequisites
 echo "📋 Checking prerequisites..."
