@@ -42,34 +42,37 @@ jobs:
         az bicep version
         echo "Upgrade completed!"
 
+    - name: Create Resource Group
+      run: |
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        echo "Creating resource group: $RESOURCE_GROUP"
+        az group create \
+          --name "$RESOURCE_GROUP" \
+          --location ${{ inputs.region }} \
+          --tags azd-env-name=${{ inputs.environment }}
+
     - name: Deploy Infrastructure
       run: |
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        RESOURCE_TOKEN=$(openssl rand -hex 6)
         
         echo "Deploying infrastructure to ${{ inputs.environment }} environment..."
+        echo "Using resource token: $RESOURCE_TOKEN"
         
-        # First compile Bicep to ARM template to avoid CLI JSON streaming issues
-        echo "Compiling Bicep to ARM..."
-        az bicep build --file infra/main.bicep --outfile main-compiled.json
-        
-        # Deploy using ARM template instead of Bicep directly
-        echo "Deploying ARM template..."
-        az deployment sub create \
-          --location ${{ inputs.region }} \
-          --template-file main-compiled.json \
+        # Deploy using resource group scope - much more stable
+        az deployment group create \
+          --resource-group "$RESOURCE_GROUP" \
+          --template-file infra/main-resources.bicep \
           --parameters \
             environmentName=${{ inputs.environment }} \
             location=${{ inputs.region }} \
-            resourceGroupName="$RESOURCE_GROUP" \
+            resourceToken="$RESOURCE_TOKEN" \
+            resourcePrefix="gh" \
             githubClientId='${{ secrets.GH_WEB_APP }}' \
             githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' \
-            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' \
-          > /dev/null 2>&1
+            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}'
         
         echo "Deployment completed. Getting Static Web App URL..."
-        
-        # Wait a moment for resources to be fully available
-        sleep 10
         
         # Get the SWA URL from the resource group
         SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv)
@@ -79,8 +82,8 @@ jobs:
           echo "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
         else
           echo "❌ Could not retrieve Static Web App URL"
-          echo "Checking if resource group exists..."
-          az group show --name "$RESOURCE_GROUP" --query "name" -o tsv || echo "Resource group not found"
+          echo "Checking deployed resources..."
+          az resource list --resource-group "$RESOURCE_GROUP" --query "[].{Name:name, Type:type}" -o table
           exit 1
         fi
 
