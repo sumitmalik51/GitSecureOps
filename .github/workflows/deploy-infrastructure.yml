@@ -59,7 +59,7 @@ jobs:
         echo "Deploying infrastructure to ${{ inputs.environment }} environment..."
         echo "Using resource token: $RESOURCE_TOKEN"
         
-        # Deploy using resource group scope - much more stable
+        # Deploy using resource group scope with error suppression flags
         az deployment group create \
           --resource-group "$RESOURCE_GROUP" \
           --template-file infra/main-resources.bicep \
@@ -70,9 +70,14 @@ jobs:
             resourcePrefix="gh" \
             githubClientId='${{ secrets.GH_WEB_APP }}' \
             githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' \
-            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}'
+            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' \
+          --only-show-errors \
+          --no-prompt
         
         echo "Deployment completed. Getting Static Web App URL..."
+        
+        # Wait a moment for resources to be available
+        sleep 15
         
         # Get the SWA URL from the resource group
         SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv)
