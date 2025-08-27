@@ -494,6 +494,142 @@ interface AnalyticsData {
 }
 ```
 
+## 🚀 Deployment
+
+### **Azure Static Web Apps Deployment**
+
+This application is designed for deployment on Azure Static Web Apps with Azure Functions backend.
+
+#### **Prerequisites**
+
+1. **Azure Subscription** with permissions to create resources
+2. **GitHub OAuth App** configured with your repository
+3. **Azure CLI** installed and configured
+
+#### **GitHub Secrets Configuration**
+
+Configure the following secrets in your GitHub repository:
+
+```bash
+# Azure Service Principal (for infrastructure deployment)
+AZURE_CREDENTIALS={
+  "clientId": "your-service-principal-client-id",
+  "clientSecret": "your-service-principal-secret",
+  "subscriptionId": "your-azure-subscription-id",
+  "tenantId": "your-azure-tenant-id"
+}
+
+# GitHub OAuth App Credentials
+GH_WEB_APP=your_github_client_id
+GH_WEB_APP_SECRET=your_github_client_secret
+```
+
+**🎯 That's it!** No need for `AZURE_STATIC_WEB_APPS_API_TOKEN` - it's retrieved automatically during deployment.
+
+#### **Manual Deployment Steps**
+
+1. **Deploy Infrastructure**:
+```bash
+az deployment sub create \
+  --location eastus \
+  --template-file infra/main.bicep \
+  --parameters \
+    environmentName=prod \
+    resourceGroupName=rg-gitsecureops-prod \
+    githubClientId='your_github_client_id' \
+    githubRedirectUri='https://your-app.azurestaticapps.net/oauth-callback' \
+    githubClientSecret='your_github_client_secret'
+```
+
+2. **Build Application**:
+```bash
+npm ci
+npm run build
+```
+
+3. **Deploy to Static Web Apps**:
+```bash
+# Get the deployment token from Azure portal
+# Deploy using Azure CLI or GitHub Actions
+swa deploy ./dist --api-location ./api
+```
+
+#### **Automated CI/CD (Two-Step Deployment)**
+
+The repository includes **two separate GitHub Actions workflows** for better control and separation of concerns:
+
+**🏗️ Infrastructure Deployment** (`.github/workflows/deploy-infrastructure.yml`):
+- ✅ Deploys Azure infrastructure using Bicep templates
+- ✅ **Generates dynamic redirect URI** from deployed Static Web App URL
+- ✅ Sets up Azure Key Vault for secure secret management
+- ✅ **Configurable for multiple environments** (dev/staging/prod)
+- ✅ **Manual trigger only** - run when you need new infrastructure
+- ✅ **Displays OAuth App configuration instructions** with actual URLs
+
+**🚀 Application Deployment** (`.github/workflows/deploy-application.yml`):
+- ✅ Builds the React application with proper environment variables
+- ✅ Deploys to existing Azure Static Web Apps infrastructure
+- ✅ **Automatically retrieves SWA deployment token** from Azure
+- ✅ **Automatic deployment** on push to main (app changes only)
+- ✅ **Manual deployment** to any environment with workflow inputs
+- ✅ **Smart path filtering** - only triggers on app code changes
+
+**🎯 Deployment Strategy:**
+1. **First time:** Run "Deploy Infrastructure" workflow manually for each environment
+2. **Ongoing:** "Deploy Application" runs automatically on code pushes
+3. **Manual deployments:** Use "Deploy Application" workflow with environment selection
+
+**🔄 No manual token configuration needed!** Both workflows handle tokens automatically.
+
+#### **Quick Start Deployment**
+
+**Step 1: Deploy Infrastructure (One-time per environment)**
+```bash
+# Go to GitHub → Actions → Deploy Infrastructure
+# Select environment (dev/staging/prod) and region
+# Click "Run workflow"
+```
+
+**Step 2: Configure GitHub OAuth App**
+```bash
+# Use the URLs displayed in the infrastructure workflow output
+# Update your GitHub OAuth App settings with the provided URLs
+```
+
+**Step 3: Deploy Application**
+```bash
+# Option A: Push code to main branch (auto-deploys to dev)
+git push origin main
+
+# Option B: Manual deployment to any environment
+# Go to GitHub → Actions → Deploy Application
+# Select environment and provide SWA details from Step 1
+```
+
+#### **Environment Variables**
+
+The application uses the following environment variables:
+
+**Build Time (Frontend)**:
+- `VITE_GITHUB_CLIENT_ID` - GitHub OAuth App Client ID
+- `VITE_GITHUB_REDIRECT_URI` - OAuth callback URL
+
+**Runtime (Azure Functions)**:
+- `GH_WEB_APP` - GitHub OAuth App Client ID
+- `GH_WEB_APP_SECRET` - GitHub OAuth App Secret (stored in Key Vault)
+- `FRONTEND_URL` - Frontend URL for CORS and redirects
+
+#### **Infrastructure Components**
+
+The Bicep template creates:
+
+- **🌐 Azure Static Web App** - Hosts the React frontend
+- **⚡ Azure Function App** - Handles OAuth callbacks and API
+- **🗄️ Azure Storage Account** - Function app storage requirements
+- **🔑 Azure Key Vault** - Secure storage for GitHub secrets
+- **📊 Log Analytics Workspace** - Monitoring and diagnostics
+- **🔧 App Service Plan** - Function app hosting plan
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed information.

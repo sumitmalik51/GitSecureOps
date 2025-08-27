@@ -12,10 +12,13 @@
       "value": "rg-${AZURE_ENV_NAME}"
     },
     "githubClientId": {
-      "value": "${REACT_APP_GITHUB_CLIENT_ID}"
+      "value": "${GH_WEB_APP}"
     },
     "githubRedirectUri": {
       "value": "${REACT_APP_GITHUB_REDIRECT_URI}"
+    },
+    "githubClientSecret": {
+      "value": "${GH_WEB_APP_SECRET}"
     }
   }
 }

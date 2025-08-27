@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage_new';
 import Auth from './components/Auth';
+import OAuthSuccess from './components/OAuthSuccess';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import OrganizationSelector from './components/OrganizationSelector';
@@ -15,7 +16,7 @@ import SmartRecommendations from './components/SmartRecommendations';
 import githubService from './services/githubService';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'app'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'oauth-success' | 'app'>('landing');
   const [token, setToken] = useState('');
   const [username, setUsername] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
@@ -23,8 +24,18 @@ function App() {
   const [selectedOrg, setSelectedOrg] = useState<string>('');
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
 
-  // Check for persisted authentication state on component mount
+  // Check for OAuth callback or persisted authentication state on component mount
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionToken = urlParams.get('session');
+    const error = urlParams.get('error');
+
+    // Handle OAuth callback
+    if (sessionToken || error) {
+      setCurrentPage('oauth-success');
+      return;
+    }
+
     // Clear any persisted authentication state to ensure fresh start
     localStorage.removeItem('github_token');
     localStorage.removeItem('github_username');
@@ -64,6 +75,16 @@ function App() {
     
     setCurrentPage('app');
     setCurrentView('dashboard');
+
+    // Clear URL parameters after successful authentication
+    window.history.replaceState({}, document.title, window.location.pathname);
+  };
+
+  const handleAuthError = (error: string) => {
+    console.error('Authentication error:', error);
+    // Redirect back to auth page with error
+    setCurrentPage('auth');
+    // You could also show a toast notification here
   };
 
   const handleLogout = () => {
@@ -156,6 +177,10 @@ function App() {
 
   if (currentPage === 'auth') {
     return <Auth onAuthSuccess={handleAuthSuccess} onBack={handleBackToLanding} />;
+  }
+
+  if (currentPage === 'oauth-success') {
+    return <OAuthSuccess onAuthSuccess={handleAuthSuccess} onAuthError={handleAuthError} />;
   }
 
   switch (currentView) {
