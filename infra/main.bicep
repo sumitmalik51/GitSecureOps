@@ -15,6 +15,10 @@ param githubClientId string = ''
 @description('GitHub Redirect URI for OAuth')
 param githubRedirectUri string = ''
 
+@description('GitHub Client Secret for OAuth')
+@secure()
+param githubClientSecret string = ''
+
 // Generate a unique resource token
 var resourceToken = uniqueString(subscription().id, location, environmentName)
 var resourcePrefix = 'gh'
@@ -39,6 +43,7 @@ module main 'main-resources.bicep' = {
     resourcePrefix: resourcePrefix
     githubClientId: githubClientId
     githubRedirectUri: githubRedirectUri
+    githubClientSecret: githubClientSecret
   }
 }
 
@@ -48,3 +53,4 @@ output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output STATICWEBAPP_URL string = main.outputs.STATICWEBAPP_URL
 output STATICWEBAPP_NAME string = main.outputs.STATICWEBAPP_NAME
+output FUNCTIONAPP_NAME string = main.outputs.FUNCTIONAPP_NAME

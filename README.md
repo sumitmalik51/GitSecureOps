@@ -494,6 +494,112 @@ interface AnalyticsData {
 }
 ```
 
+## 🚀 Deployment
+
+### **Azure Static Web Apps Deployment**
+
+This application is designed for deployment on Azure Static Web Apps with Azure Functions backend.
+
+#### **Prerequisites**
+
+1. **Azure Subscription** with permissions to create resources
+2. **GitHub OAuth App** configured with your repository
+3. **Azure CLI** installed and configured
+
+#### **GitHub Secrets Configuration**
+
+Configure the following secrets in your GitHub repository:
+
+```bash
+# Azure Service Principal (for infrastructure deployment)
+AZURE_CREDENTIALS={
+  "clientId": "your-service-principal-client-id",
+  "clientSecret": "your-service-principal-secret",
+  "subscriptionId": "your-azure-subscription-id",
+  "tenantId": "your-azure-tenant-id"
+}
+
+# GitHub OAuth App Credentials
+GH_WEB_APP=your_github_client_id
+GH_WEB_APP_SECRET=your_github_client_secret
+
+# Azure Static Web Apps API Token (auto-generated after first deployment)
+AZURE_STATIC_WEB_APPS_API_TOKEN=your_swa_deployment_token
+```
+
+#### **Manual Deployment Steps**
+
+1. **Deploy Infrastructure**:
+```bash
+az deployment sub create \
+  --location eastus \
+  --template-file infra/main.bicep \
+  --parameters \
+    environmentName=prod \
+    resourceGroupName=rg-gitsecureops-prod \
+    githubClientId='your_github_client_id' \
+    githubRedirectUri='https://your-app.azurestaticapps.net/oauth-callback' \
+    githubClientSecret='your_github_client_secret'
+```
+
+2. **Build Application**:
+```bash
+npm ci
+npm run build
+```
+
+3. **Deploy to Static Web Apps**:
+```bash
+# Get the deployment token from Azure portal
+# Deploy using Azure CLI or GitHub Actions
+swa deploy ./dist --api-location ./api
+```
+
+#### **Automated CI/CD**
+
+The repository includes GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically:
+
+- ✅ Deploys Azure infrastructure using Bicep templates
+- ✅ **Generates dynamic redirect URI** from deployed Static Web App URL
+- ✅ Builds the React application with proper environment variables
+- ✅ Deploys to Azure Static Web Apps with Azure Functions API
+- ✅ Configures CORS and security settings
+- ✅ Sets up Azure Key Vault for secure secret management
+- ✅ **Displays OAuth App configuration instructions** with actual URLs
+
+**Trigger deployment**: Push to `main` branch or manual workflow dispatch
+
+**🎯 No manual redirect URI configuration needed!** The workflow automatically:
+1. Deploys infrastructure and gets the Static Web App URL
+2. Generates the OAuth redirect URI: `https://your-app.azurestaticapps.net/oauth-callback`
+3. Updates Function App configuration with the correct URLs
+4. Builds the frontend with the dynamic redirect URI
+5. Shows you the exact URLs to configure in your GitHub OAuth App
+
+#### **Environment Variables**
+
+The application uses the following environment variables:
+
+**Build Time (Frontend)**:
+- `VITE_GITHUB_CLIENT_ID` - GitHub OAuth App Client ID
+- `VITE_GITHUB_REDIRECT_URI` - OAuth callback URL
+
+**Runtime (Azure Functions)**:
+- `GH_WEB_APP` - GitHub OAuth App Client ID
+- `GH_WEB_APP_SECRET` - GitHub OAuth App Secret (stored in Key Vault)
+- `FRONTEND_URL` - Frontend URL for CORS and redirects
+
+#### **Infrastructure Components**
+
+The Bicep template creates:
+
+- **🌐 Azure Static Web App** - Hosts the React frontend
+- **⚡ Azure Function App** - Handles OAuth callbacks and API
+- **🗄️ Azure Storage Account** - Function app storage requirements
+- **🔑 Azure Key Vault** - Secure storage for GitHub secrets
+- **📊 Log Analytics Workspace** - Monitoring and diagnostics
+- **🔧 App Service Plan** - Function app hosting plan
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed information.

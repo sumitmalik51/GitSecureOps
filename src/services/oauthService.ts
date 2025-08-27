@@ -63,6 +63,46 @@ export class GitHubOAuthService {
 
   /**
    * Handles the OAuth callback and exchanges code for access token
+   * This now works with Azure Function backend
+   */
+  async handleOAuthSuccess(sessionToken: string): Promise<{ token: string; user: GitHubUser }> {
+    try {
+      // Decode session token from Azure Function (browser-compatible)
+      const sessionData = JSON.parse(atob(sessionToken));
+      
+      // Validate session data
+      if (!sessionData.token || !sessionData.username) {
+        throw new Error('Invalid session data');
+      }
+
+      // Check if session is not too old (optional security measure)
+      const sessionAge = Date.now() - (sessionData.timestamp || 0);
+      const maxAge = 5 * 60 * 1000; // 5 minutes
+      
+      if (sessionAge > maxAge) {
+        throw new Error('Session expired');
+      }
+
+      const user: GitHubUser = {
+        id: 0, // Will be populated if needed
+        login: sessionData.username,
+        name: sessionData.name || sessionData.username,
+        email: '', // Will be populated if needed
+        avatar_url: sessionData.avatar || ''
+      };
+
+      return {
+        token: sessionData.token,
+        user: user
+      };
+    } catch (error) {
+      console.error('OAuth session processing error:', error);
+      throw new Error('Failed to process authentication session');
+    }
+  }
+
+  /**
+   * Legacy method - now deprecated in favor of Azure Function flow
    */
   async handleCallback(code: string, state: string): Promise<{ token: string; user: GitHubUser }> {
     // Verify state parameter

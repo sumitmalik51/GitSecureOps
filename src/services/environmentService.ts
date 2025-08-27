@@ -20,8 +20,8 @@ class EnvironmentService {
     
     const getEnvVar = (viteKey: string, fallback: string = ''): string => {
       // Try Vite environment (development and production builds)
-      if (import.meta.env && import.meta.env[viteKey]) {
-        return import.meta.env[viteKey];
+      if (import.meta.env && (import.meta.env as any)[viteKey]) {
+        return (import.meta.env as any)[viteKey];
       }
       
       return fallback;
@@ -38,7 +38,7 @@ class EnvironmentService {
       ),
       githubRedirectUri: getEnvVar(
         'VITE_GITHUB_REDIRECT_URI',
-        `${window.location.origin}/auth/callback`
+        `${window.location.origin}/api/github-callback`
       )
     };
   }

@@ -1,0 +1,11 @@
+{
+  "name": "gitsecureops-api",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

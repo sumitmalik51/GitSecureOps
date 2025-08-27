@@ -1,0 +1,109 @@
+name: Deploy GitSecureOps to Azure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: gitsecureops
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './api'
+  NODE_VERSION: '20.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy Infrastructure
+      id: deploy_infra
+      run: |
+        # Deploy infrastructure with all configuration in one go
+        echo "🏗️ Deploying infrastructure with complete configuration..."
+        
+        DEPLOYMENT_OUTPUT=$(az deployment sub create \
+          --location eastus \
+          --template-file infra/main.bicep \
+          --parameters \
+            environmentName=prod \
+            location=eastus \
+            resourceGroupName=rg-gitsecureops-prod \
+            githubClientId='${{ secrets.GH_WEB_APP }}' \
+            githubRedirectUri='https://placeholder-will-be-replaced.azurestaticapps.net/oauth-callback' \
+            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' \
+          --query 'properties.outputs' -o json)
+        
+        # Extract outputs from deployment
+        SWA_URL=$(echo $DEPLOYMENT_OUTPUT | jq -r '.STATICWEBAPP_URL.value')
+        SWA_NAME=$(echo $DEPLOYMENT_OUTPUT | jq -r '.STATICWEBAPP_NAME.value')
+        
+        # Generate the actual redirect URI
+        REDIRECT_URI="https://$(echo $SWA_URL | sed 's|https://||')/oauth-callback"
+        
+        # Set outputs for later steps
+        echo "SWA_URL=$(echo $SWA_URL | sed 's|https://||')" >> $GITHUB_OUTPUT
+        echo "SWA_NAME=${SWA_NAME}" >> $GITHUB_OUTPUT  
+        echo "REDIRECT_URI=${REDIRECT_URI}" >> $GITHUB_OUTPUT
+        
+        echo "✅ Infrastructure deployed with complete configuration!"
+        echo "📍 Static Web App URL: https://$(echo $SWA_URL | sed 's|https://||')"
+        echo "🔗 OAuth Redirect URI: ${REDIRECT_URI}"
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build React application
+      run: npm run build
+      env:
+        VITE_GITHUB_CLIENT_ID: ${{ secrets.GH_WEB_APP }}
+        VITE_GITHUB_REDIRECT_URI: ${{ steps.deploy_infra.outputs.REDIRECT_URI }}
+
+    - name: Install API dependencies
+      run: |
+        cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        npm ci
+
+    - name: Deploy to Azure Static Web App
+      id: deploy_swa
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        action: "upload"
+        app_location: "/"
+        api_location: "api"
+        output_location: "dist"
+        skip_app_build: true
+        skip_api_build: true
+
+    - name: Display Deployment Information
+      run: |
+        echo "🎉 Deployment completed successfully!"
+        echo "=================================="
+        echo "📍 Application URL: https://${{ steps.deploy_infra.outputs.SWA_URL }}"
+        echo "🔗 OAuth Redirect URI: ${{ steps.deploy_infra.outputs.REDIRECT_URI }}"
+        echo ""
+        echo "⚠️  IMPORTANT: Update your GitHub OAuth App settings:"
+        echo "   1. Go to GitHub → Settings → Developer settings → OAuth Apps"
+        echo "   2. Edit your OAuth App"
+        echo "   3. Set Homepage URL: https://${{ steps.deploy_infra.outputs.SWA_URL }}"
+        echo "   4. Set Authorization callback URL: ${{ steps.deploy_infra.outputs.REDIRECT_URI }}"
+
+    - name: Azure logout
+      run: |
+        az logout
+      if: always()
