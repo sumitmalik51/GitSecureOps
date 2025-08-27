@@ -36,11 +36,11 @@ jobs:
 
     - name: Upgrade Azure CLI and Bicep
       run: |
-        Write-Host "Upgrading Azure CLI and Bicep..."
+        echo "Upgrading Azure CLI and Bicep..."
         az --version
         az bicep upgrade
         az bicep version
-        Write-Host "Upgrade completed!"
+        echo "Upgrade completed!"
 
     - name: Deploy Infrastructure
       run: |
