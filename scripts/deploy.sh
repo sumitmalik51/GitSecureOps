@@ -134,6 +134,39 @@ cd ..
 
 echo "✅ API dependencies installed!"
 
+# Install SWA CLI for deployment
+echo ""
+echo "🔧 Installing SWA CLI..."
+echo "========================"
+
+npm install -g @azure/static-web-apps-cli
+
+echo "✅ SWA CLI installed!"
+
+# Deploy to Static Web App
+echo ""
+echo "🚀 Deploying to Static Web App..."
+echo "================================="
+
+# Get the SWA deployment token
+SWA_TOKEN=$(az staticwebapp secrets list \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$SWA_NAME" \
+    --query "properties.apiKey" -o tsv)
+
+# Deploy using SWA CLI
+swa deploy ./dist \
+    --api-location ./api \
+    --deployment-token "$SWA_TOKEN" \
+    --verbose
+
+if [ $? -eq 0 ]; then
+    echo "✅ Application deployed successfully!"
+else
+    echo "❌ Deployment failed!"
+    exit 1
+fi
+
 # Get Static Web App details
 echo ""
 echo "🔍 Deployment Summary..."

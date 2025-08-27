@@ -1,0 +1,97 @@
+name: Deploy Infrastructure to Azure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      region:
+        description: 'Azure region'
+        required: true
+        default: 'eastus'
+        type: string
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy Infrastructure
+      id: deploy_infra
+      run: |
+        # Deploy infrastructure with all configuration
+        echo "🏗️ Deploying infrastructure for ${{ inputs.environment }} environment..."
+        
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        
+        DEPLOYMENT_OUTPUT=$(az deployment sub create \
+          --location ${{ inputs.region }} \
+          --template-file infra/main.bicep \
+          --parameters \
+            environmentName=${{ inputs.environment }} \
+            location=${{ inputs.region }} \
+            resourceGroupName="$RESOURCE_GROUP" \
+            githubClientId='${{ secrets.GH_WEB_APP }}' \
+            githubRedirectUri='https://placeholder-will-be-replaced.azurestaticapps.net/oauth-callback' \
+            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' \
+          --query 'properties.outputs' -o json)
+        
+        # Extract outputs from deployment
+        SWA_URL=$(echo $DEPLOYMENT_OUTPUT | jq -r '.STATICWEBAPP_URL.value')
+        SWA_NAME=$(echo $DEPLOYMENT_OUTPUT | jq -r '.STATICWEBAPP_NAME.value')
+        FUNCTION_NAME=$(echo $DEPLOYMENT_OUTPUT | jq -r '.FUNCTIONAPP_NAME.value')
+        
+        # Generate the actual redirect URI
+        REDIRECT_URI="https://$SWA_URL/oauth-callback"
+        
+        echo "✅ Infrastructure deployed successfully!"
+        echo ""
+        echo "📋 Deployment Summary:"
+        echo "   Environment: ${{ inputs.environment }}"
+        echo "   Resource Group: $RESOURCE_GROUP"
+        echo "   Region: ${{ inputs.region }}"
+        echo "   Static Web App: $SWA_NAME"
+        echo "   Function App: $FUNCTION_NAME"
+        echo "   Application URL: https://$SWA_URL"
+        echo "   OAuth Redirect URI: $REDIRECT_URI"
+        echo ""
+        echo "🔧 Save these values for application deployment:"
+        echo "   RESOURCE_GROUP=$RESOURCE_GROUP"
+        echo "   SWA_NAME=$SWA_NAME"
+        echo "   SWA_URL=$SWA_URL"
+        echo "   REDIRECT_URI=$REDIRECT_URI"
+
+    - name: Display OAuth Configuration
+      run: |
+        echo ""
+        echo "⚠️  IMPORTANT: Update your GitHub OAuth App settings:"
+        echo "   1. Go to GitHub → Settings → Developer settings → OAuth Apps"
+        echo "   2. Edit your OAuth App for ${{ inputs.environment }}"
+        echo "   3. Set Homepage URL: https://$SWA_URL"
+        echo "   4. Set Authorization callback URL: $REDIRECT_URI"
+        echo ""
+        echo "✅ Infrastructure deployment completed!"
+        echo "➡️  Next: Run 'Deploy Application' workflow to deploy your app"
+
+    - name: Azure logout
+      run: |
+        az logout
+      if: always()

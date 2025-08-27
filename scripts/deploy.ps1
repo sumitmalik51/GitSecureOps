@@ -147,6 +147,39 @@ Pop-Location
 
 Write-Host "✅ API dependencies installed!" -ForegroundColor Green
 
+# Install SWA CLI for deployment
+Write-Host ""
+Write-Host "🔧 Installing SWA CLI..." -ForegroundColor Yellow
+Write-Host "========================" -ForegroundColor Yellow
+
+npm install -g @azure/static-web-apps-cli
+
+Write-Host "✅ SWA CLI installed!" -ForegroundColor Green
+
+# Deploy to Static Web App
+Write-Host ""
+Write-Host "🚀 Deploying to Static Web App..." -ForegroundColor Yellow
+Write-Host "=================================" -ForegroundColor Yellow
+
+try {
+    # Get the SWA deployment token
+    $swaToken = az staticwebapp secrets list `
+        --resource-group $ResourceGroup `
+        --name $swaName `
+        --query "properties.apiKey" -o tsv
+
+    # Deploy using SWA CLI
+    swa deploy ./dist `
+        --api-location ./api `
+        --deployment-token "$swaToken" `
+        --verbose
+
+    Write-Host "✅ Application deployed successfully!" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Deployment failed!" -ForegroundColor Red
+    exit 1
+}
+
 # Get Static Web App details
 Write-Host ""
 Write-Host "🔍 Deployment Summary..." -ForegroundColor Yellow

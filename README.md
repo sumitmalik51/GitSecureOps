@@ -522,10 +522,9 @@ AZURE_CREDENTIALS={
 # GitHub OAuth App Credentials
 GH_WEB_APP=your_github_client_id
 GH_WEB_APP_SECRET=your_github_client_secret
-
-# Azure Static Web Apps API Token (auto-generated after first deployment)
-AZURE_STATIC_WEB_APPS_API_TOKEN=your_swa_deployment_token
 ```
+
+**🎯 That's it!** No need for `AZURE_STATIC_WEB_APPS_API_TOKEN` - it's retrieved automatically during deployment.
 
 #### **Manual Deployment Steps**
 
@@ -555,26 +554,57 @@ npm run build
 swa deploy ./dist --api-location ./api
 ```
 
-#### **Automated CI/CD**
+#### **Automated CI/CD (Two-Step Deployment)**
 
-The repository includes GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically:
+The repository includes **two separate GitHub Actions workflows** for better control and separation of concerns:
 
+**🏗️ Infrastructure Deployment** (`.github/workflows/deploy-infrastructure.yml`):
 - ✅ Deploys Azure infrastructure using Bicep templates
 - ✅ **Generates dynamic redirect URI** from deployed Static Web App URL
-- ✅ Builds the React application with proper environment variables
-- ✅ Deploys to Azure Static Web Apps with Azure Functions API
-- ✅ Configures CORS and security settings
 - ✅ Sets up Azure Key Vault for secure secret management
+- ✅ **Configurable for multiple environments** (dev/staging/prod)
+- ✅ **Manual trigger only** - run when you need new infrastructure
 - ✅ **Displays OAuth App configuration instructions** with actual URLs
 
-**Trigger deployment**: Push to `main` branch or manual workflow dispatch
+**🚀 Application Deployment** (`.github/workflows/deploy-application.yml`):
+- ✅ Builds the React application with proper environment variables
+- ✅ Deploys to existing Azure Static Web Apps infrastructure
+- ✅ **Automatically retrieves SWA deployment token** from Azure
+- ✅ **Automatic deployment** on push to main (app changes only)
+- ✅ **Manual deployment** to any environment with workflow inputs
+- ✅ **Smart path filtering** - only triggers on app code changes
 
-**🎯 No manual redirect URI configuration needed!** The workflow automatically:
-1. Deploys infrastructure and gets the Static Web App URL
-2. Generates the OAuth redirect URI: `https://your-app.azurestaticapps.net/oauth-callback`
-3. Updates Function App configuration with the correct URLs
-4. Builds the frontend with the dynamic redirect URI
-5. Shows you the exact URLs to configure in your GitHub OAuth App
+**🎯 Deployment Strategy:**
+1. **First time:** Run "Deploy Infrastructure" workflow manually for each environment
+2. **Ongoing:** "Deploy Application" runs automatically on code pushes
+3. **Manual deployments:** Use "Deploy Application" workflow with environment selection
+
+**🔄 No manual token configuration needed!** Both workflows handle tokens automatically.
+
+#### **Quick Start Deployment**
+
+**Step 1: Deploy Infrastructure (One-time per environment)**
+```bash
+# Go to GitHub → Actions → Deploy Infrastructure
+# Select environment (dev/staging/prod) and region
+# Click "Run workflow"
+```
+
+**Step 2: Configure GitHub OAuth App**
+```bash
+# Use the URLs displayed in the infrastructure workflow output
+# Update your GitHub OAuth App settings with the provided URLs
+```
+
+**Step 3: Deploy Application**
+```bash
+# Option A: Push code to main branch (auto-deploys to dev)
+git push origin main
+
+# Option B: Manual deployment to any environment
+# Go to GitHub → Actions → Deploy Application
+# Select environment and provide SWA details from Step 1
+```
 
 #### **Environment Variables**
 
