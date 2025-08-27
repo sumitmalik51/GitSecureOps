@@ -2,7 +2,7 @@ name: Deploy Application to Azure Static Web Apps
 
 on:
   push:
-    branches: [main]
+    branches: [main, sso-integration]
     paths-ignore:
       - 'infra/**'
       - '*.md'
@@ -63,6 +63,9 @@ jobs:
           
           echo "swa_name=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "swa_url=$SWA_URL" >> $GITHUB_OUTPUT
+          
+          echo "🚀 Deploying from branch: ${{ github.ref_name }}"
+          echo "📍 Target environment: dev"
         else
           # For manual dispatch, use provided inputs
           echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
@@ -120,7 +123,8 @@ jobs:
         echo ""
         echo "🎉 Application deployment completed!"
         echo "=================================="
-        echo "🌍 Environment: ${{ steps.target.outputs.environment }}"
+        echo "� Source branch: ${{ github.ref_name }}"
+        echo "�🌍 Environment: ${{ steps.target.outputs.environment }}"
         echo "📍 Application URL: https://${{ steps.target.outputs.swa_url }}"
         echo "🔗 OAuth Redirect URI: https://${{ steps.target.outputs.swa_url }}/oauth-callback"
         echo ""

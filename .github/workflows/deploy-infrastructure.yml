@@ -39,6 +39,9 @@ jobs:
       run: |
         # Deploy infrastructure with all configuration
         echo "🏗️ Deploying infrastructure for ${{ inputs.environment }} environment..."
+        echo "🌿 Source branch: ${{ github.ref_name }}"
+        echo "📅 Triggered by: ${{ github.actor }}"
+        echo ""
         
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
         
@@ -65,6 +68,7 @@ jobs:
         echo "✅ Infrastructure deployed successfully!"
         echo ""
         echo "📋 Deployment Summary:"
+        echo "   Branch: ${{ github.ref_name }}"
         echo "   Environment: ${{ inputs.environment }}"
         echo "   Resource Group: $RESOURCE_GROUP"
         echo "   Region: ${{ inputs.region }}"
@@ -88,6 +92,11 @@ jobs:
         echo "   3. Set Homepage URL: https://$SWA_URL"
         echo "   4. Set Authorization callback URL: $REDIRECT_URI"
         echo ""
+        if [ "${{ github.ref_name }}" != "main" ]; then
+          echo "🔄 NOTE: Infrastructure deployed from '${{ github.ref_name }}' branch"
+          echo "   Make sure this branch contains the latest infrastructure changes"
+          echo ""
+        fi
         echo "✅ Infrastructure deployment completed!"
         echo "➡️  Next: Run 'Deploy Application' workflow to deploy your app"
 
