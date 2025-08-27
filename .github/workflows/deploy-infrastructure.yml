@@ -36,24 +36,23 @@ jobs:
 
     - name: Deploy Infrastructure
       run: |
-        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
-        DEPLOYMENT_OUTPUT=$(az deployment sub create \
-          --location ${{ inputs.region }} \
-          --template-file infra/main.bicep \
-          --parameters \
-            environmentName=${{ inputs.environment }} \
-            location=${{ inputs.region }} \
-            resourceGroupName="$RESOURCE_GROUP" \
-            githubClientId='${{ secrets.GH_WEB_APP }}' \
-            githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' \
-            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' \
-          --query 'properties.outputs' -o json)
+        $RESOURCE_GROUP = "rg-gitsecureops-${{ inputs.environment }}"
+        $DEPLOYMENT_OUTPUT = az deployment sub create `
+          --location ${{ inputs.region }} `
+          --template-file infra/main.bicep `
+          --parameters `
+            environmentName=${{ inputs.environment }} `
+            location=${{ inputs.region }} `
+            resourceGroupName="$RESOURCE_GROUP" `
+            githubClientId='${{ secrets.GH_WEB_APP }}' `
+            githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' `
+            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' `
+          --query 'properties.outputs' -o json
 
-        SWA_URL=$(echo $DEPLOYMENT_OUTPUT | jq -r '.STATICWEBAPP_URL.value')
-        echo "✅ App deployed: https://$SWA_URL"
-        echo "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
+        $SWA_URL = ($DEPLOYMENT_OUTPUT | ConvertFrom-Json).STATICWEBAPP_URL.value
+        Write-Host "✅ App deployed: https://$SWA_URL"
+        Write-Host "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
 
     - name: Azure logout
-      run: |
-        az logout
+      run: az logout
       if: always()
