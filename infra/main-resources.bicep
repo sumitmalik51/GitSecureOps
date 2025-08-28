@@ -20,6 +20,9 @@ param githubClientSecret string = ''
 @description('GitHub Redirect URI for OAuth')
 param githubRedirectUri string
 
+// Extract base URL from redirect URI for CORS and FRONTEND_URL
+var baseUrl = replace(githubRedirectUri, '/oauth-callback', '')
+
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: 'log-${resourcePrefix}-${resourceToken}'
@@ -142,7 +145,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
     siteConfig: {
       cors: {
         allowedOrigins: [
-          'https://${staticWebApp.properties.defaultHostname}'
+          baseUrl
           'http://localhost:4280'
         ]
         supportCredentials: true
@@ -177,7 +180,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         }
         {
           name: 'FRONTEND_URL'
-          value: 'https://${staticWebApp.properties.defaultHostname}'
+          value: baseUrl
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

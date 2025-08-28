@@ -80,10 +80,13 @@ jobs:
         Write-Host "Compiling Bicep to ARM template..."
         az bicep build --file infra/main-resources.bicep --outfile main-resources-compiled.json
         
-        # Deploy using PowerShell (avoids Azure CLI JSON parsing bug)
-        Write-Host "Deploying ARM template with PowerShell..."
+        # Generate a temporary static web app URL for deployment
+        $tempSwaUrl = "https://temp-$resourceToken.azurestaticapps.net"
         $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
-        $deployment = New-AzResourceGroupDeployment `
+        
+        # Validate the compiled template
+        Write-Host "Validating ARM template with temp URL: $tempSwaUrl"
+        $validationResult = Test-AzResourceGroupDeployment `
           -ResourceGroupName $resourceGroup `
           -TemplateFile "main-resources-compiled.json" `
           -environmentName "${{ inputs.environment }}" `
@@ -91,9 +94,45 @@ jobs:
           -resourceToken $resourceToken `
           -resourcePrefix "gh" `
           -githubClientId "${{ secrets.GH_WEB_APP }}" `
-          -githubRedirectUri "https://placeholder.azurestaticapps.net/oauth-callback" `
+          -githubRedirectUri "$tempSwaUrl/oauth-callback" `
           -githubClientSecret $secureSecret `
           -Verbose
+        
+        if ($validationResult) {
+          Write-Host "❌ Template validation failed:"
+          $validationResult | ForEach-Object { Write-Host "  - $($_.Message)" }
+          exit 1
+        }
+        Write-Host "✅ Template validation passed!"
+        
+        # Deploy using PowerShell (avoids Azure CLI JSON parsing bug)
+        Write-Host "Deploying ARM template with PowerShell..."
+        $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
+        
+        # Generate a temporary static web app URL for initial deployment
+        $tempSwaUrl = "https://temp-$resourceToken.azurestaticapps.net"
+        
+        try {
+          Write-Host "Starting deployment with temporary URL: $tempSwaUrl"
+          
+          $deployment = New-AzResourceGroupDeployment `
+            -ResourceGroupName $resourceGroup `
+            -TemplateFile "main-resources-compiled.json" `
+            -environmentName "${{ inputs.environment }}" `
+            -location "${{ inputs.region }}" `
+            -resourceToken $resourceToken `
+            -resourcePrefix "gh" `
+            -githubClientId "${{ secrets.GH_WEB_APP }}" `
+            -githubRedirectUri "$tempSwaUrl/oauth-callback" `
+            -githubClientSecret $secureSecret `
+            -Verbose
+        }
+        catch {
+          Write-Host "❌ Deployment failed with error: $($_.Exception.Message)"
+          Write-Host "Full error details:"
+          Write-Host $_.Exception
+          exit 1
+        }
         
         Write-Host "Waiting for resources to be available..."
         Start-Sleep -Seconds 20
@@ -106,6 +145,10 @@ jobs:
           $swaUrl = $swaResources[0].DefaultHostname
           Write-Host "✅ App deployed: https://$swaUrl"
           Write-Host "📋 OAuth Redirect URI: https://$swaUrl/oauth-callback"
+          Write-Host ""
+          Write-Host "🔗 Update your GitHub OAuth App settings:"
+          Write-Host "   Homepage URL: https://$swaUrl"
+          Write-Host "   Authorization callback URL: https://$swaUrl/oauth-callback"
         } else {
           Write-Host "❌ Could not retrieve Static Web App URL"
           Write-Host "Checking deployed resources..."

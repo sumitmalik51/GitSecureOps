@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.37.4.10188",
-      "templateHash": "840529786912339284"
+      "templateHash": "2330979991600556748"
     }
   },
   "parameters": {
@@ -52,6 +52,9 @@
         "description": "GitHub Redirect URI for OAuth"
       }
     }
+  },
+  "variables": {
+    "baseUrl": "[replace(parameters('githubRedirectUri'), '/oauth-callback', '')]"
   },
   "resources": [
     {
@@ -180,7 +183,7 @@
         "siteConfig": {
           "cors": {
             "allowedOrigins": [
-              "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2022-09-01').defaultHostname)]",
+              "[variables('baseUrl')]",
               "http://localhost:4280"
             ],
             "supportCredentials": true
@@ -215,7 +218,7 @@
             },
             {
               "name": "FRONTEND_URL",
-              "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2022-09-01').defaultHostname)]"
+              "value": "[variables('baseUrl')]"
             },
             {
               "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
@@ -228,7 +231,6 @@
         "[resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
         "[resourceId('Microsoft.Web/serverfarms', format('plan-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
         "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
-        "[resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
         "[resourceId('Microsoft.Storage/storageAccounts', format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
       ]
