@@ -41,14 +41,27 @@ jobs:
         SWA_NAME=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
         SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
         
+        # Install frontend dependencies and build
         npm ci
         VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} VITE_GITHUB_REDIRECT_URI=https://$SWA_URL/oauth-callback npm run build
         
-        cd api && npm ci && cd ..
+        # Check if API has dependencies, if not skip npm ci
+        if [ -f "api/package-lock.json" ]; then
+          cd api && npm ci && cd ..
+        else
+          echo "No package-lock.json in api folder, skipping npm ci for API"
+        fi
+        
+        # Install SWA CLI
         npm install -g @azure/static-web-apps-cli
         
+        # Deploy to Static Web Apps (try without explicit API location)
         SWA_TOKEN=$(az staticwebapp secrets list --resource-group $RESOURCE_GROUP --name $SWA_NAME --query "properties.apiKey" -o tsv)
-        swa deploy ./dist --api-location ./api --deployment-token "$SWA_TOKEN"
+        echo "Deploying to Static Web Apps..."
+        echo "Frontend: ./dist"
+        echo "Checking if API folder exists..."
+        ls -la ./api
+        swa deploy ./dist --deployment-token "$SWA_TOKEN" --verbose
         
         echo "✅ App deployed: https://$SWA_URL"
 
