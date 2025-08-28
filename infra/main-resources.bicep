@@ -21,7 +21,7 @@ param githubClientSecret string = ''
 param githubRedirectUri string
 
 // Extract base URL from redirect URI for CORS and FRONTEND_URL
-var baseUrl = replace(githubRedirectUri, '/oauth-callback', '')
+var baseUrl = replace(githubRedirectUri, '/api/github-callback', '')
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.37.4.10188",
-      "templateHash": "3387051022412135116"
+      "templateHash": "4177583523719190934"
     }
   },
   "parameters": {
@@ -54,7 +54,7 @@
     }
   },
   "variables": {
-    "baseUrl": "[replace(parameters('githubRedirectUri'), '/oauth-callback', '')]"
+    "baseUrl": "[replace(parameters('githubRedirectUri'), '/api/github-callback', '')]"
   },
   "resources": [
     {
@@ -75,7 +75,7 @@
     {
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2023-07-01",
-      "name": "[format('kv-sec-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "name": "[format('kv-secureops-{0}', parameters('environmentName'))]",
       "location": "[parameters('location')]",
       "tags": {
         "azd-env-name": "[parameters('environmentName')]"
@@ -117,12 +117,8 @@
         "azd-env-name": "[parameters('environmentName')]"
       },
       "properties": {
-        "Application_Type": "web",
-        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
-      ]
+        "Application_Type": "web"
+      }
     },
     {
       "type": "Microsoft.Storage/storageAccounts",
@@ -214,7 +210,7 @@
             },
             {
               "name": "GH_WEB_APP_SECRET",
-              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=github-client-secret)', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=github-client-secret)', format('kv-secureops-{0}', parameters('environmentName')))]"
             },
             {
               "name": "FRONTEND_URL",
@@ -230,7 +226,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
         "[resourceId('Microsoft.Web/serverfarms', format('plan-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
-        "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('kv-secureops-{0}', parameters('environmentName')))]",
         "[resourceId('Microsoft.Storage/storageAccounts', toLower(format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken'))))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
       ]
@@ -238,18 +234,18 @@
     {
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')), 'github-client-secret')]",
+      "name": "[format('{0}/{1}', format('kv-secureops-{0}', parameters('environmentName')), 'github-client-secret')]",
       "properties": {
         "value": "[parameters('githubClientSecret')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+        "[resourceId('Microsoft.KeyVault/vaults', format('kv-secureops-{0}', parameters('environmentName')))]"
       ]
     },
     {
       "type": "Microsoft.KeyVault/vaults/accessPolicies",
       "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')), 'add')]",
+      "name": "[format('{0}/{1}', format('kv-secureops-{0}', parameters('environmentName')), 'add')]",
       "properties": {
         "accessPolicies": [
           {
@@ -274,33 +270,8 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
-        "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('kv-secureops-{0}', parameters('environmentName')))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
-      ]
-    },
-    {
-      "type": "Microsoft.Insights/diagnosticSettings",
-      "apiVersion": "2021-05-01-preview",
-      "scope": "[format('Microsoft.Web/sites/{0}', format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
-      "name": "[format('functionapp-diagnostics-{0}', parameters('resourceToken'))]",
-      "properties": {
-        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
-        "logs": [
-          {
-            "category": "FunctionAppLogs",
-            "enabled": true
-          }
-        ],
-        "metrics": [
-          {
-            "category": "AllMetrics",
-            "enabled": true
-          }
-        ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
-        "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
       ]
     },
     {

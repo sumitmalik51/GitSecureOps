@@ -61,7 +61,7 @@ jobs:
         echo "Frontend: ./dist"
         echo "Checking if API folder exists..."
         ls -la ./api
-        swa deploy ./dist --deployment-token "$SWA_TOKEN" --env production --verbose
+        swa deploy ./dist --api-location ./api --deployment-token "$SWA_TOKEN" --env production --verbose
         
         echo "✅ App deployed: https://$SWA_URL"
 
