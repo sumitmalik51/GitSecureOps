@@ -79,10 +79,10 @@ jobs:
           Write-Host "Found existing Static Web App: $existingSwaUrl"
           $redirectUri = "$existingSwaUrl/api/github-callback"
         } else {
-          # Generate a temporary URL for initial deployment
-          $tempSwaUrl = "https://temp-$resourceToken.azurestaticapps.net"
-          $redirectUri = "$tempSwaUrl/api/github-callback"
-          Write-Host "No existing SWA found, using temporary URL: $tempSwaUrl"
+          # For initial deployment, use a predictable placeholder URL
+          # This will be updated after the SWA is created
+          $redirectUri = "https://placeholder-$resourceToken.azurestaticapps.net/api/github-callback"
+          Write-Host "No existing SWA found, using placeholder URL for initial deployment"
         }
         
         $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
@@ -141,3 +141,45 @@ jobs:
     - name: Azure logout
       run: az logout
       if: always()
+
+    - name: Update Function App Settings
+      if: success()
+      run: |
+        # Parse Azure credentials
+        $creds = '${{ secrets.AZURE_CREDENTIALS }}' | ConvertFrom-Json
+        $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
+        $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
+        Connect-AzAccount -ServicePrincipal -Credential $credential -TenantId $creds.tenantId -SubscriptionId $creds.subscriptionId
+        
+        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
+        $resourceToken = "${{ inputs.environment }}"
+        $functionAppName = "func-gh-$resourceToken"
+        
+        # Get the actual Static Web App URL
+        $swaResources = Get-AzStaticWebApp -ResourceGroupName $resourceGroup
+        if ($swaResources -and $swaResources.Count -gt 0) {
+          $actualSwaUrl = "https://$($swaResources[0].DefaultHostname)"
+          Write-Host "Updating Function App settings with actual SWA URL: $actualSwaUrl"
+          
+          try {
+            # Get current app settings
+            $functionApp = Get-AzFunctionApp -ResourceGroupName $resourceGroup -Name $functionAppName
+            $currentSettings = @{}
+            foreach ($setting in $functionApp.ApplicationSettings) {
+              $currentSettings[$setting.Name] = $setting.Value
+            }
+            
+            # Update FRONTEND_URL with actual SWA URL
+            $currentSettings["FRONTEND_URL"] = $actualSwaUrl
+            
+            # Update the settings
+            Update-AzFunctionAppSetting -ResourceGroupName $resourceGroup -Name $functionAppName -AppSetting $currentSettings
+            Write-Host "✅ Function App FRONTEND_URL updated successfully!"
+          }
+          catch {
+            Write-Host "⚠️ Warning: Could not update Function App settings: $($_.Exception.Message)"
+          }
+        }
+        
+        Disconnect-AzAccount
+      shell: pwsh
