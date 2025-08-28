@@ -1,0 +1,375 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.37.4.10188",
+      "templateHash": "12155353274681747142"
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "The environment name"
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "The Azure region where resources will be deployed"
+      }
+    },
+    "resourceToken": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource token for unique naming"
+      }
+    },
+    "resourcePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource prefix"
+      }
+    },
+    "githubClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "GitHub Client ID for OAuth"
+      }
+    },
+    "githubClientSecret": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "GitHub Client Secret for OAuth (secure)"
+      }
+    },
+    "githubRedirectUri": {
+      "type": "string",
+      "metadata": {
+        "description": "GitHub Redirect URI for OAuth"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]"
+      },
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-07-01",
+      "name": "[format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]"
+      },
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "enabledForTemplateDeployment": true,
+        "enabledForDiskEncryption": false,
+        "enabledForDeployment": false,
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 7,
+        "enablePurgeProtection": false,
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "bypass": "AzureServices"
+        },
+        "accessPolicies": []
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]"
+      },
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]"
+      },
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false,
+        "networkAcls": {
+          "defaultAction": "Allow"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[format('plan-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]"
+      },
+      "sku": {
+        "name": "Y1",
+        "tier": "Dynamic"
+      },
+      "properties": {
+        "reserved": false
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp",
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]",
+        "azd-service-name": "gitsecureops-api"
+      },
+      "identity": {
+        "type": "SystemAssigned, UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))))]": {}
+        }
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('plan-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "cors": {
+            "allowedOrigins": [
+              "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2022-09-01').defaultHostname)]",
+              "http://localhost:4280"
+            ],
+            "supportCredentials": true
+          },
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "nodeVersion": "~20",
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken')), listKeys(resourceId('Microsoft.Storage/storageAccounts', format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2023-01-01').keys[0].value)]"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "node"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~20"
+            },
+            {
+              "name": "GH_WEB_APP",
+              "value": "[parameters('githubClientId')]"
+            },
+            {
+              "name": "GH_WEB_APP_SECRET",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=github-client-secret)', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+            },
+            {
+              "name": "FRONTEND_URL",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2022-09-01').defaultHostname)]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2020-02-02').ConnectionString]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Web/serverfarms', format('plan-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')), 'github-client-secret')]",
+      "properties": {
+        "value": "[parameters('githubClientSecret')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/accessPolicies",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')), 'add')]",
+      "properties": {
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[reference(resourceId('Microsoft.Web/sites', format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2022-09-01', 'full').identity.principalId]",
+            "permissions": {
+              "secrets": [
+                "get"
+              ]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2023-01-31').principalId]",
+            "permissions": {
+              "secrets": [
+                "get"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[format('Microsoft.Web/sites/{0}', format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+      "name": "[format('functionapp-diagnostics-{0}', parameters('resourceToken'))]",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "logs": [
+          {
+            "category": "FunctionAppLogs",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": 30
+            }
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": 30
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-09-01",
+      "name": "[format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "azd-env-name": "[parameters('environmentName')]",
+        "azd-service-name": "gitsecureops-web"
+      },
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      },
+      "properties": {
+        "buildProperties": {
+          "skipGithubActionWorkflowGeneration": false,
+          "appBuildCommand": "npm run build",
+          "outputLocation": "dist",
+          "appLocation": "/"
+        },
+        "stagingEnvironmentPolicy": "Enabled",
+        "allowConfigFileUpdates": true,
+        "enterpriseGradeCdnStatus": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Web/staticSites/config",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}/{1}', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')), 'appsettings')]",
+      "properties": {
+        "REACT_APP_GITHUB_CLIENT_ID": "[parameters('githubClientId')]",
+        "REACT_APP_GITHUB_REDIRECT_URI": "[parameters('githubRedirectUri')]",
+        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2020-02-02').ConnectionString]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "STATICWEBAPP_URL": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/staticSites', format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2022-09-01').defaultHostname]"
+    },
+    "STATICWEBAPP_NAME": {
+      "type": "string",
+      "value": "[format('swa-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]"
+    },
+    "FUNCTIONAPP_NAME": {
+      "type": "string",
+      "value": "[format('func-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]"
+    },
+    "APPLICATION_INSIGHTS_CONNECTION_STRING": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2020-02-02').ConnectionString]"
+    },
+    "APPLICATION_INSIGHTS_INSTRUMENTATION_KEY": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2020-02-02').InstrumentationKey]"
+    }
+  }
+}

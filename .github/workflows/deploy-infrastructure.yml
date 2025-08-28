@@ -44,53 +44,56 @@ jobs:
 
     - name: Create Resource Group
       run: |
-        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
-        echo "Creating resource group: $RESOURCE_GROUP"
-        az group create \
-          --name "$RESOURCE_GROUP" \
-          --location ${{ inputs.region }} \
-          --tags azd-env-name=${{ inputs.environment }}
+        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
+        Write-Host "Creating resource group: $resourceGroup"
+        New-AzResourceGroup -Name $resourceGroup -Location "${{ inputs.region }}" -Tag @{"azd-env-name"="${{ inputs.environment }}"} -Force
+      shell: pwsh
 
     - name: Deploy Infrastructure
       run: |
-        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
-        RESOURCE_TOKEN=$(openssl rand -hex 6)
+        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
+        $resourceToken = -join ((1..6) | ForEach {'{0:X}' -f (Get-Random -Max 16)})
         
-        echo "Deploying infrastructure to ${{ inputs.environment }} environment..."
-        echo "Using resource token: $RESOURCE_TOKEN"
+        Write-Host "Deploying infrastructure to ${{ inputs.environment }} environment..."
+        Write-Host "Using resource token: $resourceToken"
         
-        # Deploy using resource group scope with error suppression flags
-        az deployment group create \
-          --resource-group "$RESOURCE_GROUP" \
-          --template-file infra/main-resources.bicep \
-          --parameters \
-            environmentName=${{ inputs.environment }} \
-            location=${{ inputs.region }} \
-            resourceToken="$RESOURCE_TOKEN" \
-            resourcePrefix="gh" \
-            githubClientId='${{ secrets.GH_WEB_APP }}' \
-            githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' \
-            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' \
-          --only-show-errors \
-          --no-prompt
+        # Compile Bicep to ARM first
+        Write-Host "Compiling Bicep to ARM template..."
+        az bicep build --file infra/main-resources.bicep --outfile main-resources-compiled.json
         
-        echo "Deployment completed. Getting Static Web App URL..."
+        # Deploy using PowerShell (avoids Azure CLI JSON parsing bug)
+        Write-Host "Deploying ARM template with PowerShell..."
+        $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
+        $deployment = New-AzResourceGroupDeployment `
+          -ResourceGroupName $resourceGroup `
+          -TemplateFile "main-resources-compiled.json" `
+          -environmentName "${{ inputs.environment }}" `
+          -location "${{ inputs.region }}" `
+          -resourceToken $resourceToken `
+          -resourcePrefix "gh" `
+          -githubClientId "${{ secrets.GH_WEB_APP }}" `
+          -githubRedirectUri "https://placeholder.azurestaticapps.net/oauth-callback" `
+          -githubClientSecret $secureSecret `
+          -Verbose
         
-        # Wait a moment for resources to be available
-        sleep 15
+        Write-Host "Waiting for resources to be available..."
+        Start-Sleep -Seconds 20
         
-        # Get the SWA URL from the resource group
-        SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv)
+        # Get the SWA URL from the deployment outputs or resource group
+        Write-Host "Querying deployed resources..."
+        $swaResources = Get-AzStaticWebApp -ResourceGroupName $resourceGroup
         
-        if [ -n "$SWA_URL" ]; then
-          echo "✅ App deployed: https://$SWA_URL"
-          echo "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
-        else
-          echo "❌ Could not retrieve Static Web App URL"
-          echo "Checking deployed resources..."
-          az resource list --resource-group "$RESOURCE_GROUP" --query "[].{Name:name, Type:type}" -o table
+        if ($swaResources -and $swaResources.Count -gt 0) {
+          $swaUrl = $swaResources[0].DefaultHostname
+          Write-Host "✅ App deployed: https://$swaUrl"
+          Write-Host "📋 OAuth Redirect URI: https://$swaUrl/oauth-callback"
+        } else {
+          Write-Host "❌ Could not retrieve Static Web App URL"
+          Write-Host "Checking deployed resources..."
+          Get-AzResource -ResourceGroupName $resourceGroup | Format-Table Name, ResourceType
           exit 1
-        fi
+        }
+      shell: pwsh
 
     - name: Azure logout
       run: az logout

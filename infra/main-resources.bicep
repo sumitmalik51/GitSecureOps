@@ -53,7 +53,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enabledForDeployment: false
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
-    enablePurgeProtection: false
     networkAcls: {
       defaultAction: 'Allow'
       bypass: 'AzureServices'
@@ -236,20 +235,12 @@ resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-0
       {
         category: 'FunctionAppLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
     ]
   }
