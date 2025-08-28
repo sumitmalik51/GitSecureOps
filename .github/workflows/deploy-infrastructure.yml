@@ -15,7 +15,7 @@ on:
       region:
         description: 'Azure region'
         required: true
-        default: 'eastus'
+        default: 'eastus2'
         type: string
 
 env:
@@ -23,7 +23,7 @@ env:
 
 jobs:
   deploy-infrastructure:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
     - name: 'Checkout GitHub Action'
@@ -34,24 +34,92 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Install Azure PowerShell Module
+      run: |
+        Write-Host "Installing Azure PowerShell Module..."
+        Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force -AllowClobber
+        Write-Host "Azure PowerShell Module installed successfully!"
+      shell: pwsh
+
+    - name: Connect to Azure PowerShell
+      run: |
+        Write-Host "Connecting to Azure PowerShell..."
+        # Parse the service principal credentials from the secret
+        $creds = '${{ secrets.AZURE_CREDENTIALS }}' | ConvertFrom-Json
+        $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
+        $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
+        Connect-AzAccount -ServicePrincipal -Credential $credential -TenantId $creds.tenantId -SubscriptionId $creds.subscriptionId
+        Set-AzContext -SubscriptionId $creds.subscriptionId
+        Write-Host "Connected to Azure PowerShell successfully!"
+      shell: pwsh
+
+
+    - name: Create Resource Group
+      run: |
+        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
+        Write-Host "Creating resource group: $resourceGroup"
+        New-AzResourceGroup -Name $resourceGroup -Location "${{ inputs.region }}" -Tag @{"azd-env-name"="${{ inputs.environment }}"} -Force
+      shell: pwsh
+
     - name: Deploy Infrastructure
       run: |
-        $RESOURCE_GROUP = "rg-gitsecureops-${{ inputs.environment }}"
-        $DEPLOYMENT_OUTPUT = az deployment sub create `
-          --location ${{ inputs.region }} `
-          --template-file infra/main.bicep `
-          --parameters `
-            environmentName=${{ inputs.environment }} `
-            location=${{ inputs.region }} `
-            resourceGroupName="$RESOURCE_GROUP" `
-            githubClientId='${{ secrets.GH_WEB_APP }}' `
-            githubRedirectUri='https://placeholder.azurestaticapps.net/oauth-callback' `
-            githubClientSecret='${{ secrets.GH_WEB_APP_SECRET }}' `
-          --query 'properties.outputs' -o json
-
-        $SWA_URL = ($DEPLOYMENT_OUTPUT | ConvertFrom-Json).STATICWEBAPP_URL.value
-        Write-Host "✅ App deployed: https://$SWA_URL"
-        Write-Host "📋 OAuth Redirect URI: https://$SWA_URL/oauth-callback"
+        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
+        $resourceToken = (-join ((1..6) | ForEach {'{0:X}' -f (Get-Random -Max 16)})).ToLower()
+        
+        Write-Host "Deploying infrastructure to ${{ inputs.environment }} environment..."
+        Write-Host "Using resource token: $resourceToken"
+        
+        # Generate a temporary static web app URL for deployment
+        $tempSwaUrl = "https://temp-$resourceToken.azurestaticapps.net"
+        $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
+        
+        # Deploy using PowerShell directly with Bicep (no compilation needed)
+        Write-Host "Deploying Bicep template directly with PowerShell..."
+        
+        try {
+          Write-Host "Starting deployment with temporary URL: $tempSwaUrl"
+          
+          $deployment = New-AzResourceGroupDeployment `
+            -ResourceGroupName $resourceGroup `
+            -TemplateFile "infra/main-resources.bicep" `
+            -environmentName "${{ inputs.environment }}" `
+            -location "${{ inputs.region }}" `
+            -resourceToken $resourceToken `
+            -resourcePrefix "gh" `
+            -githubClientId "${{ secrets.GH_WEB_APP }}" `
+            -githubRedirectUri "$tempSwaUrl/oauth-callback" `
+            -githubClientSecret $secureSecret `
+            -Verbose
+        }
+        catch {
+          Write-Host "❌ Deployment failed with error: $($_.Exception.Message)"
+          Write-Host "Full error details:"
+          Write-Host $_.Exception
+          exit 1
+        }
+        
+        Write-Host "Waiting for resources to be available..."
+        Start-Sleep -Seconds 20
+        
+        # Get the SWA URL from the deployment outputs or resource group
+        Write-Host "Querying deployed resources..."
+        $swaResources = Get-AzStaticWebApp -ResourceGroupName $resourceGroup
+        
+        if ($swaResources -and $swaResources.Count -gt 0) {
+          $swaUrl = $swaResources[0].DefaultHostname
+          Write-Host "✅ App deployed: https://$swaUrl"
+          Write-Host "📋 OAuth Redirect URI: https://$swaUrl/oauth-callback"
+          Write-Host ""
+          Write-Host "🔗 Update your GitHub OAuth App settings:"
+          Write-Host "   Homepage URL: https://$swaUrl"
+          Write-Host "   Authorization callback URL: https://$swaUrl/oauth-callback"
+        } else {
+          Write-Host "❌ Could not retrieve Static Web App URL"
+          Write-Host "Checking deployed resources..."
+          Get-AzResource -ResourceGroupName $resourceGroup | Format-Table Name, ResourceType
+          exit 1
+        }
+      shell: pwsh
 
     - name: Azure logout
       run: az logout

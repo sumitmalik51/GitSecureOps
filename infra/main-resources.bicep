@@ -20,6 +20,9 @@ param githubClientSecret string = ''
 @description('GitHub Redirect URI for OAuth')
 param githubRedirectUri string
 
+// Extract base URL from redirect URI for CORS and FRONTEND_URL
+var baseUrl = replace(githubRedirectUri, '/oauth-callback', '')
+
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: 'log-${resourcePrefix}-${resourceToken}'
@@ -53,7 +56,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enabledForDeployment: false
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
-    enablePurgeProtection: false
     networkAcls: {
       defaultAction: 'Allow'
       bypass: 'AzureServices'
@@ -81,13 +83,14 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
   properties: {
     Application_Type: 'web'
-    WorkspaceResourceId: logAnalytics.id
+    // Temporarily remove workspace reference to avoid provisioning issues
+    // WorkspaceResourceId: logAnalytics.id
   }
 }
 
 // Storage Account for Azure Functions
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: 'st${resourcePrefix}func${resourceToken}'
+  name: toLower('st${resourcePrefix}func${resourceToken}')
   location: location
   kind: 'StorageV2'
   sku: {
@@ -143,7 +146,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
     siteConfig: {
       cors: {
         allowedOrigins: [
-          'https://${staticWebApp.properties.defaultHostname}'
+          baseUrl
           'http://localhost:4280'
         ]
         supportCredentials: true
@@ -174,11 +177,11 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         }
         {
           name: 'GH_WEB_APP_SECRET'
-          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=${githubClientSecretKv.name})'
+          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=github-client-secret)'
         }
         {
           name: 'FRONTEND_URL'
-          value: 'https://${staticWebApp.properties.defaultHostname}'
+          value: baseUrl
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -198,7 +201,7 @@ resource githubClientSecretKv 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
-// Key Vault access policy for Function App
+// Key Vault access policy for Function App (both system and user assigned identities)
 resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
   name: 'add'
   parent: keyVault
@@ -213,38 +216,39 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-
           ]
         }
       }
+      {
+        tenantId: subscription().tenantId
+        objectId: userIdentity.properties.principalId
+        permissions: {
+          secrets: [
+            'get'
+          ]
+        }
+      }
     ]
   }
 }
 
-// Diagnostic settings for Function App
-resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'functionapp-diagnostics'
-  scope: functionApp
-  properties: {
-    workspaceId: logAnalytics.id
-    logs: [
-      {
-        category: 'FunctionAppLogs'
-        enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
-      }
-    ]
-  }
-}
+// Diagnostic settings for Function App - temporarily disabled
+// resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+//   name: 'functionapp-diagnostics-${resourceToken}'
+//   scope: functionApp
+//   properties: {
+//     workspaceId: logAnalytics.id
+//     logs: [
+//       {
+//         category: 'FunctionAppLogs'
+//         enabled: true
+//       }
+//     ]
+//     metrics: [
+//       {
+//         category: 'AllMetrics'
+//         enabled: true
+//       }
+//     ]
+//   }
+// }
 
 // Static Web App
 resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
@@ -267,7 +271,6 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
     }
     stagingEnvironmentPolicy: 'Enabled'
     allowConfigFileUpdates: true
-    provider: 'GitHub'
     enterpriseGradeCdnStatus: 'Disabled'
   }
 }
