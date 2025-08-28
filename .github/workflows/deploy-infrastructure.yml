@@ -71,7 +71,7 @@ jobs:
     - name: Deploy Infrastructure
       run: |
         $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
-        $resourceToken = -join ((1..6) | ForEach {'{0:X}' -f (Get-Random -Max 16)})
+        $resourceToken = (-join ((1..6) | ForEach {'{0:X}' -f (Get-Random -Max 16)})).ToLower()
         
         Write-Host "Deploying infrastructure to ${{ inputs.environment }} environment..."
         Write-Host "Using resource token: $resourceToken"

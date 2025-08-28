@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.37.4.10188",
-      "templateHash": "2330979991600556748"
+      "templateHash": "3387051022412135116"
     }
   },
   "parameters": {
@@ -127,7 +127,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2023-01-01",
-      "name": "[format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "name": "[toLower(format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
       "location": "[parameters('location')]",
       "kind": "StorageV2",
       "sku": {
@@ -194,7 +194,7 @@
           "appSettings": [
             {
               "name": "AzureWebJobsStorage",
-              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken')), listKeys(resourceId('Microsoft.Storage/storageAccounts', format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken'))), '2023-01-01').keys[0].value)]"
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', toLower(format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken'))), listKeys(resourceId('Microsoft.Storage/storageAccounts', toLower(format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken')))), '2023-01-01').keys[0].value)]"
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
@@ -231,7 +231,7 @@
         "[resourceId('Microsoft.Insights/components', format('ai-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
         "[resourceId('Microsoft.Web/serverfarms', format('plan-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
         "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', toLower(format('st{0}func{1}', parameters('resourcePrefix'), parameters('resourceToken'))))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken')))]"
       ]
     },

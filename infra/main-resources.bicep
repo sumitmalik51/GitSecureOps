@@ -89,7 +89,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 // Storage Account for Azure Functions
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: 'st${resourcePrefix}func${resourceToken}'
+  name: toLower('st${resourcePrefix}func${resourceToken}')
   location: location
   kind: 'StorageV2'
   sku: {
