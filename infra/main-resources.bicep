@@ -83,7 +83,8 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
   properties: {
     Application_Type: 'web'
-    WorkspaceResourceId: logAnalytics.id
+    // Temporarily remove workspace reference to avoid provisioning issues
+    // WorkspaceResourceId: logAnalytics.id
   }
 }
 
@@ -228,26 +229,26 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-
   }
 }
 
-// Diagnostic settings for Function App
-resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'functionapp-diagnostics-${resourceToken}'
-  scope: functionApp
-  properties: {
-    workspaceId: logAnalytics.id
-    logs: [
-      {
-        category: 'FunctionAppLogs'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-  }
-}
+// Diagnostic settings for Function App - temporarily disabled
+// resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+//   name: 'functionapp-diagnostics-${resourceToken}'
+//   scope: functionApp
+//   properties: {
+//     workspaceId: logAnalytics.id
+//     logs: [
+//       {
+//         category: 'FunctionAppLogs'
+//         enabled: true
+//       }
+//     ]
+//     metrics: [
+//       {
+//         category: 'AllMetrics'
+//         enabled: true
+//       }
+//     ]
+//   }
+// }
 
 // Static Web App
 resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
