@@ -55,13 +55,13 @@ jobs:
         # Install SWA CLI
         npm install -g @azure/static-web-apps-cli
         
-        # Deploy to Static Web Apps (try without explicit API location)
+        # Deploy to Static Web Apps to production environment
         SWA_TOKEN=$(az staticwebapp secrets list --resource-group $RESOURCE_GROUP --name $SWA_NAME --query "properties.apiKey" -o tsv)
-        echo "Deploying to Static Web Apps..."
+        echo "Deploying to Static Web Apps production environment..."
         echo "Frontend: ./dist"
         echo "Checking if API folder exists..."
         ls -la ./api
-        swa deploy ./dist --deployment-token "$SWA_TOKEN" --verbose
+        swa deploy ./dist --deployment-token "$SWA_TOKEN" --env production --verbose
         
         echo "✅ App deployed: https://$SWA_URL"
 
