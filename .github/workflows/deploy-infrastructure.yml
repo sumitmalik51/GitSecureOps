@@ -53,13 +53,6 @@ jobs:
         Write-Host "Connected to Azure PowerShell successfully!"
       shell: pwsh
 
-    - name: Upgrade Azure CLI and Bicep
-      run: |
-        echo "Upgrading Azure CLI and Bicep..."
-        az --version
-        az bicep upgrade
-        az bicep version
-        echo "Upgrade completed!"
 
     - name: Create Resource Group
       run: |
@@ -76,30 +69,19 @@ jobs:
         Write-Host "Deploying infrastructure to ${{ inputs.environment }} environment..."
         Write-Host "Using resource token: $resourceToken"
         
-        # Compile Bicep to ARM first
-        Write-Host "Compiling Bicep to ARM template..."
-        az bicep build --file infra/main-resources.bicep --outfile main-resources-compiled.json
-        
         # Generate a temporary static web app URL for deployment
         $tempSwaUrl = "https://temp-$resourceToken.azurestaticapps.net"
         $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
         
-        # Skip validation for now and try direct deployment (validation was failing but deployment worked locally)
-        Write-Host "Skipping validation - proceeding with deployment..."
-        
-        # Deploy using PowerShell (avoids Azure CLI JSON parsing bug)
-        Write-Host "Deploying ARM template with PowerShell..."
-        $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
-        
-        # Generate a temporary static web app URL for initial deployment
-        $tempSwaUrl = "https://temp-$resourceToken.azurestaticapps.net"
+        # Deploy using PowerShell directly with Bicep (no compilation needed)
+        Write-Host "Deploying Bicep template directly with PowerShell..."
         
         try {
           Write-Host "Starting deployment with temporary URL: $tempSwaUrl"
           
           $deployment = New-AzResourceGroupDeployment `
             -ResourceGroupName $resourceGroup `
-            -TemplateFile "main-resources-compiled.json" `
+            -TemplateFile "infra/main-resources.bicep" `
             -environmentName "${{ inputs.environment }}" `
             -location "${{ inputs.region }}" `
             -resourceToken $resourceToken `
