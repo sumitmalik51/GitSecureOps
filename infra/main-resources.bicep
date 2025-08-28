@@ -40,7 +40,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
 
 // Azure Key Vault for secure storage of secrets
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: 'kv-${resourcePrefix}-${resourceToken}'
+  name: 'kv-secureops-${environmentName}'
   location: location
   tags: {
     'azd-env-name': environmentName
