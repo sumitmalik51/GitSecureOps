@@ -35,7 +35,7 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Deploy Application
+    - name: Deploy Frontend to Static Web Apps
       run: |
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
         SWA_NAME=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
@@ -45,25 +45,39 @@ jobs:
         npm ci
         VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} VITE_GITHUB_REDIRECT_URI=https://$SWA_URL/api/github-callback npm run build
         
-        # Check if API has dependencies, if not skip npm ci
-        if [ -f "api/package-lock.json" ]; then
-          cd api && npm ci && cd ..
-        else
-          echo "No package-lock.json in api folder, skipping npm ci for API"
-        fi
-        
         # Install SWA CLI
         npm install -g @azure/static-web-apps-cli
         
-        # Deploy to Static Web Apps to production environment
+        # Deploy frontend only to Static Web Apps
         SWA_TOKEN=$(az staticwebapp secrets list --resource-group $RESOURCE_GROUP --name $SWA_NAME --query "properties.apiKey" -o tsv)
-        echo "Deploying to Static Web Apps production environment..."
+        echo "Deploying frontend to Static Web Apps production environment..."
         echo "Frontend: ./dist"
-        echo "Checking if API folder exists..."
-        ls -la ./api
-        swa deploy ./dist --api-location ./api --deployment-token "$SWA_TOKEN" --env production --verbose
+        swa deploy ./dist --deployment-token "$SWA_TOKEN" --env production --verbose
         
-        echo "✅ App deployed: https://$SWA_URL"
+        echo "✅ Frontend deployed: https://$SWA_URL"
+
+    - name: Deploy Function App
+      run: |
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
+        
+        # Install Function App dependencies
+        cd api
+        if [ -f "package-lock.json" ]; then
+          npm ci
+        else
+          npm install
+        fi
+        
+        # Install Azure Functions Core Tools
+        npm install -g azure-functions-core-tools@4 --unsafe-perm true
+        
+        # Deploy Function App
+        echo "Deploying Function App: $FUNCTION_APP_NAME"
+        func azure functionapp publish $FUNCTION_APP_NAME --javascript --build-native-deps
+        
+        echo "✅ Function App deployed: https://$FUNCTION_APP_NAME.azurewebsites.net"
+        cd ..
 
     - name: Azure logout
       run: |
