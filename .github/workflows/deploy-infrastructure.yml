@@ -15,7 +15,7 @@ on:
       region:
         description: 'Azure region'
         required: true
-        default: 'eastus'
+        default: 'eastus2'
         type: string
 
 env:
@@ -33,6 +33,25 @@ jobs:
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Install Azure PowerShell Module
+      run: |
+        Write-Host "Installing Azure PowerShell Module..."
+        Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force -AllowClobber
+        Write-Host "Azure PowerShell Module installed successfully!"
+      shell: pwsh
+
+    - name: Connect to Azure PowerShell
+      run: |
+        Write-Host "Connecting to Azure PowerShell..."
+        # Parse the service principal credentials from the secret
+        $creds = '${{ secrets.AZURE_CREDENTIALS }}' | ConvertFrom-Json
+        $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
+        $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
+        Connect-AzAccount -ServicePrincipal -Credential $credential -TenantId $creds.tenantId -SubscriptionId $creds.subscriptionId
+        Set-AzContext -SubscriptionId $creds.subscriptionId
+        Write-Host "Connected to Azure PowerShell successfully!"
+      shell: pwsh
 
     - name: Upgrade Azure CLI and Bicep
       run: |
