@@ -43,7 +43,7 @@ jobs:
         
         # Install frontend dependencies and build
         npm ci
-        VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} VITE_GITHUB_REDIRECT_URI=https://$SWA_URL/oauth-callback npm run build
+        VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} VITE_GITHUB_REDIRECT_URI=https://$SWA_URL/api/github-callback npm run build
         
         # Check if API has dependencies, if not skip npm ci
         if [ -f "api/package-lock.json" ]; then
