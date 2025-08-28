@@ -75,7 +75,7 @@
     {
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2023-07-01",
-      "name": "[format('kv-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
+      "name": "[format('kv-sec-{0}-{1}', parameters('resourcePrefix'), parameters('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": {
         "azd-env-name": "[parameters('environmentName')]"
