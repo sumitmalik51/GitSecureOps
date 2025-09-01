@@ -1,5 +1,58 @@
-const fetch = require('node-fetch');
+const https = require('https');
 const { URLSearchParams } = require('url');
+
+// Helper function to make HTTP requests using built-in modules
+function makeRequest(url, options = {}) {
+    return new Promise((resolve, reject) => {
+        const parsedUrl = new URL(url);
+        const requestOptions = {
+            hostname: parsedUrl.hostname,
+            port: parsedUrl.port || 443,
+            path: parsedUrl.pathname + parsedUrl.search,
+            method: options.method || 'GET',
+            headers: options.headers || {}
+        };
+
+        if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
+            const data = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+            requestOptions.headers['Content-Length'] = Buffer.byteLength(data);
+        }
+
+        const req = https.request(requestOptions, (res) => {
+            let data = '';
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
+            res.on('end', () => {
+                const response = {
+                    ok: res.statusCode >= 200 && res.statusCode < 300,
+                    status: res.statusCode,
+                    statusText: res.statusMessage,
+                    json: () => {
+                        try {
+                            return Promise.resolve(JSON.parse(data));
+                        } catch (e) {
+                            return Promise.reject(new Error(`JSON parse error: ${e.message}. Response: ${data.substring(0, 200)}`));
+                        }
+                    },
+                    text: () => Promise.resolve(data)
+                };
+                resolve(response);
+            });
+        });
+
+        req.on('error', (error) => {
+            reject(error);
+        });
+
+        if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
+            const data = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+            req.write(data);
+        }
+
+        req.end();
+    });
+}
 
 module.exports = async function (context, req) {
     context.log('GitHub OAuth callback function processed a request.');
@@ -108,7 +161,7 @@ module.exports = async function (context, req) {
         context.log(`GitHub Client Secret: ${process.env.GH_WEB_APP_SECRET ? 'present' : 'missing'}`);
 
         // Exchange authorization code for access token
-        const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+        const tokenResponse = await makeRequest('https://github.com/login/oauth/access_token', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -136,15 +189,20 @@ module.exports = async function (context, req) {
         }
 
         // Get user information
-        const userResponse = await fetch('https://api.github.com/user', {
+        context.log('Fetching user information from GitHub API...');
+        const userResponse = await makeRequest('https://api.github.com/user', {
             headers: {
-                'Authorization': `token ${tokenData.access_token}`,
+                'Authorization': `Bearer ${tokenData.access_token}`,
                 'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'GitSecureOps-OAuth-App',
             },
         });
 
+        context.log(`User API response status: ${userResponse.status}`);
         if (!userResponse.ok) {
-            throw new Error('Failed to fetch user information');
+            const errorText = await userResponse.text();
+            context.log(`User API error response: ${errorText}`);
+            throw new Error(`Failed to fetch user information: ${userResponse.status} ${userResponse.statusText}`);
         }
 
         const userData = await userResponse.json();

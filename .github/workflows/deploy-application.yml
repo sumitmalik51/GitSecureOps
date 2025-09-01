@@ -65,7 +65,6 @@ jobs:
         VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} \
         VITE_FUNCTION_APP_URL=https://$FUNCTION_APP_NAME.azurewebsites.net \
         VITE_STATIC_WEB_APP_URL=https://$SWA_URL \
-        VITE_GITHUB_REDIRECT_URI=https://$FUNCTION_APP_NAME.azurewebsites.net/api/github-callback \
         npm run build
         
         # Validate build output
@@ -121,25 +120,33 @@ jobs:
           exit 1
         fi
 
-        # Create deployment package (excluding node_modules)
-        echo "� Creating deployment package..."
-        zip -r ../function-app.zip . -x "node_modules/*" "*.log" ".DS_Store" "local.settings.json" "test/*"
-        cd ..
-
-        # Deploy using az functionapp deployment
+        # Install Azure Functions Core Tools
+        echo "🔧 Installing Azure Functions Core Tools..."
+        npm install -g azure-functions-core-tools@4 --unsafe-perm true
+        
+        # Deploy using Azure Functions Core Tools (same method as local)
         echo "🚀 Deploying Function App: $FUNCTION_APP_NAME"
-        az functionapp deployment source config-zip --resource-group $RESOURCE_GROUP --name $FUNCTION_APP_NAME --src function-app.zip --build-remote true
-
-        # Clean up
-        rm -f function-app.zip        echo "✅ Function App deployed successfully!"
+        func azure functionapp publish $FUNCTION_APP_NAME --build-remote
+        
+        echo "✅ Function App deployed successfully!"
         echo "🔗 Function App URL: https://$FUNCTION_APP_NAME.azurewebsites.net"
-        cd ..
 
     - name: Update Function App Settings for OAuth
       run: |
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
         FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
         SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
+        
+        echo "🔧 Updating Function App settings for OAuth..."
+        
+        # Set all required OAuth environment variables
+        az functionapp config appsettings set \
+          --resource-group "$RESOURCE_GROUP" \
+          --name "$FUNCTION_APP_NAME" \
+          --settings \
+            "GH_WEB_APP=${{ secrets.GH_WEB_APP }}" \
+            "GH_WEB_APP_SECRET=${{ secrets.GH_WEB_APP_SECRET }}" \
+          --output table
         
         if [ -n "$SWA_URL" ]; then
           echo "Updating Function App FRONTEND_URL setting to: https://$SWA_URL"
@@ -148,7 +155,7 @@ jobs:
             --name "$FUNCTION_APP_NAME" \
             --settings "FRONTEND_URL=https://$SWA_URL" \
             --output table
-          echo "✅ Function App FRONTEND_URL updated for OAuth redirect fix"
+          echo "✅ Function App OAuth settings updated successfully"
         else
           echo "⚠️ Warning: Could not retrieve Static Web App URL"
         fi
