@@ -108,6 +108,33 @@ function App() {
       };
       
       loadUserOrganizations();
+
+      // Force hide any persistent popups/notifications when authenticated
+      const hideAllPopups = () => {
+        // Hide any fixed positioned elements that might be notifications
+        const fixedElements = document.querySelectorAll('[style*="fixed"]');
+        fixedElements.forEach(el => {
+          const element = el as HTMLElement;
+          if (element.textContent?.toLowerCase().includes('streamline') || 
+              element.textContent?.toLowerCase().includes('repos')) {
+            element.style.display = 'none';
+          }
+        });
+        
+        // Also hide elements with specific classes that might be notifications
+        const popupElements = document.querySelectorAll('.fixed, [class*="fixed"], [class*="popup"], [class*="notification"]');
+        popupElements.forEach(el => {
+          const element = el as HTMLElement;
+          if (element.textContent?.toLowerCase().includes('streamline') || 
+              element.textContent?.toLowerCase().includes('repos')) {
+            element.style.display = 'none';
+          }
+        });
+      };
+      
+      // Run immediately and after a short delay
+      hideAllPopups();
+      setTimeout(hideAllPopups, 1000);
     }
   }, [token, username]);
 

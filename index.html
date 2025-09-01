@@ -92,19 +92,6 @@
       .glow-hover:hover {
         box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.5);
       }
-      .floating-cta {
-        position: fixed;
-        bottom: 30px;
-        left: 30px;
-        background-color: #1e40af;
-        color: white;
-        padding: 10px 16px;
-        border-radius: 9999px;
-        font-size: 14px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        animation: pulse 2s infinite;
-        z-index: 50;
-      }
       @keyframes pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.08); }
@@ -254,8 +241,7 @@
 
       /* Refine gradient colors for light theme */
       body.light #backToTop,
-      body.light #popup-greeting,
-      body.light .floating-cta {
+      body.light #popup-greeting {
         background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af);
         background-size: 300% 300%;
         animation: gradient-shift 6s ease-in-out infinite, pulse 2s infinite;
@@ -299,13 +285,6 @@
         background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af);
         background-size: 300% 300%;
         animation: gradient-shift 6s ease-in-out infinite;
-      }
-
-      /* Restore gradient for Let's Build Together button */
-      .floating-cta {
-        background: linear-gradient(120deg, #374151, #4b5563, #6b7280, #9ca3af);
-        background-size: 300% 300%;
-        animation: gradient-shift 6s ease-in-out infinite, pulse 2s infinite;
       }
 
       /* Add advanced hover effects */
@@ -592,11 +571,6 @@
     <div id="popup-greeting" class="hidden fixed top-20 right-4 text-white px-4 py-2 rounded-lg shadow-lg z-50 max-w-sm text-sm">
     </div>
     
-    <!-- Floating CTA -->
-    <div class="floating-cta hidden">
-      🚀 Streamline Your Repos
-    </div>
-    
     <!-- Back to Top Button -->
     <button id="backToTop" class="hidden fixed bottom-6 right-6 text-white p-3 rounded-full shadow-lg z-50 hover:scale-110 transition-transform">
       ↑
@@ -611,12 +585,6 @@
         duration: 800,
         once: true
       });
-      
-      // Show floating CTA after 10 seconds
-      setTimeout(() => {
-        const cta = document.querySelector('.floating-cta');
-        if (cta) cta.classList.remove('hidden');
-      }, 10000);
       
       // Back to top functionality
       window.addEventListener('scroll', () => {
