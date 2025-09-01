@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Debug</title>
+</head>
+<body>
+    <h2>OAuth Configuration Debug</h2>
+    <div id="debug-info"></div>
+    <button onclick="testOAuth()">Test OAuth URL Generation</button>
+    
+    <script>
+        // Test environment variables access
+        console.log('Environment variables:');
+        console.log('import.meta.env:', import.meta.env);
+        
+        function testOAuth() {
+            // Simulate the OAuth URL generation
+            const clientId = 'Ov23liCMUV3VHCwCWZMi'; // Hardcoded for testing
+            const redirectUri = 'https://func-gh-prod.azurewebsites.net/api/github-callback';
+            const scopes = ['repo', 'read:org', 'user:email'];
+            const state = Math.random().toString(36).substring(2, 15);
+            
+            const params = new URLSearchParams({
+                client_id: clientId,
+                redirect_uri: redirectUri,
+                scope: scopes.join(' '),
+                state: state,
+                response_type: 'code'
+            });
+
+            const authUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
+            
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.innerHTML = `
+                <h3>Generated OAuth URL:</h3>
+                <p><a href="${authUrl}" target="_blank">${authUrl}</a></p>
+                <h3>Configuration:</h3>
+                <p>Client ID: ${clientId}</p>
+                <p>Redirect URI: ${redirectUri}</p>
+                <p>Scopes: ${scopes.join(', ')}</p>
+                <p>State: ${state}</p>
+            `;
+            
+            console.log('OAuth URL:', authUrl);
+        }
+    </script>
+</body>
+</html>

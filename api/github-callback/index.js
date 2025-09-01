@@ -76,10 +76,13 @@ export default async function (context, req) {
     }
 
     try {
+        context.log('Starting OAuth callback processing...');
         const { code, state, error } = req.query;
+        context.log(`Query parameters - code: ${code ? 'present' : 'missing'}, state: ${state}, error: ${error}`);
 
         // Handle OAuth errors
         if (error) {
+            context.log(`OAuth error detected: ${error}`);
             const errorMessage = error === 'access_denied' 
                 ? 'User cancelled authorization'
                 : `OAuth error: ${error}`;
@@ -96,8 +99,13 @@ export default async function (context, req) {
 
         // Validate required parameters
         if (!code) {
+            context.log('Missing authorization code');
             throw new Error('Missing authorization code');
         }
+
+        context.log('Attempting to exchange authorization code for access token...');
+        context.log(`GitHub Client ID: ${process.env.GH_WEB_APP ? 'present' : 'missing'}`);
+        context.log(`GitHub Client Secret: ${process.env.GH_WEB_APP_SECRET ? 'present' : 'missing'}`);
 
         // Exchange authorization code for access token
         const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -113,13 +121,17 @@ export default async function (context, req) {
             }),
         });
 
+        context.log(`Token exchange response status: ${tokenResponse.status}`);
         if (!tokenResponse.ok) {
+            context.log(`Token exchange failed with status ${tokenResponse.status}`);
             throw new Error('Failed to exchange code for token');
         }
 
         const tokenData = await tokenResponse.json();
+        context.log(`Token data received: ${tokenData.error ? 'error - ' + tokenData.error : 'success'}`);
 
         if (tokenData.error) {
+            context.log(`Token exchange error: ${tokenData.error} - ${tokenData.error_description}`);
             throw new Error(tokenData.error_description || tokenData.error);
         }
 

@@ -1,10 +1,15 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "node",
-    "GITHUB_CLIENT_ID": "Ov23liCMUV3VHCwCWZMi",
-    "GITHUB_CLIENT_SECRET": "654a03bdf3bda417f33a5db98318e292a4132763",
+    "GH_WEB_APP": "Ov23liCMUV3VHCwCWZMi",
+    "GH_WEB_APP_SECRET": "654a03bdf3bda417f33a5db98318e292a4132763",
     "FRONTEND_URL": "http://localhost:4280"
+  },
+  "Host": {
+    "LocalHttpPort": 7071,
+    "CORS": "*",
+    "CORSCredentials": false
   }
 }
