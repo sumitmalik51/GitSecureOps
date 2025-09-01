@@ -106,6 +106,19 @@ try {
     Write-Host "📍 Static Web App URL: https://$swaUrl" -ForegroundColor White
     Write-Host "🔧 Function App Name: $functionName" -ForegroundColor White
     Write-Host "🔗 OAuth Redirect URI: $dynamicRedirectUri" -ForegroundColor White
+    
+    # Update Function App environment variables with actual URLs
+    Write-Host ""
+    Write-Host "🔧 Updating Function App Configuration..." -ForegroundColor Yellow
+    Write-Host "========================================"
+    
+    az functionapp config appsettings set `
+        --resource-group $ResourceGroup `
+        --name $functionName `
+        --settings "FRONTEND_URL=https://$swaUrl" `
+        --output table
+        
+    Write-Host "✅ Function App configuration updated!" -ForegroundColor Green
 } catch {
     Write-Host "❌ Infrastructure deployment failed!" -ForegroundColor Red
     exit 1

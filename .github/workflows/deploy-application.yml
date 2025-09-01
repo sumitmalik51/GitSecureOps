@@ -79,6 +79,26 @@ jobs:
         echo "✅ Function App deployed: https://$FUNCTION_APP_NAME.azurewebsites.net"
         cd ..
 
+    - name: Update Function App Settings for OAuth
+      run: |
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
+        
+        # Get the actual Static Web App URL
+        SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
+        
+        if [ -n "$SWA_URL" ]; then
+          echo "Updating Function App FRONTEND_URL setting to: https://$SWA_URL"
+          az functionapp config appsettings set \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$FUNCTION_APP_NAME" \
+            --settings "FRONTEND_URL=https://$SWA_URL" \
+            --output table
+          echo "✅ Function App FRONTEND_URL updated for OAuth redirect fix"
+        else
+          echo "⚠️ Warning: Could not retrieve Static Web App URL"
+        fi
+
     - name: Azure logout
       run: |
         az logout

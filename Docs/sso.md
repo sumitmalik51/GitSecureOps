@@ -152,6 +152,14 @@ Your GitHub OAuth SSO integration is now ready! Here's what has been implemented
 - Check Azure Function logs for errors
 - Ensure environment variables are set in Azure
 
+### **Redirects to localhost after OAuth (Azure deployment):**
+- This issue has been fixed in the latest version
+- The Azure Function now automatically detects the correct frontend URL
+- If still experiencing issues:
+  - Check Azure Function App logs for URL detection messages
+  - Verify the `FRONTEND_URL` environment variable is set in the Function App
+  - Ensure your GitHub OAuth App callback URL matches your Azure Static Web App URL
+
 ### **Authentication Not Working:**
 - Check browser console for errors
 - Verify network requests in DevTools
