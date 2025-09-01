@@ -91,6 +91,12 @@ export const DASHBOARD_OPTIONS = [
     icon: '📚 BOOKMARKS'
   },
   {
+    id: 'snippets',
+    title: '📝 Code Snippets',
+    description: 'Save, organize and share code snippets from your search results and repositories',
+    icon: '💾 SNIPPETS'
+  },
+  {
     id: 'smart-recommendations',
     title: '🤖 Smart Recommendations (Preview)',
     description: 'Preview of AI-powered insights for access optimization (Full AI coming soon!)',

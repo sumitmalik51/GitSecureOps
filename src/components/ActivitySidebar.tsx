@@ -11,7 +11,9 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import activityService, { type ActivityItem, type ActivityFilter } from '../services/activityService';
+import githubDataService, { type GitHubDataItem } from '../services/githubDataService';
+
+type ActivityFilter = 'all' | 'pr' | 'commit' | 'issue';
 
 interface ActivitySidebarProps {
   accessToken: string | null;
@@ -22,9 +24,9 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
   accessToken, 
   organizations 
 }) => {
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [filteredActivities, setFilteredActivities] = useState<ActivityItem[]>([]);
-  const [displayedActivities, setDisplayedActivities] = useState<ActivityItem[]>([]);
+  const [activities, setActivities] = useState<GitHubDataItem[]>([]);
+  const [filteredActivities, setFilteredActivities] = useState<GitHubDataItem[]>([]);
+  const [displayedActivities, setDisplayedActivities] = useState<GitHubDataItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ActivityFilter>('all');
@@ -40,14 +42,16 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
     setError(null);
 
     try {
-      const result = await activityService.fetchRecentActivity(
-        accessToken, 
-        organizations, 
-        daysBack
-      );
+      const result = await githubDataService.getData({
+        mode: 'recent',
+        organizations,
+        accessToken,
+        daysBack,
+        filter: filter === 'all' ? 'all' : filter === 'pr' ? 'pull_request' : filter
+      });
 
       if (result.success) {
-        setActivities(result.activities);
+        setActivities(result.items);
       } else {
         setError(result.error || 'Failed to fetch activity');
       }
@@ -60,7 +64,7 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
 
   // Apply filters and pagination when activities, filter, or itemsToShow changes
   useEffect(() => {
-    const filtered = activityService.filterActivities(activities, filter);
+    const filtered = githubDataService.filterByType(activities, filter);
     setFilteredActivities(filtered);
     
     // Set displayed activities with pagination
@@ -83,9 +87,9 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
     setItemsToShow(prev => prev + 10);
   };
 
-  const getActivityIcon = (type: ActivityItem['type']) => {
+  const getActivityIcon = (type: GitHubDataItem['type']) => {
     switch (type) {
-      case 'pull_request':
+      case 'pr':
         return <GitPullRequest size={12} />;
       case 'commit':
         return <GitCommit size={12} />;
@@ -96,13 +100,42 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
     }
   };
 
-  const renderCompactActivityItem = (activity: ActivityItem) => {
-    const typeInfo = activityService.getActivityTypeInfo(activity.type);
-    const timeAgo = activityService.formatTimeAgo(activity.timestamp);
+  const getActivityTypeInfo = (type: GitHubDataItem['type']) => {
+    switch (type) {
+      case 'pr':
+        return {
+          label: 'PR',
+          color: 'text-green-600',
+          bgColor: 'bg-green-100'
+        };
+      case 'commit':
+        return {
+          label: 'Commit',
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-100'
+        };
+      case 'issue':
+        return {
+          label: 'Issue',
+          color: 'text-red-600',
+          bgColor: 'bg-red-100'
+        };
+      default:
+        return {
+          label: 'Activity',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-100'
+        };
+    }
+  };
+
+  const renderCompactActivityItem = (activity: GitHubDataItem) => {
+    const typeInfo = getActivityTypeInfo(activity.type);
+    const timeAgo = githubDataService.formatTimeAgo(activity.timestamp || activity.updated_at || activity.created_at || '');
     const truncatedTitle = activity.title.length > 70 
       ? `${activity.title.substring(0, 70)}...` 
       : activity.title;
-    const repoName = activity.repo.split('/')[1] || activity.repo;
+    const repoName = activity.repository?.split('/')[1] || activity.repository || 'Unknown';
 
     return (
       <div 
@@ -119,7 +152,7 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
             {activity.avatar ? (
               <img
                 src={activity.avatar}
-                alt={activity.user}
+                alt={activity.author}
                 className="w-7 h-7 rounded-full"
               />
             ) : (
@@ -151,9 +184,9 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
               <div className="flex items-center space-x-1">
                 <span className="truncate font-medium">{repoName}</span>
-                {activity.sha && (
+                {activity.metadata?.sha && (
                   <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-xs">
-                    {activity.sha}
+                    {activity.metadata.sha.substring(0, 7)}
                   </span>
                 )}
               </div>
@@ -226,7 +259,7 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
           <div className="mt-3 space-y-2">
             {/* Filter buttons */}
             <div className="flex flex-wrap gap-1">
-              {(['all', 'pull_request', 'commit', 'issue'] as ActivityFilter[]).map((filterType) => (
+              {(['all', 'pr', 'commit', 'issue'] as ActivityFilter[]).map((filterType) => (
                 <button
                   key={filterType}
                   onClick={() => setFilter(filterType)}
@@ -237,7 +270,7 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
                   }`}
                 >
                   {filterType === 'all' ? 'All' : 
-                   filterType === 'pull_request' ? 'PRs' : 
+                   filterType === 'pr' ? 'PRs' : 
                    filterType === 'commit' ? 'Commits' : 'Issues'}
                 </button>
               ))}
@@ -327,7 +360,7 @@ const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
               {displayedActivities.length} of {filteredActivities.length} shown
             </div>
             <div className="text-blue-600 dark:text-blue-400">
-              Important: {activityService.getImportantActivities(displayedActivities).length}
+              Important: {githubDataService.getImportantItems(displayedActivities).length}
             </div>
           </div>
         </div>

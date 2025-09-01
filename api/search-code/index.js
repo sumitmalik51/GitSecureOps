@@ -395,7 +395,8 @@ module.exports = async function (context, req) {
             return `${protocol}://${host}`;
         }
         
-        return 'http://localhost:5173';
+        // Fallback for local development - use environment variable
+        return process.env.FRONTEND_URL || 'http://localhost:5173';
     };
 
     const frontendUrl = getFrontendUrl();

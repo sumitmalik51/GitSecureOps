@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Command } from 'lucide-react';
 import LandingPage from './components/LandingPage_new';
 import Auth from './components/Auth';
 import OAuthSuccess from './components/OAuthSuccess';
@@ -17,7 +18,10 @@ import SearchChatbot from './components/SearchChatbot';
 import ChatButton from './components/ChatButton';
 import BookmarkManager from './components/BookmarkManager';
 import ActivitySidebar from './components/ActivitySidebar';
+import EnhancedCommandPalette from './components/EnhancedCommandPalette';
+import SnippetManager from './components/SnippetManager';
 import githubService, { type GitHubOrg } from './services/githubService';
+import useGlobalShortcut from './hooks/useGlobalShortcut';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'oauth-success' | 'app'>('landing');
@@ -33,8 +37,14 @@ function App() {
   const [userOrganizations, setUserOrganizations] = useState<GitHubOrg[]>([]);
   const [orgNames, setOrgNames] = useState<string[]>([]);
   
+  // Command palette state
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  
   // Bookmark manager state
   const [isBookmarkManagerOpen, setIsBookmarkManagerOpen] = useState(false);
+  
+  // Snippet manager state
+  const [isSnippetManagerOpen, setIsSnippetManagerOpen] = useState(false);
 
   console.log('User organizations loaded:', userOrganizations.length);
 
@@ -138,6 +148,14 @@ function App() {
     }
   }, [token, username]);
 
+  // Global keyboard shortcut for command palette (Ctrl+K)
+  useGlobalShortcut({
+    key: 'k',
+    ctrlKey: true,
+    callback: () => setIsCommandPaletteOpen(true),
+    enabled: currentPage === 'app' && !!token
+  });
+
   const handleAuthError = (error: string) => {
     console.error('Authentication error:', error);
     // Redirect back to auth page with error
@@ -176,6 +194,8 @@ function App() {
   const handleSelectOption = (option: string) => {
     if (option === 'bookmarks') {
       setIsBookmarkManagerOpen(true);
+    } else if (option === 'snippets') {
+      setIsSnippetManagerOpen(true);
     } else if (option === 'smart-recommendations') {
       setCurrentView('smart-recommendations');
     } else if (option === 'copilot-manager') {
@@ -241,6 +261,10 @@ function App() {
 
   const handleCloseBookmarks = () => {
     setIsBookmarkManagerOpen(false);
+  };
+
+  const handleCloseSnippets = () => {
+    setIsSnippetManagerOpen(false);
   };
 
   if (currentPage === 'landing') {
@@ -442,6 +466,16 @@ GitSecureOps will search across all repositories within the selected org(s) and 
                   </div>
                   
                   <div className="flex items-center space-x-4">
+                    {/* Command Palette Hint */}
+                    <button
+                      onClick={() => setIsCommandPaletteOpen(true)}
+                      className="hidden sm:flex items-center space-x-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                      title="Open Command Palette (Ctrl+K)"
+                    >
+                      <Command size={16} />
+                      <span>Press Ctrl+K</span>
+                    </button>
+                    
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
                         {username.charAt(0).toUpperCase()}
@@ -502,6 +536,21 @@ GitSecureOps will search across all repositories within the selected org(s) and 
             isOpen={isBookmarkManagerOpen}
             onClose={handleCloseBookmarks}
             userLogin={username}
+          />
+
+          {/* Snippet Manager Modal */}
+          <SnippetManager
+            isOpen={isSnippetManagerOpen}
+            userLogin={username}
+            onClose={handleCloseSnippets}
+          />
+
+          {/* Enhanced Command Palette - Cross-Org Universal Search */}
+          <EnhancedCommandPalette
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            accessToken={token}
+            organizations={orgNames}
           />
         </>
       );

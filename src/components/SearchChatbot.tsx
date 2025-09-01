@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Search, GitBranch, Star, Eye, Bookmark, BookmarkCheck, Maximize2, Minimize2, Code2 } from 'lucide-react';
 import environmentService from '../services/environmentService';
 import bookmarkService from '../services/bookmarkService';
+import snippetService from '../services/snippetService';
 
 interface Repository {
   id: number;
@@ -151,6 +152,19 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
     }
   }, [isOpen]);
 
+  // Clear messages when search type changes
+  useEffect(() => {
+    if (messages.length > 1) { // Keep welcome message if it exists
+      const welcomeMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'bot',
+        content: `Switched to ${searchType === 'code' ? 'code' : 'repository'} search. What would you like to find?`,
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [searchType]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -200,6 +214,9 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
           streaming: true
         };
 
+        console.log('Starting streaming search with body:', requestBody);
+        console.log('Function app URL:', functionAppUrl);
+        
         fetch(`${functionAppUrl}/api/search-code`, {
           method: 'POST',
           headers: {
@@ -209,39 +226,55 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
           },
           body: JSON.stringify(requestBody)
         }).then(response => {
+          console.log('Streaming response received:', response.status, response.statusText);
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+          console.log('Response body reader available:', !!response.body);
+          
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
 
           const reader = response.body?.getReader();
           if (!reader) {
+            console.error('ReadableStream not supported');
             throw new Error('ReadableStream not supported');
           }
 
+          console.log('Starting to read stream...');
           const decoder = new TextDecoder();
           let buffer = '';
 
           const readStream = () => {
             reader.read().then(({ value, done }) => {
+              console.log('Stream read:', { done, valueLength: value?.length });
+              
               if (done) {
+                console.log('Stream ended, final buffer:', buffer);
                 resolve(null);
                 return;
               }
 
               buffer += decoder.decode(value, { stream: true });
+              // console.log('Received streaming chunk:', buffer.slice(-200)); // Commented out for less noise
+              
               const lines = buffer.split('\n');
               buffer = lines.pop() || '';
 
               for (const line of lines) {
+                if (line.trim()) console.log('Processing line:', line); // Only log non-empty lines
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
+                  console.log('Extracted data:', data.substring(0, 100) + '...'); // Truncated for readability
+                  
                   if (data === '[DONE]') {
+                    console.log('Streaming complete');
                     resolve(null);
                     return;
                   }
 
                   try {
                     const eventData = JSON.parse(data);
+                    console.log('Received SSE event:', eventData); // Debug log
                     onProgress(eventData);
 
                     if (eventData.type === 'complete') {
@@ -262,7 +295,10 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
           };
 
           readStream();
-        }).catch(reject);
+        }).catch(error => {
+          console.error('Streaming fetch error:', error);
+          reject(error);
+        });
       });
     }
 
@@ -343,8 +379,11 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
 
         // Start streaming code search
         const onProgress = (eventData: any) => {
+          console.log('SearchChatbot onProgress received:', eventData); // Debug log
+          
           if (eventData.type === 'progress') {
             const { totalResults, progress, allResults } = eventData.data;
+            console.log('Progress data:', { totalResults, progress, allResults }); // Debug log
             
             // Update the streaming message with new results
             setMessages(prev => prev.map(msg => {
@@ -408,6 +447,41 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
 
         await searchCode(query, selectedOrgs, selectedLanguage, selectedFileType, onProgress);
         
+        // If streaming didn't work, try non-streaming as fallback
+        setTimeout(async () => {
+          try {
+            console.log('Checking if streaming worked, trying fallback...');
+            const fallbackResults = await searchCode(query, selectedOrgs, selectedLanguage, selectedFileType) as any;
+            
+            if (fallbackResults && fallbackResults.results && fallbackResults.results.length > 0) {
+              console.log('Fallback results received:', fallbackResults);
+              
+              // Remove streaming message and replace with final results
+              setMessages(prev => prev.map(msg => {
+                if (msg.id === streamingMessageId) {
+                  return {
+                    ...msg,
+                    codeResults: fallbackResults.results,
+                    metadata: {
+                      repositories_searched: fallbackResults.repositories_searched || 0,
+                      total_results: fallbackResults.total_matches || fallbackResults.results.length,
+                      streaming: false
+                    }
+                  };
+                } else if (msg.id === botMessageId) {
+                  return {
+                    ...msg,
+                    content: `Found ${fallbackResults.total_matches || fallbackResults.results.length} code matches for "${query}"${orgText}${selectedLanguage ? ` (${selectedLanguage})` : ''}${selectedFileType ? ` (*.${selectedFileType})` : ''}.`
+                  };
+                }
+                return msg;
+              }));
+            }
+          } catch (fallbackError) {
+            console.error('Fallback search also failed:', fallbackError);
+          }
+        }, 5000); // Wait 5 seconds before trying fallback
+        
       } else {
         // Repository search (existing functionality) - for now, use first selected org or empty
         const searchOrg = selectedOrgs.length > 0 ? selectedOrgs[0] : '';
@@ -449,6 +523,46 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
     }
   };
 
+  const handleSaveCodeSnippet = (
+    code: string,
+    repository: Repository,
+    file: { name: string; path: string; url: string },
+    lineStart: number,
+    lineEnd: number
+  ) => {
+    if (!userLogin) return;
+
+    try {
+      const snippet = snippetService.createSnippetFromCode(userLogin, code, {
+        filename: file.name,
+        language: repository.language?.toLowerCase() || 'text',
+        repo_name: repository.full_name,
+        repo_url: repository.html_url,
+        file_path: file.path,
+        line_start: lineStart,
+        line_end: lineEnd,
+        commit_sha: undefined, // We could add this if available
+        branch: 'main' // Default branch assumption
+      });
+
+      // Show success feedback (you could replace this with a toast notification)
+      alert(`Code snippet saved as "${snippet.title}"`);
+      
+      // Optional: Add a message to the chat
+      const snippetMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'bot',
+        content: `📝 Saved code snippet "${snippet.title}" from ${repository.full_name}/${file.path}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, snippetMessage]);
+
+    } catch (error) {
+      console.error('Error saving snippet:', error);
+      alert('Failed to save code snippet. Please try again.');
+    }
+  };
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -463,7 +577,7 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
   const renderMessage = (message: ChatMessage) => {
     if (message.type === 'results' && message.results) {
       return (
-        <div key={message.id} className="space-y-3">
+        <div key={`results-${message.id}`} className="space-y-3">
           {message.results.map((repo) => (
             <div
               key={repo.id}
@@ -561,7 +675,7 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
 
     if (message.type === 'code-results' && message.codeResults) {
       return (
-        <div key={message.id} className="space-y-4">
+        <div key={`code-results-${message.id}`} className="space-y-4">
           {message.codeResults.map((codeResult, index) => (
             <div
               key={`${codeResult.repository.id}-${index}`}
@@ -610,9 +724,25 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Lines {match.context_start}-{match.context_end}
                       </span>
-                      <span className="text-xs font-mono text-gray-400">
-                        Line {match.line_number}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleSaveCodeSnippet(
+                            match.snippet,
+                            codeResult.repository,
+                            codeResult.file,
+                            match.context_start,
+                            match.context_end
+                          )}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-1 px-2 py-1 rounded border border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900"
+                          title="Save as snippet"
+                        >
+                          <Code2 size={12} />
+                          Save
+                        </button>
+                        <span className="text-xs font-mono text-gray-400">
+                          Line {match.line_number}
+                        </span>
+                      </div>
                     </div>
                     <pre className="text-sm font-mono whitespace-pre-wrap overflow-x-auto bg-gray-50 dark:bg-gray-800 p-2 rounded text-gray-800 dark:text-gray-200">
                       {match.snippet}
@@ -633,7 +763,7 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
 
     return (
       <div
-        key={message.id}
+        key={`message-${message.id}`}
         className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
       >
         <div
