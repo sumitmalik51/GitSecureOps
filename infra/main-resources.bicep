@@ -146,11 +146,11 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
     siteConfig: {
       cors: {
         allowedOrigins: [
-          baseUrl
-          'https://portal.azure.com'
-          'http://localhost:4280'
-          'http://localhost:5173'
-          'http://localhost:3000'
+          'https://${staticWebApp.properties.defaultHostname}'  // Static Web App URL
+          'https://portal.azure.com'                           // Azure Portal testing
+          'http://localhost:4280'                              // SWA CLI dev
+          'http://localhost:5173'                              // Vite dev server
+          'http://localhost:3000'                              // React dev server
         ]
         supportCredentials: false
       }
