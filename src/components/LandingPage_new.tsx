@@ -7,7 +7,7 @@ interface LandingPageProps {
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [showPopup, setShowPopup] = useState(true);
+  const [showPopup, setShowPopup] = useState(false); // Start with false to prevent popup from showing
 
   const darkModeMessages = [
     "Where's the light mode? Buried next to our sleep schedule. Welcome to the dark side.",
@@ -15,7 +15,35 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     "Only Dark Mode? Yes. Because real developers squint proudly."
   ];
 
-  const [isMessageVisible, setIsMessageVisible] = useState(true);
+  const [isMessageVisible, setIsMessageVisible] = useState(false); // Start with false
+
+  // Only show popup if no authentication tokens exist and component just mounted
+  useEffect(() => {
+    const hasToken = localStorage.getItem('github_token') || sessionStorage.getItem('github_token');
+    if (!hasToken) {
+      // Small delay to prevent flash, then show popup
+      const timer = setTimeout(() => {
+        setShowPopup(true);
+        setIsMessageVisible(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Handle navigation to authentication - hide popup first
+  const handleGetStarted = () => {
+    setShowPopup(false);
+    setIsMessageVisible(false);
+    onGetStarted();
+  };
+
+  // Hide popup when component is about to unmount (user is navigating away to login)
+  useEffect(() => {
+    return () => {
+      setShowPopup(false);
+      setIsMessageVisible(false);
+    };
+  }, []);
 
   // Cycle through messages: show for 5 seconds, hide for 10 seconds
   useEffect(() => {
@@ -69,8 +97,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Floating Dark Mode Message Popup */}
-      {showPopup && isMessageVisible && (
+      {/* Floating Dark Mode Message Popup - Only show if no authentication tokens exist */}
+      {showPopup && isMessageVisible && !localStorage.getItem('github_token') && !sessionStorage.getItem('github_token') && (
         <div className="fixed top-20 left-4 z-50 animate-fade-in">
           <div className="relative bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-xl text-white rounded-2xl p-6 shadow-2xl border border-gray-700/30 max-w-sm group hover:scale-[1.02] transition-all duration-300">
             {/* Glow effect */}
@@ -244,7 +272,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
               <div className="flex flex-col space-y-4">
                 <button
-                  onClick={onGetStarted}
+                  onClick={handleGetStarted}
                   className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg text-left overflow-hidden border border-blue-500/20"
                 >
                   <span className="relative z-10 flex items-center gap-2">
@@ -287,7 +315,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </p>
             <div className="flex justify-center items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <button
-                onClick={onGetStarted}
+                onClick={handleGetStarted}
                 className="group relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white px-10 py-5 rounded-2xl font-semibold text-lg transition-all duration-500 transform hover:scale-[1.03] shadow-2xl hover:shadow-blue-500/25 border border-white/10 overflow-hidden backdrop-blur-sm"
               >
                 <span className="relative z-10 flex items-center gap-3">
@@ -550,7 +578,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             Join development teams who trust GitSecureOps for their repository management needs.
           </p>
           <button
-            onClick={onGetStarted}
+            onClick={handleGetStarted}
             className="group relative text-white px-12 py-6 rounded-2xl font-bold text-xl transition-all duration-700 transform hover:scale-[1.05] shadow-2xl hover:shadow-purple-500/40 border-2 border-white/20 hover:border-white/40 overflow-hidden backdrop-blur-sm"
             style={{
               background: 'linear-gradient(45deg, #8b5cf6, #3b82f6, #10b981, #8b5cf6)',
@@ -652,7 +680,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div>
               <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                <li><button onClick={onGetStarted} className="text-gray-400 hover:text-white transition-colors">Get Started</button></li>
+                <li><button onClick={handleGetStarted} className="text-gray-400 hover:text-white transition-colors">Get Started</button></li>
               </ul>
             </div>
             

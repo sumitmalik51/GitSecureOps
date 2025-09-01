@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Search, MessageSquare, GitBranch, Star, Eye } from 'lucide-react';
+import { X, Send, Search, GitBranch, Star, Eye, Bookmark, BookmarkCheck, Maximize2, Minimize2 } from 'lucide-react';
 import environmentService from '../services/environmentService';
+import bookmarkService from '../services/bookmarkService';
 
 interface Repository {
   id: number;
@@ -63,7 +64,27 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState('');
+  const [isMaximized, setIsMaximized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatbotRef = useRef<HTMLDivElement>(null);
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (chatbotRef.current && !chatbotRef.current.contains(event.target as Node)) {
+        setIsMaximized(false);
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -209,6 +230,32 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 ml-4">
+                  {/* Bookmark Button */}
+                  <button
+                    onClick={() => {
+                      if (!userLogin) return;
+                      
+                      const isCurrentlyBookmarked = bookmarkService.isBookmarked(userLogin, repo.id);
+                      if (isCurrentlyBookmarked) {
+                        bookmarkService.removeBookmark(userLogin, repo.id);
+                      } else {
+                        bookmarkService.addBookmark(userLogin, repo);
+                      }
+                    }}
+                    className={`p-1 rounded transition-colors ${
+                      userLogin && bookmarkService.isBookmarked(userLogin, repo.id)
+                        ? 'text-yellow-500 hover:text-yellow-600'
+                        : 'text-gray-400 hover:text-yellow-500'
+                    }`}
+                    title={userLogin && bookmarkService.isBookmarked(userLogin, repo.id) ? 'Remove bookmark' : 'Bookmark repository'}
+                  >
+                    {userLogin && bookmarkService.isBookmarked(userLogin, repo.id) ? (
+                      <BookmarkCheck size={16} />
+                    ) : (
+                      <Bookmark size={16} />
+                    )}
+                  </button>
+                  
                   {repo.private && (
                     <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
                       <Eye size={12} className="inline mr-1" />
@@ -287,22 +334,42 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md h-[600px] flex flex-col">
+    <div className={`fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex ${isMaximized ? 'items-center justify-center' : 'items-end justify-start'} p-4`}>
+      <div 
+        ref={chatbotRef}
+        className={`bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col ${
+          isMaximized 
+            ? 'w-[95vw] h-[95vh] max-w-none' 
+            : 'w-full max-w-md h-[600px]'
+        } transition-all duration-300 ease-in-out`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
-            <MessageSquare className="text-blue-600 dark:text-blue-400" size={20} />
+            <Search className="text-blue-600 dark:text-blue-400" size={20} />
             <h3 className="font-semibold text-gray-800 dark:text-gray-200">
               Repository Search
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsMaximized(!isMaximized)}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              title={isMaximized ? 'Minimize' : 'Maximize'}
+            >
+              {isMaximized ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+            <button
+              onClick={() => {
+                setMessages([]);
+                setIsMaximized(false);
+                onClose();
+              }}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Organization Filter */}

@@ -85,6 +85,12 @@ export const UI_CONSTANTS = {
 
 export const DASHBOARD_OPTIONS = [
   {
+    id: 'bookmarks',
+    title: '⭐ Repository Bookmarks',
+    description: 'Quick access to your bookmarked repositories and organize them into folders',
+    icon: '📚 BOOKMARKS'
+  },
+  {
     id: 'smart-recommendations',
     title: '🤖 Smart Recommendations (Preview)',
     description: 'Preview of AI-powered insights for access optimization (Full AI coming soon!)',
