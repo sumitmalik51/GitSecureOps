@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Search, MessageSquare, GitBranch, Star, Eye } from 'lucide-react';
+import environmentService from '../services/environmentService';
 
 interface Repository {
   id: number;
@@ -103,7 +104,8 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
       searchParams.append('org', organization);
     }
 
-    const response = await fetch(`/api/search-repos?${searchParams.toString()}`, {
+    const functionAppUrl = environmentService.getFunctionAppUrl();
+    const response = await fetch(`${functionAppUrl}/api/search-repos?${searchParams.toString()}`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
