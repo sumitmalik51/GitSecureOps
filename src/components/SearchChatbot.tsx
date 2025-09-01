@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Search, GitBranch, Star, Eye, Bookmark, BookmarkCheck, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Send, Search, GitBranch, Star, Eye, Bookmark, BookmarkCheck, Maximize2, Minimize2, Code2 } from 'lucide-react';
 import environmentService from '../services/environmentService';
 import bookmarkService from '../services/bookmarkService';
 
@@ -23,6 +23,43 @@ interface Repository {
   visibility: string;
 }
 
+interface CodeMatch {
+  line_number: number;
+  snippet: string;
+  match_line_index: number;
+  context_start: number;
+  context_end: number;
+}
+
+interface CodeResult {
+  repository: Repository;
+  file: {
+    name: string;
+    path: string;
+    url: string;
+    git_url: string;
+    sha: string;
+  };
+  matches: CodeMatch[];
+  score: number;
+}
+
+interface CodeSearchResult {
+  success: boolean;
+  query: string;
+  organization: string | null;
+  language: string | null;
+  file_type: string | null;
+  total_results: number;
+  repositories_searched: number;
+  results: CodeResult[];
+  metadata: {
+    search_time: string;
+    search_type: string;
+    results_count: number;
+  };
+}
+
 interface SearchResult {
   success: boolean;
   query: string;
@@ -38,10 +75,11 @@ interface SearchResult {
 
 interface ChatMessage {
   id: string;
-  type: 'user' | 'bot' | 'results';
+  type: 'user' | 'bot' | 'results' | 'code-results';
   content: string;
   timestamp: Date;
   results?: Repository[];
+  codeResults?: CodeResult[];
   metadata?: any;
 }
 
@@ -63,8 +101,11 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState('');
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]); // Support multiple organization selection
   const [isMaximized, setIsMaximized] = useState(false);
+  const [searchType, setSearchType] = useState<'repos' | 'code'>('repos');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [selectedFileType, setSelectedFileType] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatbotRef = useRef<HTMLDivElement>(null);
 
@@ -141,6 +182,115 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
     return await response.json() as SearchResult;
   };
 
+  const searchCode = async (query: string, organizations?: string[], language?: string, fileType?: string, onProgress?: (data: any) => void) => {
+    if (!accessToken) {
+      throw new Error('No access token available');
+    }
+
+    const functionAppUrl = environmentService.getFunctionAppUrl();
+    
+    // If progress callback is provided, use streaming mode
+    if (onProgress) {
+      return new Promise((resolve, reject) => {
+        const requestBody = {
+          query,
+          organizations: organizations || [],
+          language: language || '',
+          fileType: fileType || '',
+          streaming: true
+        };
+
+        fetch(`${functionAppUrl}/api/search-code`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream',
+          },
+          body: JSON.stringify(requestBody)
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error('ReadableStream not supported');
+          }
+
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          const readStream = () => {
+            reader.read().then(({ value, done }) => {
+              if (done) {
+                resolve(null);
+                return;
+              }
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') {
+                    resolve(null);
+                    return;
+                  }
+
+                  try {
+                    const eventData = JSON.parse(data);
+                    onProgress(eventData);
+
+                    if (eventData.type === 'complete') {
+                      resolve(eventData.data);
+                      return;
+                    } else if (eventData.type === 'error') {
+                      reject(new Error(eventData.data.message));
+                      return;
+                    }
+                  } catch (parseError) {
+                    console.warn('Failed to parse SSE data:', data);
+                  }
+                }
+              }
+
+              readStream();
+            }).catch(reject);
+          };
+
+          readStream();
+        }).catch(reject);
+      });
+    }
+
+    // Non-streaming mode (original functionality)
+    const requestBody = {
+      query,
+      organizations: organizations || [],
+      language: language || '',
+      fileType: fileType || ''
+    };
+
+    const response = await fetch(`${functionAppUrl}/api/search-code`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}`);
+    }
+
+    return await response.json() as CodeSearchResult;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -162,26 +312,127 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      const results = await searchRepositories(query, selectedOrg);
-      
-      // Add bot response with results
-      const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: `Found ${results.total_count} repositories matching "${query}"${selectedOrg ? ` in ${selectedOrg}` : ''}. Here are the top ${results.results.length} results:`,
-        timestamp: new Date()
-      };
+      if (searchType === 'code') {
+        // Create organization display text
+        const orgText = selectedOrgs.length > 0 
+          ? selectedOrgs.length === 1 
+            ? ` in ${selectedOrgs[0]}` 
+            : ` in ${selectedOrgs.length} organizations (${selectedOrgs.join(', ')})`
+          : '';
 
-      const resultsMessage: ChatMessage = {
-        id: (Date.now() + 2).toString(),
-        type: 'results',
-        content: '',
-        timestamp: new Date(),
-        results: results.results,
-        metadata: results.metadata
-      };
+        // Add initial bot message
+        const botMessageId = (Date.now() + 1).toString();
+        const botMessage: ChatMessage = {
+          id: botMessageId,
+          type: 'bot',
+          content: `Searching for "${query}"${orgText}${selectedLanguage ? ` (${selectedLanguage})` : ''}${selectedFileType ? ` (*.${selectedFileType})` : ''}...`,
+          timestamp: new Date()
+        };
 
-      setMessages(prev => [...prev, botMessage, resultsMessage]);
+        const streamingMessageId = (Date.now() + 2).toString();
+        const streamingMessage: ChatMessage = {
+          id: streamingMessageId,
+          type: 'code-results',
+          content: '',
+          timestamp: new Date(),
+          codeResults: [],
+          metadata: { streaming: true, repositories_searched: 0, total_results: 0 }
+        };
+
+        setMessages(prev => [...prev, botMessage, streamingMessage]);
+
+        // Start streaming code search
+        const onProgress = (eventData: any) => {
+          if (eventData.type === 'progress') {
+            const { totalResults, progress, allResults } = eventData.data;
+            
+            // Update the streaming message with new results
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === streamingMessageId) {
+                return {
+                  ...msg,
+                  codeResults: allResults || [],
+                  metadata: {
+                    ...msg.metadata,
+                    repositories_searched: progress.current,
+                    total_repositories: progress.total,
+                    total_results: totalResults,
+                    progress_percentage: progress.percentage,
+                    current_repository: eventData.data.repository
+                  }
+                };
+              }
+              return msg;
+            }));
+
+            // Update bot message with progress
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === botMessageId) {
+                return {
+                  ...msg,
+                  content: `Found ${totalResults} code matches for "${query}"${orgText}${selectedLanguage ? ` (${selectedLanguage})` : ''}${selectedFileType ? ` (*.${selectedFileType})` : ''}. Searching... ${progress.current}/${progress.total} repositories (${progress.percentage}%)`
+                };
+              }
+              return msg;
+            }));
+          } else if (eventData.type === 'complete') {
+            // Update with final results
+            const finalData = eventData.data;
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === streamingMessageId) {
+                return {
+                  ...msg,
+                  codeResults: finalData.results || [],
+                  metadata: {
+                    ...finalData.metadata,
+                    repositories_searched: finalData.repositories_searched,
+                    total_results: finalData.total_results
+                  }
+                };
+              }
+              return msg;
+            }));
+
+            // Update final bot message
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === botMessageId) {
+                return {
+                  ...msg,
+                  content: `Found ${finalData.total_results} code matches for "${query}"${orgText}${selectedLanguage ? ` (${selectedLanguage})` : ''}${selectedFileType ? ` (*.${selectedFileType})` : ''}. Searched ${finalData.repositories_searched} repositories:`
+                };
+              }
+              return msg;
+            }));
+          }
+        };
+
+        await searchCode(query, selectedOrgs, selectedLanguage, selectedFileType, onProgress);
+        
+      } else {
+        // Repository search (existing functionality) - for now, use first selected org or empty
+        const searchOrg = selectedOrgs.length > 0 ? selectedOrgs[0] : '';
+        const results = await searchRepositories(query, searchOrg);
+        
+        // Add bot response with results
+        const botMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          content: `Found ${results.total_count} repositories matching "${query}"${searchOrg ? ` in ${searchOrg}` : ''}. Here are the top ${results.results.length} results:`,
+          timestamp: new Date()
+        };
+
+        const resultsMessage: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'results',
+          content: '',
+          timestamp: new Date(),
+          results: results.results,
+          metadata: results.metadata
+        };
+
+        setMessages(prev => [...prev, botMessage, resultsMessage]);
+        setMessages(prev => [...prev, botMessage, resultsMessage]);
+      }
 
     } catch (error) {
       console.error('Search error:', error);
@@ -308,6 +559,78 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
       );
     }
 
+    if (message.type === 'code-results' && message.codeResults) {
+      return (
+        <div key={message.id} className="space-y-4">
+          {message.codeResults.map((codeResult, index) => (
+            <div
+              key={`${codeResult.repository.id}-${index}`}
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
+            >
+              {/* Repository Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-blue-600 dark:text-blue-400 hover:underline text-sm">
+                    <a href={codeResult.repository.html_url} target="_blank" rel="noopener noreferrer">
+                      {codeResult.repository.full_name}
+                    </a>
+                  </h4>
+                  <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <Code2 size={12} />
+                    <a
+                      href={codeResult.file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-blue-600 dark:hover:text-blue-400"
+                    >
+                      {codeResult.file.path}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 text-xs">
+                  {codeResult.repository.language && (
+                    <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                      {codeResult.repository.language}
+                    </span>
+                  )}
+                  {codeResult.repository.private && (
+                    <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+                      <Eye size={12} className="inline mr-1" />
+                      Private
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Code Matches */}
+              <div className="space-y-3">
+                {codeResult.matches.slice(0, 3).map((match, matchIndex) => (
+                  <div key={matchIndex} className="bg-white dark:bg-gray-900 rounded border p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Lines {match.context_start}-{match.context_end}
+                      </span>
+                      <span className="text-xs font-mono text-gray-400">
+                        Line {match.line_number}
+                      </span>
+                    </div>
+                    <pre className="text-sm font-mono whitespace-pre-wrap overflow-x-auto bg-gray-50 dark:bg-gray-800 p-2 rounded text-gray-800 dark:text-gray-200">
+                      {match.snippet}
+                    </pre>
+                  </div>
+                ))}
+                {codeResult.matches.length > 3 && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    +{codeResult.matches.length - 3} more matches in this file
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div
         key={message.id}
@@ -348,7 +671,7 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
           <div className="flex items-center space-x-2">
             <Search className="text-blue-600 dark:text-blue-400" size={20} />
             <h3 className="font-semibold text-gray-800 dark:text-gray-200">
-              Repository Search
+              {searchType === 'code' ? 'Code Search' : 'Repository Search'}
             </h3>
           </div>
           <div className="flex items-center space-x-2">
@@ -372,23 +695,130 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
           </div>
         </div>
 
-        {/* Organization Filter */}
-        {organizations.length > 0 && (
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <select
-              value={selectedOrg}
-              onChange={(e) => setSelectedOrg(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        {/* Search Type Selector */}
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setSearchType('repos')}
+              className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${
+                searchType === 'repos'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600'
+              }`}
             >
-              <option value="">All repositories</option>
-              {organizations.map((org) => (
-                <option key={org} value={org}>
-                  {org} organization
-                </option>
-              ))}
-            </select>
+              <Search size={14} className="inline mr-1" />
+              Repositories
+            </button>
+            <button
+              onClick={() => setSearchType('code')}
+              className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${
+                searchType === 'code'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600'
+              }`}
+            >
+              <Code2 size={14} className="inline mr-1" />
+              Code
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Filters */}
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          {/* Organization Filter */}
+          {organizations.length > 0 && (
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Organizations ({selectedOrgs.length > 0 ? selectedOrgs.length : 'All'})
+              </label>
+              <div className="max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                {organizations.map((org) => (
+                  <label key={org} className="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrgs.includes(org)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedOrgs([...selectedOrgs, org]);
+                        } else {
+                          setSelectedOrgs(selectedOrgs.filter(o => o !== org));
+                        }
+                      }}
+                      className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
+                    />
+                    <span className="text-sm text-gray-800 dark:text-gray-200">{org}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedOrgs.length > 0 && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => setSelectedOrgs([])}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Code Search Filters */}
+          {searchType === 'code' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Any language</option>
+                  <option value="JavaScript">JavaScript</option>
+                  <option value="TypeScript">TypeScript</option>
+                  <option value="Python">Python</option>
+                  <option value="Java">Java</option>
+                  <option value="C#">C#</option>
+                  <option value="Go">Go</option>
+                  <option value="Rust">Rust</option>
+                  <option value="PHP">PHP</option>
+                  <option value="Ruby">Ruby</option>
+                  <option value="Swift">Swift</option>
+                  <option value="Kotlin">Kotlin</option>
+                  <option value="C++">C++</option>
+                  <option value="C">C</option>
+                </select>
+              </div>
+              <div>
+                <select
+                  value={selectedFileType}
+                  onChange={(e) => setSelectedFileType(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Any file type</option>
+                  <option value="js">*.js</option>
+                  <option value="ts">*.ts</option>
+                  <option value="tsx">*.tsx</option>
+                  <option value="jsx">*.jsx</option>
+                  <option value="py">*.py</option>
+                  <option value="java">*.java</option>
+                  <option value="cs">*.cs</option>
+                  <option value="go">*.go</option>
+                  <option value="rs">*.rs</option>
+                  <option value="php">*.php</option>
+                  <option value="rb">*.rb</option>
+                  <option value="swift">*.swift</option>
+                  <option value="kt">*.kt</option>
+                  <option value="cpp">*.cpp</option>
+                  <option value="c">*.c</option>
+                  <option value="md">*.md</option>
+                  <option value="json">*.json</option>
+                  <option value="yaml">*.yaml</option>
+                  <option value="yml">*.yml</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -414,7 +844,11 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder={accessToken ? "Search repositories..." : "Please sign in to search"}
+              placeholder={
+                accessToken 
+                  ? (searchType === 'code' ? "Search code..." : "Search repositories...") 
+                  : "Please sign in to search"
+              }
               disabled={isLoading || !accessToken}
               className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
