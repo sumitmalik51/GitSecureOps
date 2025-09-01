@@ -154,36 +154,31 @@ jobs:
     - name: Update Function App Settings
       if: success()
       run: |
-        # Parse Azure credentials
-        $creds = '${{ secrets.AZURE_CREDENTIALS }}' | ConvertFrom-Json
-        $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
-        $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
-        Connect-AzAccount -ServicePrincipal -Credential $credential -TenantId $creds.tenantId -SubscriptionId $creds.subscriptionId
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
         
-        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
-        $resourceToken = "${{ inputs.environment }}"
-        $functionAppName = "func-gh-$resourceToken"
+        echo "🔧 Updating Function App settings..."
         
-        # Get the actual Static Web App URL for FRONTEND_URL setting
-        $swaResources = Get-AzStaticWebApp -ResourceGroupName $resourceGroup
-        if ($swaResources -and $swaResources.Count -gt 0) {
-          $actualSwaUrl = "https://$($swaResources[0].DefaultHostname)"
-          Write-Host "Updating Function App settings with Static Web App URL: $actualSwaUrl"
+        # Get the actual Static Web App URL
+        SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv 2>/dev/null || echo "")
+        
+        if [ -n "$SWA_URL" ]; then
+          ACTUAL_SWA_URL="https://$SWA_URL"
+          echo "📍 Static Web App URL: $ACTUAL_SWA_URL"
+          echo "🔧 Updating Function App FRONTEND_URL setting..."
           
-          try {
-            # Update Function App FRONTEND_URL setting
-            Write-Host "Updating FRONTEND_URL setting..."
-            az functionapp config appsettings set \
-              --resource-group $resourceGroup \
-              --name $functionAppName \
-              --settings "FRONTEND_URL=$actualSwaUrl" \
-              --output table
-            Write-Host "✅ Function App FRONTEND_URL updated successfully!"
-          }
-          catch {
-            Write-Host "⚠️ Warning: Could not update Function App settings: $($_.Exception.Message)"
-          }
-        }
-        
-        Disconnect-AzAccount
-      shell: pwsh
+          # Update Function App settings
+          az functionapp config appsettings set \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$FUNCTION_APP_NAME" \
+            --settings "FRONTEND_URL=$ACTUAL_SWA_URL" \
+            --output table
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Function App FRONTEND_URL updated successfully!"
+          else
+            echo "⚠️ Warning: Could not update Function App settings"
+          fi
+        else
+          echo "⚠️ Warning: Could not retrieve Static Web App URL"
+        fi

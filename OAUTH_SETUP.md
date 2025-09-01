@@ -9,7 +9,7 @@
    - **Application name**: `GitHub AccessOps`
    - **Homepage URL**: `http://localhost:5173` (for development)
    - **Application description**: `GitHub repository access management tool`
-   - **Authorization callback URL**: `http://localhost:5173/auth/callback`
+   - **Authorization callback URL**: `https://func-gh-dev.azurewebsites.net/api/github-callback`
 
 3. Click **"Register application"**
 
@@ -24,7 +24,7 @@
    ```env
    VITE_GITHUB_CLIENT_ID=your_actual_client_id
    VITE_GITHUB_CLIENT_SECRET=your_actual_client_secret
-   VITE_GITHUB_REDIRECT_URI=http://localhost:5173/auth/callback
+   VITE_GITHUB_REDIRECT_URI=https://func-gh-dev.azurewebsites.net/api/github-callback
    ```
 
 3. Restart your development server:
@@ -46,11 +46,11 @@ For production deployment:
 
 1. Update your GitHub OAuth app settings:
    - **Homepage URL**: `https://yourdomain.com`
-   - **Authorization callback URL**: `https://yourdomain.com/auth/callback`
+   - **Authorization callback URL**: `https://func-gh-prod.azurewebsites.net/api/github-callback`
 
 2. Update your production environment variables:
    ```env
-   VITE_GITHUB_REDIRECT_URI=https://yourdomain.com/auth/callback
+   VITE_GITHUB_REDIRECT_URI=https://func-gh-prod.azurewebsites.net/api/github-callback
    ```
 
 ## Security Notes
