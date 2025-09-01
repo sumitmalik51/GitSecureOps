@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Command } from 'lucide-react';
 import LandingPage from './components/LandingPage_new';
 import Auth from './components/Auth';
 import OAuthSuccess from './components/OAuthSuccess';
@@ -12,12 +13,15 @@ import TwoFactorChecker from './components/TwoFactorChecker';
 import DeleteUserAccess from './components/DeleteUserAccess';
 import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
-import SmartRecommendations from './components/SmartRecommendations';
 import SearchChatbot from './components/SearchChatbot';
 import ChatButton from './components/ChatButton';
 import BookmarkManager from './components/BookmarkManager';
 import ActivitySidebar from './components/ActivitySidebar';
+import EnhancedCommandPalette from './components/EnhancedCommandPalette';
+import SnippetManager from './components/SnippetManager';
+import UserAvatarHeader from './components/UserAvatarHeader';
 import githubService, { type GitHubOrg } from './services/githubService';
+import useGlobalShortcut from './hooks/useGlobalShortcut';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'oauth-success' | 'app'>('landing');
@@ -33,8 +37,14 @@ function App() {
   const [userOrganizations, setUserOrganizations] = useState<GitHubOrg[]>([]);
   const [orgNames, setOrgNames] = useState<string[]>([]);
   
+  // Command palette state
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  
   // Bookmark manager state
   const [isBookmarkManagerOpen, setIsBookmarkManagerOpen] = useState(false);
+  
+  // Snippet manager state
+  const [isSnippetManagerOpen, setIsSnippetManagerOpen] = useState(false);
 
   console.log('User organizations loaded:', userOrganizations.length);
 
@@ -138,6 +148,14 @@ function App() {
     }
   }, [token, username]);
 
+  // Global keyboard shortcut for command palette (Ctrl+K)
+  useGlobalShortcut({
+    key: 'k',
+    ctrlKey: true,
+    callback: () => setIsCommandPaletteOpen(true),
+    enabled: currentPage === 'app' && !!token
+  });
+
   const handleAuthError = (error: string) => {
     console.error('Authentication error:', error);
     // Redirect back to auth page with error
@@ -176,8 +194,8 @@ function App() {
   const handleSelectOption = (option: string) => {
     if (option === 'bookmarks') {
       setIsBookmarkManagerOpen(true);
-    } else if (option === 'smart-recommendations') {
-      setCurrentView('smart-recommendations');
+    } else if (option === 'snippets') {
+      setIsSnippetManagerOpen(true);
     } else if (option === 'copilot-manager') {
       setCurrentView('copilot-manager');
     } else if (option === 'grant-access') {
@@ -243,6 +261,10 @@ function App() {
     setIsBookmarkManagerOpen(false);
   };
 
+  const handleCloseSnippets = () => {
+    setIsSnippetManagerOpen(false);
+  };
+
   if (currentPage === 'landing') {
     return <LandingPage onGetStarted={handleGetStarted} />;
   }
@@ -258,7 +280,7 @@ function App() {
   switch (currentView) {
     case 'org-selector-delete-user-access':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -271,7 +293,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'org-selector-list-private-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -282,7 +304,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'org-selector-list-public-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -293,7 +315,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'org-selector-export-usernames':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -302,31 +324,9 @@ GitSecureOps will search across all repositories within the selected org(s) and 
           />
         </Layout>
       );
-    case 'smart-recommendations':
-      return (
-        <>
-          <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
-            <SmartRecommendations onBack={handleBack} />
-          </Layout>
-          
-          {/* Floating Chat Button */}
-          {token && (
-            <ChatButton onClick={handleOpenChatbot} />
-          )}
-          
-          {/* Search Chatbot Modal */}
-          <SearchChatbot
-            isOpen={isChatbotOpen}
-            onClose={handleCloseChatbot}
-            accessToken={token}
-            userLogin={username}
-            organizations={orgNames}
-          />
-        </>
-      );
     case 'copilot-manager':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <CopilotManager
             onBack={handleBack}
           />
@@ -334,7 +334,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'grant-access':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <GrantAccess
             token={token}
             onBack={handleBack}
@@ -343,7 +343,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'actions-manager':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <GitHubActionsManager
             token={token}
             onBack={handleBack}
@@ -352,7 +352,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'two-factor-checker':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <TwoFactorChecker
             token={token}
             onBack={handleBack}
@@ -361,7 +361,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'delete-user-access':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <DeleteUserAccess
             token={token}
             username={username}
@@ -374,7 +374,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'list-private-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <RepositoryListView
             token={token}
             username={username}
@@ -388,7 +388,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'list-public-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <RepositoryListView
             token={token}
             username={username}
@@ -402,7 +402,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'export-usernames':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <ExportUsernames
             token={token}
             username={username}
@@ -431,34 +431,26 @@ GitSecureOps will search across all repositories within the selected org(s) and 
                         <p className="text-xs text-gray-500 dark:text-gray-400">Repository Management</p>
                       </div>
                     </div>
-                    <div className="hidden sm:block">
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Welcome {username}
-                      </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Choose from the options below to manage your repositories
-                      </p>
-                    </div>
                   </div>
                   
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {username.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="hidden sm:block">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{username}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">GitHub User</div>
-                      </div>
-                    </div>
-                    
+                    {/* Command Palette Hint */}
                     <button
-                      onClick={handleLogout}
-                      className="inline-flex items-center px-3 sm:px-4 py-2 border border-red-200 dark:border-red-500/50 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-300 dark:hover:border-red-400 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                      onClick={() => setIsCommandPaletteOpen(true)}
+                      className="hidden sm:flex items-center space-x-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                      title="Open Command Palette (Ctrl+K)"
                     >
-                      <span className="mr-2">🚪</span>
-                      <span>Logout</span>
+                      <Command size={16} />
+                      <span>Press Ctrl+K</span>
                     </button>
+                    
+                    {/* User Avatar Header with GitHub Profile */}
+                    <UserAvatarHeader
+                      accessToken={token}
+                      username={username}
+                      onLogout={handleLogout}
+                      className="ml-4"
+                    />
                   </div>
                 </div>
               </header>
@@ -502,6 +494,21 @@ GitSecureOps will search across all repositories within the selected org(s) and 
             isOpen={isBookmarkManagerOpen}
             onClose={handleCloseBookmarks}
             userLogin={username}
+          />
+
+          {/* Snippet Manager Modal */}
+          <SnippetManager
+            isOpen={isSnippetManagerOpen}
+            userLogin={username}
+            onClose={handleCloseSnippets}
+          />
+
+          {/* Enhanced Command Palette - Cross-Org Universal Search */}
+          <EnhancedCommandPalette
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            accessToken={token}
+            organizations={orgNames}
           />
         </>
       );

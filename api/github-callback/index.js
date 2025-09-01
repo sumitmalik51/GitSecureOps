@@ -103,8 +103,8 @@ module.exports = async function (context, req) {
             return `${protocol}://${host}`;
         }
         
-        // Fallback for local development
-        return 'http://localhost:4280';
+        // Fallback for local development - use environment variable
+        return process.env.FRONTEND_URL || 'http://localhost:4280';
     };
 
     const frontendUrl = getFrontendUrl();

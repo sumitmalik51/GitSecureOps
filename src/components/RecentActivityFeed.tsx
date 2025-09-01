@@ -11,7 +11,9 @@ import {
   Calendar,
   User
 } from 'lucide-react';
-import activityService, { type ActivityItem, type ActivityFilter } from '../services/activityService';
+import githubDataService, { type GitHubDataItem } from '../services/githubDataService';
+
+type ActivityFilter = 'all' | 'pr' | 'commit' | 'issue';
 
 interface RecentActivityFeedProps {
   accessToken: string | null;
@@ -22,8 +24,8 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
   accessToken, 
   organizations 
 }) => {
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [filteredActivities, setFilteredActivities] = useState<ActivityItem[]>([]);
+  const [activities, setActivities] = useState<GitHubDataItem[]>([]);
+  const [filteredActivities, setFilteredActivities] = useState<GitHubDataItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ActivityFilter>('all');
@@ -40,14 +42,16 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
     setError(null);
 
     try {
-      const result = await activityService.fetchRecentActivity(
-        accessToken, 
-        organizations, 
-        daysBack
-      );
+      const result = await githubDataService.getData({
+        mode: 'recent',
+        organizations,
+        accessToken,
+        daysBack,
+        filter: filter === 'all' ? 'all' : filter === 'pr' ? 'pull_request' : filter
+      });
 
       if (result.success) {
-        setActivities(result.activities);
+        setActivities(result.items);
         setLastFetch(new Date());
       } else {
         setError(result.error || 'Failed to fetch activity');
@@ -61,7 +65,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
 
   // Apply filters when activities or filter changes
   useEffect(() => {
-    const filtered = activityService.filterActivities(activities, filter);
+    const filtered = githubDataService.filterByType(activities, filter);
     setFilteredActivities(filtered);
   }, [activities, filter]);
 
@@ -74,9 +78,9 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
     setFilter(newFilter);
   };
 
-  const getActivityIcon = (type: ActivityItem['type']) => {
+  const getActivityIcon = (type: GitHubDataItem['type']) => {
     switch (type) {
-      case 'pull_request':
+      case 'pr':
         return <GitPullRequest size={16} />;
       case 'commit':
         return <GitCommit size={16} />;
@@ -87,10 +91,66 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
     }
   };
 
-  const renderActivityItem = (activity: ActivityItem) => {
-    const typeInfo = activityService.getActivityTypeInfo(activity.type);
-    const stateInfo = activityService.getStateInfo(activity);
-    const timeAgo = activityService.formatTimeAgo(activity.timestamp);
+  const getActivityTypeInfo = (type: GitHubDataItem['type']) => {
+    switch (type) {
+      case 'pr':
+        return {
+          label: 'Pull Request',
+          color: 'text-green-700',
+          bgColor: 'bg-green-100 dark:bg-green-900/20'
+        };
+      case 'commit':
+        return {
+          label: 'Commit',
+          color: 'text-blue-700',
+          bgColor: 'bg-blue-100 dark:bg-blue-900/20'
+        };
+      case 'issue':
+        return {
+          label: 'Issue',
+          color: 'text-red-700',
+          bgColor: 'bg-red-100 dark:bg-red-900/20'
+        };
+      default:
+        return {
+          label: 'Activity',
+          color: 'text-gray-700',
+          bgColor: 'bg-gray-100 dark:bg-gray-900/20'
+        };
+    }
+  };
+
+  const getStateInfo = (activity: GitHubDataItem) => {
+    if (!activity.state) return null;
+    
+    switch (activity.state) {
+      case 'open':
+        return {
+          label: 'Open',
+          color: 'text-green-700',
+          bgColor: 'bg-green-100'
+        };
+      case 'closed':
+        return {
+          label: 'Closed',
+          color: 'text-red-700',
+          bgColor: 'bg-red-100'
+        };
+      case 'merged':
+        return {
+          label: 'Merged',
+          color: 'text-purple-700',
+          bgColor: 'bg-purple-100'
+        };
+      default:
+        return null;
+    }
+  };
+
+  const renderActivityItem = (activity: GitHubDataItem) => {
+    const typeInfo = getActivityTypeInfo(activity.type);
+    const stateInfo = getStateInfo(activity);
+    const timeAgo = githubDataService.formatTimeAgo(activity.timestamp || activity.updated_at || activity.created_at || '');
 
     return (
       <div 
@@ -107,7 +167,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
             {activity.avatar ? (
               <img
                 src={activity.avatar}
-                alt={activity.user}
+                alt={activity.author}
                 className="w-8 h-8 rounded-full"
               />
             ) : (
@@ -148,24 +208,24 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
             <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
               <div className="flex items-center space-x-1">
                 <GitCommit size={12} />
-                <span className="truncate">{activity.repo}</span>
+                <span className="truncate">{activity.repository}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <User size={12} />
-                <span>{activity.user}</span>
+                <span>{activity.author}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Calendar size={12} />
                 <span>{timeAgo}</span>
               </div>
-              {activity.sha && (
+              {activity.metadata?.sha && (
                 <div className="font-mono bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded">
-                  {activity.sha}
+                  {activity.metadata.sha.substring(0, 7)}
                 </div>
               )}
-              {activity.number && (
+              {activity.metadata?.number && (
                 <div className="font-medium">
-                  #{activity.number}
+                  #{activity.metadata.number}
                 </div>
               )}
             </div>
@@ -227,7 +287,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
           <div className="flex items-center space-x-1">
             <Filter size={16} className="text-gray-500 dark:text-gray-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
-            {(['all', 'pull_request', 'commit', 'issue'] as ActivityFilter[]).map((filterType) => (
+            {(['all', 'pr', 'commit', 'issue'] as ActivityFilter[]).map((filterType) => (
               <button
                 key={filterType}
                 onClick={() => handleFilterChange(filterType)}
@@ -238,7 +298,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
                 }`}
               >
                 {filterType === 'all' ? 'All' : 
-                 filterType === 'pull_request' ? 'PRs' : 
+                 filterType === 'pr' ? 'PRs' : 
                  filterType === 'commit' ? 'Commits' : 'Issues'}
               </button>
             ))}
@@ -264,7 +324,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
 
           {lastFetch && (
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              Updated {activityService.formatTimeAgo(lastFetch.toISOString())}
+              Updated {githubDataService.formatTimeAgo(lastFetch.toISOString())}
             </span>
           )}
         </div>
@@ -295,7 +355,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
           <p className="mt-4 text-gray-500 dark:text-gray-400">
             {filter === 'all' 
               ? 'No recent activity found' 
-              : `No ${filter === 'pull_request' ? 'pull requests' : filter}s found`}
+              : `No ${filter === 'pr' ? 'pull requests' : filter}s found`}
           </p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             Try adjusting the time range or filters
@@ -318,7 +378,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
               Showing {filteredActivities.length} of {activities.length} activities
             </div>
             <div className="text-blue-600 dark:text-blue-400">
-              Important: {activityService.getImportantActivities(activities).length}
+              Important: {githubDataService.getImportantItems(activities).length}
             </div>
           </div>
         </div>

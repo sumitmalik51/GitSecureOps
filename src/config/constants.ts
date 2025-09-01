@@ -85,18 +85,6 @@ export const UI_CONSTANTS = {
 
 export const DASHBOARD_OPTIONS = [
   {
-    id: 'bookmarks',
-    title: '⭐ Repository Bookmarks',
-    description: 'Quick access to your bookmarked repositories and organize them into folders',
-    icon: '📚 BOOKMARKS'
-  },
-  {
-    id: 'smart-recommendations',
-    title: '🤖 Smart Recommendations (Preview)',
-    description: 'Preview of AI-powered insights for access optimization (Full AI coming soon!)',
-    icon: '🧠 AI'
-  },
-  {
     id: 'copilot-manager',
     title: 'GitHub Copilot Management',
     description: 'Manage GitHub Copilot access and permissions for organization members',
@@ -109,10 +97,16 @@ export const DASHBOARD_OPTIONS = [
     icon: '🔑 GRANT'
   },
   {
-    id: 'actions-manager',
-    title: 'GitHub Actions Permissions Management',
-    description: 'View & manage Action-level permissions per repo, detect secrets exposed to actions, modify GITHUB_TOKEN permissions, flag self-hosted runners',
-    icon: '🧬 ACTIONS'
+    id: 'list-public-repos',
+    title: 'Get All Public Repositories',
+    description: 'View all your public repositories',
+    icon: '🌍 PUBLIC'
+  },
+  {
+    id: 'list-private-repos',
+    title: 'Get All Private Repositories',
+    description: 'View all your private repositories',
+    icon: '🔒 PRIVATE'
   },
   {
     id: 'two-factor-checker',
@@ -127,16 +121,22 @@ export const DASHBOARD_OPTIONS = [
     icon: '🗑️ DELETE'
   },
   {
-    id: 'list-private-repos',
-    title: 'Get All Private Repositories',
-    description: 'View all your private repositories',
-    icon: '🔒 PRIVATE'
+    id: 'bookmarks',
+    title: '⭐ Repository Bookmarks',
+    description: 'Quick access to your bookmarked repositories and organize them into folders',
+    icon: '📚 BOOKMARKS'
   },
   {
-    id: 'list-public-repos',
-    title: 'Get All Public Repositories',
-    description: 'View all your public repositories',
-    icon: '🌍 PUBLIC'
+    id: 'snippets',
+    title: '📝 Code Snippets',
+    description: 'Save, organize and share code snippets from your search results and repositories',
+    icon: '� SNIPPETS'
+  },
+  {
+    id: 'actions-manager',
+    title: 'GitHub Actions Permissions Management',
+    description: 'View & manage Action-level permissions per repo, detect secrets exposed to actions, modify GITHUB_TOKEN permissions, flag self-hosted runners',
+    icon: '🧬 ACTIONS'
   },
   {
     id: 'export-usernames',

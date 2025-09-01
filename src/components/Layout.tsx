@@ -4,6 +4,7 @@ import NotificationBell from './NotificationBell';
 import NotificationCenter from './NotificationCenter';
 import NotificationSettings from './NotificationSettings';
 import ActivitySidebar from './ActivitySidebar';
+import UserAvatarHeader from './UserAvatarHeader';
 
 interface LayoutProps {
   children: ReactNode;
@@ -62,25 +63,13 @@ export default function Layout({ children, username, onLogout, currentView, acce
               {/* Dark Mode Toggle */}
               <DarkModeToggle />
               
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">
-                    {username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="hidden sm:block">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">{username}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">GitHub User</div>
-                </div>
-              </div>
-              
-              <button
-                onClick={onLogout}
-                className="inline-flex items-center px-3 sm:px-4 py-2 border border-red-200 dark:border-red-500/50 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-300 dark:hover:border-red-400 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <span className="mr-2">🚪</span>
-                <span>Logout</span>
-              </button>
+              {/* User Avatar Header with GitHub Profile */}
+              <UserAvatarHeader
+                accessToken={accessToken || ''}
+                username={username}
+                onLogout={onLogout}
+                className="ml-2"
+              />
             </div>
           </div>
         </header>
