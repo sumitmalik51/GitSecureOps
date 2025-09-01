@@ -1,13 +1,12 @@
 {
   "name": "gitsecureops-api",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "start": "func start",
     "test": "echo \"No tests yet...\""
   },
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "azure-functions-core-tools": "^4.0.0"

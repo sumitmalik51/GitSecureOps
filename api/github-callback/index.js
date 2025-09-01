@@ -1,7 +1,7 @@
-import { URLSearchParams } from 'url';
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
+const { URLSearchParams } = require('url');
 
-export default async function (context, req) {
+module.exports = async function (context, req) {
     context.log('GitHub OAuth callback function processed a request.');
 
     // Dynamically determine frontend URL
