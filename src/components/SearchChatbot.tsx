@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Search, MessageSquare, GitBranch, Star, Eye } from 'lucide-react';
+import { X, Send, Search, MessageSquare, GitBranch, Star, Eye, Bookmark, BookmarkCheck } from 'lucide-react';
 import environmentService from '../services/environmentService';
+import bookmarkService from '../services/bookmarkService';
 
 interface Repository {
   id: number;
@@ -64,6 +65,24 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatbotRef = useRef<HTMLDivElement>(null);
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (chatbotRef.current && !chatbotRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -209,6 +228,32 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 ml-4">
+                  {/* Bookmark Button */}
+                  <button
+                    onClick={() => {
+                      if (!userLogin) return;
+                      
+                      const isCurrentlyBookmarked = bookmarkService.isBookmarked(userLogin, repo.id);
+                      if (isCurrentlyBookmarked) {
+                        bookmarkService.removeBookmark(userLogin, repo.id);
+                      } else {
+                        bookmarkService.addBookmark(userLogin, repo);
+                      }
+                    }}
+                    className={`p-1 rounded transition-colors ${
+                      userLogin && bookmarkService.isBookmarked(userLogin, repo.id)
+                        ? 'text-yellow-500 hover:text-yellow-600'
+                        : 'text-gray-400 hover:text-yellow-500'
+                    }`}
+                    title={userLogin && bookmarkService.isBookmarked(userLogin, repo.id) ? 'Remove bookmark' : 'Bookmark repository'}
+                  >
+                    {userLogin && bookmarkService.isBookmarked(userLogin, repo.id) ? (
+                      <BookmarkCheck size={16} />
+                    ) : (
+                      <Bookmark size={16} />
+                    )}
+                  </button>
+                  
                   {repo.private && (
                     <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
                       <Eye size={12} className="inline mr-1" />
@@ -287,8 +332,11 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md h-[600px] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-end justify-end p-4">
+      <div 
+        ref={chatbotRef}
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md h-[600px] flex flex-col"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">

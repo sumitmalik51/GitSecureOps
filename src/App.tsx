@@ -15,6 +15,7 @@ import ExportUsernames from './components/ExportUsernames';
 import SmartRecommendations from './components/SmartRecommendations';
 import SearchChatbot from './components/SearchChatbot';
 import ChatButton from './components/ChatButton';
+import BookmarkManager from './components/BookmarkManager';
 import githubService, { type GitHubOrg } from './services/githubService';
 
 function App() {
@@ -30,6 +31,9 @@ function App() {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [userOrganizations, setUserOrganizations] = useState<GitHubOrg[]>([]);
   const [orgNames, setOrgNames] = useState<string[]>([]);
+  
+  // Bookmark manager state
+  const [isBookmarkManagerOpen, setIsBookmarkManagerOpen] = useState(false);
 
   console.log('User organizations loaded:', userOrganizations.length);
 
@@ -142,7 +146,9 @@ function App() {
   };
 
   const handleSelectOption = (option: string) => {
-    if (option === 'smart-recommendations') {
+    if (option === 'bookmarks') {
+      setIsBookmarkManagerOpen(true);
+    } else if (option === 'smart-recommendations') {
       setCurrentView('smart-recommendations');
     } else if (option === 'copilot-manager') {
       setCurrentView('copilot-manager');
@@ -203,6 +209,10 @@ function App() {
 
   const handleCloseChatbot = () => {
     setIsChatbotOpen(false);
+  };
+
+  const handleCloseBookmarks = () => {
+    setIsBookmarkManagerOpen(false);
   };
 
   if (currentPage === 'landing') {
@@ -398,6 +408,13 @@ GitSecureOps will search across all repositories within the selected org(s) and 
             accessToken={token}
             userLogin={username}
             organizations={orgNames}
+          />
+          
+          {/* Bookmark Manager Modal */}
+          <BookmarkManager
+            isOpen={isBookmarkManagerOpen}
+            onClose={handleCloseBookmarks}
+            userLogin={username}
           />
         </>
       );
