@@ -13,7 +13,9 @@ import DeleteUserAccess from './components/DeleteUserAccess';
 import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
 import SmartRecommendations from './components/SmartRecommendations';
-import githubService from './services/githubService';
+import SearchChatbot from './components/SearchChatbot';
+import ChatButton from './components/ChatButton';
+import githubService, { type GitHubOrg } from './services/githubService';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'oauth-success' | 'app'>('landing');
@@ -23,6 +25,13 @@ function App() {
   const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'all' | 'multi-org'>('user');
   const [selectedOrg, setSelectedOrg] = useState<string>('');
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
+  
+  // Chatbot state management
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [userOrganizations, setUserOrganizations] = useState<GitHubOrg[]>([]);
+  const [orgNames, setOrgNames] = useState<string[]>([]);
+
+  console.log('User organizations loaded:', userOrganizations.length);
 
   // Check for OAuth callback or persisted authentication state on component mount
   useEffect(() => {
@@ -79,6 +88,23 @@ function App() {
     // Clear URL parameters after successful authentication
     window.history.replaceState({}, document.title, window.location.pathname);
   };
+
+  // Load user organizations when authenticated
+  useEffect(() => {
+    if (token && username) {
+      const loadUserOrganizations = async () => {
+        try {
+          const orgs = await githubService.getUserOrganizations();
+          setUserOrganizations(orgs);
+          setOrgNames(orgs.map(org => org.login));
+        } catch (error) {
+          console.error('Failed to load user organizations:', error);
+        }
+      };
+      
+      loadUserOrganizations();
+    }
+  }, [token, username]);
 
   const handleAuthError = (error: string) => {
     console.error('Authentication error:', error);
@@ -171,6 +197,14 @@ function App() {
     }
   };
 
+  const handleOpenChatbot = () => {
+    setIsChatbotOpen(true);
+  };
+
+  const handleCloseChatbot = () => {
+    setIsChatbotOpen(false);
+  };
+
   if (currentPage === 'landing') {
     return <LandingPage onGetStarted={handleGetStarted} />;
   }
@@ -232,9 +266,25 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'smart-recommendations':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
-          <SmartRecommendations onBack={handleBack} />
-        </Layout>
+        <>
+          <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+            <SmartRecommendations onBack={handleBack} />
+          </Layout>
+          
+          {/* Floating Chat Button */}
+          {token && (
+            <ChatButton onClick={handleOpenChatbot} />
+          )}
+          
+          {/* Search Chatbot Modal */}
+          <SearchChatbot
+            isOpen={isChatbotOpen}
+            onClose={handleCloseChatbot}
+            accessToken={token}
+            userLogin={username}
+            organizations={orgNames}
+          />
+        </>
       );
     case 'copilot-manager':
       return (
@@ -327,13 +377,29 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     default:
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
-          <Dashboard
-            username={username}
-            onLogout={handleLogout}
-            onSelectOption={handleSelectOption}
+        <>
+          <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+            <Dashboard
+              username={username}
+              onLogout={handleLogout}
+              onSelectOption={handleSelectOption}
+            />
+          </Layout>
+          
+          {/* Floating Chat Button - Only show when authenticated */}
+          {token && (
+            <ChatButton onClick={handleOpenChatbot} />
+          )}
+          
+          {/* Search Chatbot Modal */}
+          <SearchChatbot
+            isOpen={isChatbotOpen}
+            onClose={handleCloseChatbot}
+            accessToken={token}
+            userLogin={username}
+            organizations={orgNames}
           />
-        </Layout>
+        </>
       );
   }
 }

@@ -18,15 +18,12 @@ on:
         default: 'eastus2'
         type: string
 
-env:
-  NODE_VERSION: '20.x'
-
 jobs:
   deploy-infrastructure:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: 'Checkout GitHub Action'
+    - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Login to Azure
@@ -34,151 +31,69 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Install Azure PowerShell Module
+    - name: Set environment-specific GitHub secrets
       run: |
-        Write-Host "Installing Azure PowerShell Module..."
-        Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force -AllowClobber
-        Write-Host "Azure PowerShell Module installed successfully!"
-      shell: pwsh
-
-    - name: Connect to Azure PowerShell
-      run: |
-        Write-Host "Connecting to Azure PowerShell..."
-        # Parse the service principal credentials from the secret
-        $creds = '${{ secrets.AZURE_CREDENTIALS }}' | ConvertFrom-Json
-        $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
-        $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
-        Connect-AzAccount -ServicePrincipal -Credential $credential -TenantId $creds.tenantId -SubscriptionId $creds.subscriptionId
-        Set-AzContext -SubscriptionId $creds.subscriptionId
-        Write-Host "Connected to Azure PowerShell successfully!"
-      shell: pwsh
-
+        if [ "${{ inputs.environment }}" == "dev" ]; then
+          echo "GH_CLIENT_ID=${{ secrets.GH_WEB_APP_DEV }}" >> $GITHUB_ENV
+          echo "GH_CLIENT_SECRET=${{ secrets.GH_WEB_APP_SECRET_DEV }}" >> $GITHUB_ENV
+        else
+          echo "GH_CLIENT_ID=${{ secrets.GH_WEB_APP }}" >> $GITHUB_ENV
+          echo "GH_CLIENT_SECRET=${{ secrets.GH_WEB_APP_SECRET }}" >> $GITHUB_ENV
+        fi
 
     - name: Create Resource Group
       run: |
-        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
-        Write-Host "Creating resource group: $resourceGroup"
-        New-AzResourceGroup -Name $resourceGroup -Location "${{ inputs.region }}" -Tag @{"azd-env-name"="${{ inputs.environment }}"} -Force
-      shell: pwsh
-
-    - name: Deploy Infrastructure
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        az group create --name "$RESOURCE_GROUP" --location "${{ inputs.region }}" --tags "azd-env-name=${{ inputs.environment }}"
+        echo "✅ Resource Group $RESOURCE_GROUP created/verified"
+    
+    - name: Deploy Bicep Infrastructure
       run: |
-        $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
-        # Use environment name as resource token for consistent naming
-        $resourceToken = "${{ inputs.environment }}"
-        
-        Write-Host "Deploying infrastructure to ${{ inputs.environment }} environment..."
-        Write-Host "Using resource token: $resourceToken (consistent naming)"
-        
-        # Check if Function App already exists and get its URL for OAuth callback
-        Write-Host "Checking for existing Function App..."
-        $resourceToken = "${{ inputs.environment }}"
-        $functionAppName = "func-gh-$resourceToken"
-        
-        try {
-          $existingFunctionApp = Get-AzWebApp -ResourceGroupName $resourceGroup -Name $functionAppName -ErrorAction SilentlyContinue
-          if ($existingFunctionApp) {
-            $functionAppUrl = "https://$($existingFunctionApp.DefaultHostName)"
-            Write-Host "Found existing Function App: $functionAppUrl"
-            $redirectUri = "$functionAppUrl/api/github-callback"
-          } else {
-            # For initial deployment, use predictable Function App URL
-            $redirectUri = "https://$functionAppName.azurewebsites.net/api/github-callback"
-            Write-Host "No existing Function App found, using predictable URL for initial deployment"
-          }
-        }
-        catch {
-          # Fallback to predictable URL
-          $redirectUri = "https://$functionAppName.azurewebsites.net/api/github-callback"
-          Write-Host "Using predictable Function App URL for OAuth callback"
-        }
-        
-        $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
-        
-        # Deploy using PowerShell directly with Bicep (no compilation needed)
-        Write-Host "Deploying Bicep template directly with PowerShell..."
-        
-        try {
-          Write-Host "Starting deployment with redirect URI: $redirectUri"
-          
-          $deployment = New-AzResourceGroupDeployment `
-            -ResourceGroupName $resourceGroup `
-            -TemplateFile "infra/main-resources.bicep" `
-            -environmentName "${{ inputs.environment }}" `
-            -location "${{ inputs.region }}" `
-            -resourceToken $resourceToken `
-            -resourcePrefix "gh" `
-            -githubClientId "${{ secrets.GH_WEB_APP }}" `
-            -githubRedirectUri $redirectUri `
-            -githubClientSecret $secureSecret `
-            -Verbose
-        }
-        catch {
-          Write-Host "❌ Deployment failed with error: $($_.Exception.Message)"
-          Write-Host "Full error details:"
-          Write-Host $_.Exception
-          exit 1
-        }
-        
-        Write-Host "Waiting for resources to be available..."
-        Start-Sleep -Seconds 20
-        
-        # Get the SWA URL from the deployment outputs or resource group
-        Write-Host "Querying deployed resources..."
-        $swaResources = Get-AzStaticWebApp -ResourceGroupName $resourceGroup
-        
-        if ($swaResources -and $swaResources.Count -gt 0) {
-          $swaUrl = $swaResources[0].DefaultHostname
-          Write-Host "✅ Infrastructure deployment complete!"
-          Write-Host "🌐 Frontend URL: https://$swaUrl"
-          Write-Host "🔧 Function App URL: https://$functionAppName.azurewebsites.net"
-          Write-Host "🔗 OAuth Redirect URI: https://$functionAppName.azurewebsites.net/api/github-callback"
-          Write-Host ""
-          Write-Host "📋 GitHub OAuth App Configuration:"
-          Write-Host "   Homepage URL: https://$swaUrl"
-          Write-Host "   Authorization callback URL: https://$functionAppName.azurewebsites.net/api/github-callback"
-          Write-Host ""
-          Write-Host "🔄 Resources updated/created in environment: ${{ inputs.environment }}"
-        } else {
-          Write-Host "❌ Could not retrieve Static Web App URL"
-          Write-Host "Checking deployed resources..."
-          Get-AzResource -ResourceGroupName $resourceGroup | Format-Table Name, ResourceType
-          exit 1
-        }
-      shell: pwsh
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        RESOURCE_TOKEN="${{ inputs.environment }}"
+        FUNCTION_APP_NAME="func-gh-$RESOURCE_TOKEN"
+
+        # Predictable Function App redirect URI
+        REDIRECT_URI="https://$FUNCTION_APP_NAME.azurewebsites.net/api/github-callback"
+
+        echo "🔧 Deploying Bicep template to $RESOURCE_GROUP..."
+        az deployment group create \
+          --resource-group "$RESOURCE_GROUP" \
+          --template-file "infra/main-resources.bicep" \
+          --parameters \
+            environmentName="${{ inputs.environment }}" \
+            location="${{ inputs.region }}" \
+            resourceToken="$RESOURCE_TOKEN" \
+            resourcePrefix="gh" \
+            githubClientId="$GH_CLIENT_ID" \
+            githubRedirectUri="$REDIRECT_URI" \
+            githubClientSecret="$GH_CLIENT_SECRET" \
+          --verbose
+
+        echo "✅ Infrastructure deployed to $RESOURCE_GROUP"
+
+    - name: Update Function App settings
+      run: |
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
+
+        # Get Static Web App URL
+        SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv 2>/dev/null)
+        if [ -n "$SWA_URL" ]; then
+          FRONTEND_URL="https://$SWA_URL"
+          echo "🔧 Updating Function App FRONTEND_URL: $FRONTEND_URL"
+
+          az functionapp config appsettings set \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$FUNCTION_APP_NAME" \
+            --settings "FRONTEND_URL=$FRONTEND_URL" \
+            --output table
+
+          echo "✅ Function App FRONTEND_URL updated successfully!"
+        else
+          echo "⚠️ Could not retrieve Static Web App URL"
+        fi
 
     - name: Azure logout
       run: az logout
       if: always()
-
-    - name: Update Function App Settings
-      if: success()
-      run: |
-        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
-        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
-        
-        echo "🔧 Updating Function App settings..."
-        
-        # Get the actual Static Web App URL
-        SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv 2>/dev/null || echo "")
-        
-        if [ -n "$SWA_URL" ]; then
-          ACTUAL_SWA_URL="https://$SWA_URL"
-          echo "📍 Static Web App URL: $ACTUAL_SWA_URL"
-          echo "🔧 Updating Function App FRONTEND_URL setting..."
-          
-          # Update Function App settings
-          az functionapp config appsettings set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$FUNCTION_APP_NAME" \
-            --settings "FRONTEND_URL=$ACTUAL_SWA_URL" \
-            --output table
-          
-          if [ $? -eq 0 ]; then
-            echo "✅ Function App FRONTEND_URL updated successfully!"
-          else
-            echo "⚠️ Warning: Could not update Function App settings"
-          fi
-        else
-          echo "⚠️ Warning: Could not retrieve Static Web App URL"
-        fi
