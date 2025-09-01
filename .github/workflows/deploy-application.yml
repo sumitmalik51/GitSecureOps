@@ -55,7 +55,6 @@ jobs:
         SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
         FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
 
-        # Validate resources
         if [ -z "$SWA_NAME" ]; then
           echo "❌ Static Web App not found in resource group $RESOURCE_GROUP"
           exit 1
@@ -75,6 +74,7 @@ jobs:
         npm install -g @azure/static-web-apps-cli
         SWA_TOKEN=$(az staticwebapp secrets list --resource-group $RESOURCE_GROUP --name $SWA_NAME --query "properties.apiKey" -o tsv)
 
+        echo "🚀 Deploying frontend to environment: ${{ inputs.environment }}"
         swa deploy ./dist --deployment-token "$SWA_TOKEN" --env ${{ inputs.environment }} --verbose
 
         echo "✅ Frontend deployed: https://$SWA_URL"
@@ -85,10 +85,8 @@ jobs:
         set -e
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
         FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
-
         echo "🔧 Deploying Function App: $FUNCTION_APP_NAME"
 
-        # Validate API structure
         cd api
         if [ ! -f "host.json" ]; then
           echo "❌ host.json not found in api folder"
@@ -109,6 +107,11 @@ jobs:
         FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
         SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
 
+        if [ -z "$SWA_URL" ]; then
+          echo "❌ Could not retrieve Static Web App URL"
+          exit 1
+        fi
+
         echo "🔧 Updating Function App OAuth settings..."
         az functionapp config appsettings set \
           --resource-group "$RESOURCE_GROUP" \
@@ -122,6 +125,5 @@ jobs:
         echo "✅ Function App settings updated"
 
     - name: Azure logout
-      run: |
-        az logout
+      run: az logout
       if: always()
