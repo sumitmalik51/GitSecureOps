@@ -74,24 +74,34 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
   const features = [
     {
+      icon: "�",
+      title: "� GitHub Copilot Management",
+      description: "Manage GitHub Copilot access and permissions for organization members with enterprise-grade controls."
+    },
+    {
+      icon: "🔑",
+      title: "🔑 Grant GitHub Access",
+      description: "Invite users to organizations or repositories with specific permissions and automated workflows."
+    },
+    {
       icon: "🔐",
-      title: "🔐 Automated Access Control",
-      description: "Automatically manage user permissions across all your repositories."
-    },
-    {
-      icon: "⚡",
-      title: "⚡ Lightning Fast Operations",
-      description: "Process thousands of repositories in parallel with optimized batching."
-    },
-    {
-      icon: "🛡️",
-      title: "🛡️ Enterprise-Grade Security",
-      description: "Secure access via PAT (Personal Access Tokens) with zero data persistence. OAuth integration — coming soon."
-    },
-    {
-      icon: "🔒",
-      title: "🔒 Two-Factor Authentication Compliance",
+      title: "🔐 Two-Factor Authentication Compliance",
       description: "Scan organizations and repositories for 2FA compliance. Identify users without 2FA enabled, view compliance rates, and export detailed reports for security auditing."
+    },
+    {
+      icon: "🧬",
+      title: "🧬 GitHub Actions Management",
+      description: "View & manage Action-level permissions per repo, detect secrets exposed to actions, modify GITHUB_TOKEN permissions, flag self-hosted runners."
+    },
+    {
+      icon: "�",
+      title: "� Repository Bookmarks",
+      description: "Quick access to your bookmarked repositories and organize them into folders for enhanced productivity."
+    },
+    {
+      icon: "💾",
+      title: "💾 Code Snippets",
+      description: "Save, organize and share code snippets from your search results and repositories with intelligent tagging."
     }
   ];
 
@@ -310,8 +320,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-fade-in">
-              Professional GitHub repository management with enterprise-grade security
-              Streamline user access, automate permissions, and maintain compliance, all from one sleek dashboard.
+              Professional GitHub repository management with enterprise-grade security.
+              Streamline user access, manage Copilot permissions, bookmark repositories, save code snippets, and maintain 2FA compliance — all from one powerful dashboard.
             </p>
             <div className="flex justify-center items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <button
@@ -354,7 +364,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               💡 What GitSecureOps Does
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Comprehensive GitHub access automation for modern DevSecOps teams.
+              Comprehensive GitHub management tools for modern development teams, from access control to productivity features.
             </p>
           </div>
           
@@ -421,36 +431,44 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Key Features</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center">
-                  <span className="text-blue-600 mr-3">🔒</span>
-                  <span className="dark:text-gray-300">Two-Factor Authentication Compliance</span>
+                  <span className="text-blue-600 mr-3">�</span>
+                  <span className="dark:text-gray-300">GitHub Copilot Management</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-blue-600 mr-3">🔑</span>
                   <span className="dark:text-gray-300">Grant GitHub Access</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-blue-600 mr-3">🧬</span>
-                  <span className="dark:text-gray-300">GitHub Actions Management</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-blue-600 mr-3">🗑️</span>
-                  <span className="dark:text-gray-300">Delete User Access</span>
+                  <span className="text-blue-600 mr-3">🌍</span>
+                  <span className="dark:text-gray-300">List Public Repositories</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-blue-600 mr-3">🔒</span>
                   <span className="dark:text-gray-300">List Private Repositories</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-blue-600 mr-3">🌍</span>
-                  <span className="dark:text-gray-300">List Public Repositories</span>
+                  <span className="text-blue-600 mr-3">🔐</span>
+                  <span className="dark:text-gray-300">Two-Factor Authentication Compliance</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-3">🗑️</span>
+                  <span className="dark:text-gray-300">Delete User Access</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-3">�</span>
+                  <span className="dark:text-gray-300">Repository Bookmarks</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-3">💾</span>
+                  <span className="dark:text-gray-300">Code Snippets</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-3">🧬</span>
+                  <span className="dark:text-gray-300">GitHub Actions Management</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-blue-600 mr-3">📊</span>
-                  <span className="dark:text-gray-300">Export Username Data</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-blue-600 mr-3">🏢</span>
-                  <span className="dark:text-gray-300">Organization Management</span>
+                  <span className="dark:text-gray-300">Export User Data</span>
                 </div>
               </div>
             </div>
