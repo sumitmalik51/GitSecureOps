@@ -20,6 +20,7 @@ import BookmarkManager from './components/BookmarkManager';
 import ActivitySidebar from './components/ActivitySidebar';
 import EnhancedCommandPalette from './components/EnhancedCommandPalette';
 import SnippetManager from './components/SnippetManager';
+import UserAvatarHeader from './components/UserAvatarHeader';
 import githubService, { type GitHubOrg } from './services/githubService';
 import useGlobalShortcut from './hooks/useGlobalShortcut';
 
@@ -282,7 +283,7 @@ function App() {
   switch (currentView) {
     case 'org-selector-delete-user-access':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -295,7 +296,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'org-selector-list-private-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -306,7 +307,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'org-selector-list-public-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -317,7 +318,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'org-selector-export-usernames':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <OrganizationSelector
             onBack={handleBack}
             onSelectScope={handleScopeSelection}
@@ -329,7 +330,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
     case 'smart-recommendations':
       return (
         <>
-          <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+          <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
             <SmartRecommendations onBack={handleBack} />
           </Layout>
           
@@ -350,7 +351,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'copilot-manager':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <CopilotManager
             onBack={handleBack}
           />
@@ -358,7 +359,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'grant-access':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <GrantAccess
             token={token}
             onBack={handleBack}
@@ -367,7 +368,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'actions-manager':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <GitHubActionsManager
             token={token}
             onBack={handleBack}
@@ -376,7 +377,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'two-factor-checker':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <TwoFactorChecker
             token={token}
             onBack={handleBack}
@@ -385,7 +386,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'delete-user-access':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <DeleteUserAccess
             token={token}
             username={username}
@@ -398,7 +399,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'list-private-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <RepositoryListView
             token={token}
             username={username}
@@ -412,7 +413,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'list-public-repos':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <RepositoryListView
             token={token}
             username={username}
@@ -426,7 +427,7 @@ GitSecureOps will search across all repositories within the selected org(s) and 
       );
     case 'export-usernames':
       return (
-        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
+        <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
           <ExportUsernames
             token={token}
             username={username}
@@ -455,14 +456,6 @@ GitSecureOps will search across all repositories within the selected org(s) and 
                         <p className="text-xs text-gray-500 dark:text-gray-400">Repository Management</p>
                       </div>
                     </div>
-                    <div className="hidden sm:block">
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Welcome {username}
-                      </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Choose from the options below to manage your repositories
-                      </p>
-                    </div>
                   </div>
                   
                   <div className="flex items-center space-x-4">
@@ -476,23 +469,13 @@ GitSecureOps will search across all repositories within the selected org(s) and 
                       <span>Press Ctrl+K</span>
                     </button>
                     
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {username.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="hidden sm:block">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{username}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">GitHub User</div>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={handleLogout}
-                      className="inline-flex items-center px-3 sm:px-4 py-2 border border-red-200 dark:border-red-500/50 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-300 dark:hover:border-red-400 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                      <span className="mr-2">🚪</span>
-                      <span>Logout</span>
-                    </button>
+                    {/* User Avatar Header with GitHub Profile */}
+                    <UserAvatarHeader
+                      accessToken={token}
+                      username={username}
+                      onLogout={handleLogout}
+                      className="ml-4"
+                    />
                   </div>
                 </div>
               </header>
