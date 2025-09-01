@@ -13,7 +13,6 @@ import TwoFactorChecker from './components/TwoFactorChecker';
 import DeleteUserAccess from './components/DeleteUserAccess';
 import RepositoryListView from './components/RepositoryListView';
 import ExportUsernames from './components/ExportUsernames';
-import SmartRecommendations from './components/SmartRecommendations';
 import SearchChatbot from './components/SearchChatbot';
 import ChatButton from './components/ChatButton';
 import BookmarkManager from './components/BookmarkManager';
@@ -197,8 +196,6 @@ function App() {
       setIsBookmarkManagerOpen(true);
     } else if (option === 'snippets') {
       setIsSnippetManagerOpen(true);
-    } else if (option === 'smart-recommendations') {
-      setCurrentView('smart-recommendations');
     } else if (option === 'copilot-manager') {
       setCurrentView('copilot-manager');
     } else if (option === 'grant-access') {
@@ -326,28 +323,6 @@ GitSecureOps will search across all repositories within the selected org(s) and 
             description="Choose which repositories to scan for usernames"
           />
         </Layout>
-      );
-    case 'smart-recommendations':
-      return (
-        <>
-          <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate} accessToken={token} organizations={orgNames}>
-            <SmartRecommendations onBack={handleBack} />
-          </Layout>
-          
-          {/* Floating Chat Button */}
-          {token && (
-            <ChatButton onClick={handleOpenChatbot} />
-          )}
-          
-          {/* Search Chatbot Modal */}
-          <SearchChatbot
-            isOpen={isChatbotOpen}
-            onClose={handleCloseChatbot}
-            accessToken={token}
-            userLogin={username}
-            organizations={orgNames}
-          />
-        </>
       );
     case 'copilot-manager':
       return (
