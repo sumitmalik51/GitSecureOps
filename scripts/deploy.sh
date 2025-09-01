@@ -106,6 +106,19 @@ echo "📍 Static Web App URL: https://${SWA_URL}"
 echo "� Function App Name: ${FUNCTION_NAME}" 
 echo "🔗 OAuth Redirect URI: ${DYNAMIC_REDIRECT_URI}"
 
+# Update Function App environment variables with actual URLs
+echo ""
+echo "🔧 Updating Function App Configuration..."
+echo "========================================"
+
+az functionapp config appsettings set \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$FUNCTION_NAME" \
+    --settings "FRONTEND_URL=https://${SWA_URL}" \
+    --output table
+
+echo "✅ Function App configuration updated!"
+
 # Install dependencies
 echo ""
 echo "📦 Installing Dependencies..."

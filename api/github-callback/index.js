@@ -3,6 +3,59 @@ import { URLSearchParams } from 'url';
 export default async function (context, req) {
     context.log('GitHub OAuth callback function processed a request.');
 
+    // Dynamically determine frontend URL
+    const getFrontendUrl = () => {
+        // First try the environment variable (explicitly configured)
+        if (process.env.FRONTEND_URL) {
+            return process.env.FRONTEND_URL;
+        }
+        
+        // Extract from headers - common Azure Static Web Apps patterns
+        const host = req.headers.host || req.headers['x-forwarded-host'] || req.headers['x-original-host'];
+        const protocol = req.headers['x-forwarded-proto'] || req.headers['x-arr-ssl'] ? 'https' : 'http';
+        const referer = req.headers.referer || req.headers.referrer;
+        
+        // Try to get frontend URL from referer header (most reliable for OAuth callbacks)
+        if (referer) {
+            try {
+                const refererUrl = new URL(referer);
+                const refererOrigin = `${refererUrl.protocol}//${refererUrl.hostname}${refererUrl.port ? ':' + refererUrl.port : ''}`;
+                // Don't use localhost referers in production
+                if (!refererOrigin.includes('localhost') || host?.includes('localhost')) {
+                    context.log(`Using referer origin: ${refererOrigin}`);
+                    return refererOrigin;
+                }
+            } catch (e) {
+                context.log(`Failed to parse referer: ${referer}`);
+            }
+        }
+        
+        if (host) {
+            // If host is the Azure Function host (contains .azurewebsites.net)
+            // we need to derive the Static Web App URL
+            if (host.includes('.azurewebsites.net')) {
+                // Convert function app URL to static web app URL
+                // Function: func-gh-xxx.azurewebsites.net -> Static: swa-gh-xxx.azurestaticapps.net
+                const staticHost = host.replace('func-', 'swa-').replace('.azurewebsites.net', '.azurestaticapps.net');
+                return `${protocol}://${staticHost}`;
+            }
+            
+            // Handle Azure Static Web Apps direct access (*.azurestaticapps.net)
+            if (host.includes('.azurestaticapps.net')) {
+                return `${protocol}://${host}`;
+            }
+            
+            // For custom domains or other deployments
+            return `${protocol}://${host}`;
+        }
+        
+        // Fallback for local development
+        return 'http://localhost:4280';
+    };
+
+    const frontendUrl = getFrontendUrl();
+    context.log(`Determined frontend URL: ${frontendUrl}`);
+
     // Enable CORS
     context.res = {
         headers: {
@@ -31,7 +84,7 @@ export default async function (context, req) {
             context.res = {
                 status: 302,
                 headers: {
-                    'Location': `${process.env.FRONTEND_URL || 'http://localhost:4280'}?error=${encodeURIComponent(errorMessage)}`
+                    'Location': `${frontendUrl}?error=${encodeURIComponent(errorMessage)}`
                 }
             };
             return;
@@ -93,7 +146,6 @@ export default async function (context, req) {
         const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64');
 
         // Redirect to frontend with success
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4280';
         context.res = {
             status: 302,
             headers: {
@@ -105,7 +157,6 @@ export default async function (context, req) {
         context.log.error('OAuth callback error:', error);
         
         // Redirect to frontend with error
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4280';
         context.res = {
             status: 302,
             headers: {
