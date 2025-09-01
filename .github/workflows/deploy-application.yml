@@ -128,7 +128,7 @@ jobs:
 
         # Deploy using az functionapp deployment
         echo "🚀 Deploying Function App: $FUNCTION_APP_NAME"
-        az functionapp deployment source config-zip --resource-group $RESOURCE_GROUP --name $FUNCTION_APP_NAME --src function-app.zip
+        az functionapp deployment source config-zip --resource-group $RESOURCE_GROUP --name $FUNCTION_APP_NAME --src function-app.zip --build-remote true
 
         # Clean up
         rm -f function-app.zip        echo "✅ Function App deployed successfully!"
