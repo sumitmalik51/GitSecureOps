@@ -201,7 +201,7 @@ resource githubClientSecretKv 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
-// Key Vault access policy for Function App (both system and user assigned identities)
+// Key Vault access policy for Function App and User Identity
 resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
   name: 'add'
   parent: keyVault
@@ -267,7 +267,6 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
       skipGithubActionWorkflowGeneration: false
       appBuildCommand: 'npm run build'
       outputLocation: 'dist'
-      apiLocation: 'api'
       appLocation: '/'
     }
     stagingEnvironmentPolicy: 'Enabled'
@@ -282,16 +281,14 @@ resource staticWebAppSettings 'Microsoft.Web/staticSites/config@2022-09-01' = {
   name: 'appsettings'
   properties: {
     REACT_APP_GITHUB_CLIENT_ID: githubClientId
-    REACT_APP_GITHUB_REDIRECT_URI: githubRedirectUri
+    REACT_APP_GITHUB_REDIRECT_URI: 'https://func-${resourcePrefix}-${resourceToken}.azurewebsites.net/api/github-callback'
     APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
-    GH_WEB_APP: githubClientId
-    GH_WEB_APP_SECRET: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=github-client-secret)'
-    FRONTEND_URL: baseUrl
   }
 }
 
 // Outputs
 output STATICWEBAPP_URL string = staticWebApp.properties.defaultHostname
 output STATICWEBAPP_NAME string = staticWebApp.name
+output FUNCTIONAPP_NAME string = functionApp.name
 output APPLICATION_INSIGHTS_CONNECTION_STRING string = appInsights.properties.ConnectionString
 output APPLICATION_INSIGHTS_INSTRUMENTATION_KEY string = appInsights.properties.InstrumentationKey

@@ -70,19 +70,27 @@ jobs:
         Write-Host "Deploying infrastructure to ${{ inputs.environment }} environment..."
         Write-Host "Using resource token: $resourceToken (consistent naming)"
         
-        # Check if Static Web App already exists and get its URL
-        Write-Host "Checking for existing Static Web App..."
-        $existingSwa = Get-AzStaticWebApp -ResourceGroupName $resourceGroup -ErrorAction SilentlyContinue
+        # Check if Function App already exists and get its URL for OAuth callback
+        Write-Host "Checking for existing Function App..."
+        $resourceToken = "${{ inputs.environment }}"
+        $functionAppName = "func-gh-$resourceToken"
         
-        if ($existingSwa -and $existingSwa.Count -gt 0) {
-          $existingSwaUrl = "https://$($existingSwa[0].DefaultHostname)"
-          Write-Host "Found existing Static Web App: $existingSwaUrl"
-          $redirectUri = "$existingSwaUrl/api/github-callback"
-        } else {
-          # For initial deployment, use a predictable placeholder URL
-          # This will be updated after the SWA is created
-          $redirectUri = "https://placeholder-$resourceToken.azurestaticapps.net/api/github-callback"
-          Write-Host "No existing SWA found, using placeholder URL for initial deployment"
+        try {
+          $existingFunctionApp = Get-AzWebApp -ResourceGroupName $resourceGroup -Name $functionAppName -ErrorAction SilentlyContinue
+          if ($existingFunctionApp) {
+            $functionAppUrl = "https://$($existingFunctionApp.DefaultHostName)"
+            Write-Host "Found existing Function App: $functionAppUrl"
+            $redirectUri = "$functionAppUrl/api/github-callback"
+          } else {
+            # For initial deployment, use predictable Function App URL
+            $redirectUri = "https://$functionAppName.azurewebsites.net/api/github-callback"
+            Write-Host "No existing Function App found, using predictable URL for initial deployment"
+          }
+        }
+        catch {
+          # Fallback to predictable URL
+          $redirectUri = "https://$functionAppName.azurewebsites.net/api/github-callback"
+          Write-Host "Using predictable Function App URL for OAuth callback"
         }
         
         $secureSecret = ConvertTo-SecureString "${{ secrets.GH_WEB_APP_SECRET }}" -AsPlainText -Force
@@ -122,12 +130,13 @@ jobs:
         if ($swaResources -and $swaResources.Count -gt 0) {
           $swaUrl = $swaResources[0].DefaultHostname
           Write-Host "✅ Infrastructure deployment complete!"
-          Write-Host "🌐 App URL: https://$swaUrl"
-          Write-Host "� OAuth Redirect URI: https://$swaUrl/api/github-callback"
+          Write-Host "🌐 Frontend URL: https://$swaUrl"
+          Write-Host "🔧 Function App URL: https://$functionAppName.azurewebsites.net"
+          Write-Host "🔗 OAuth Redirect URI: https://$functionAppName.azurewebsites.net/api/github-callback"
           Write-Host ""
-          Write-Host "� GitHub OAuth App Configuration:"
+          Write-Host "📋 GitHub OAuth App Configuration:"
           Write-Host "   Homepage URL: https://$swaUrl"
-          Write-Host "   Authorization callback URL: https://$swaUrl/api/github-callback"
+          Write-Host "   Authorization callback URL: https://$functionAppName.azurewebsites.net/api/github-callback"
           Write-Host ""
           Write-Host "🔄 Resources updated/created in environment: ${{ inputs.environment }}"
         } else {
@@ -153,27 +162,26 @@ jobs:
         
         $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
         $resourceToken = "${{ inputs.environment }}"
-        $swaName = "swa-gh-$resourceToken"
+        $functionAppName = "func-gh-$resourceToken"
         
-        # Get the actual Static Web App URL
+        # Get the actual Static Web App URL for FRONTEND_URL setting
         $swaResources = Get-AzStaticWebApp -ResourceGroupName $resourceGroup
         if ($swaResources -and $swaResources.Count -gt 0) {
           $actualSwaUrl = "https://$($swaResources[0].DefaultHostname)"
-          Write-Host "Updating Static Web App settings with actual URL: $actualSwaUrl"
+          Write-Host "Updating Function App settings with Static Web App URL: $actualSwaUrl"
           
           try {
-            # Update Static Web App settings for API functions
-            Write-Host "Updating FRONTEND_URL and redirect URI settings..."
-            az staticwebapp appsettings set \
+            # Update Function App FRONTEND_URL setting
+            Write-Host "Updating FRONTEND_URL setting..."
+            az functionapp config appsettings set \
               --resource-group $resourceGroup \
-              --name $swaName \
-              --setting-names "FRONTEND_URL=$actualSwaUrl" \
-              --setting-names "REACT_APP_GITHUB_REDIRECT_URI=$actualSwaUrl/api/github-callback" \
+              --name $functionAppName \
+              --settings "FRONTEND_URL=$actualSwaUrl" \
               --output table
-            Write-Host "✅ Static Web App settings updated successfully!"
+            Write-Host "✅ Function App FRONTEND_URL updated successfully!"
           }
           catch {
-            Write-Host "⚠️ Warning: Could not update Static Web App settings: $($_.Exception.Message)"
+            Write-Host "⚠️ Warning: Could not update Function App settings: $($_.Exception.Message)"
           }
         }
         
