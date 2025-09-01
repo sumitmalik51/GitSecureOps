@@ -1,4 +1,5 @@
 import { URLSearchParams } from 'url';
+import fetch from 'node-fetch';
 
 export default async function (context, req) {
     context.log('GitHub OAuth callback function processed a request.');

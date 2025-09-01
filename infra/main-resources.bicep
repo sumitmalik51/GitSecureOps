@@ -267,6 +267,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
       skipGithubActionWorkflowGeneration: false
       appBuildCommand: 'npm run build'
       outputLocation: 'dist'
+      apiLocation: 'api'
       appLocation: '/'
     }
     stagingEnvironmentPolicy: 'Enabled'
@@ -283,12 +284,14 @@ resource staticWebAppSettings 'Microsoft.Web/staticSites/config@2022-09-01' = {
     REACT_APP_GITHUB_CLIENT_ID: githubClientId
     REACT_APP_GITHUB_REDIRECT_URI: githubRedirectUri
     APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
+    GH_WEB_APP: githubClientId
+    GH_WEB_APP_SECRET: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=github-client-secret)'
+    FRONTEND_URL: baseUrl
   }
 }
 
 // Outputs
 output STATICWEBAPP_URL string = staticWebApp.properties.defaultHostname
 output STATICWEBAPP_NAME string = staticWebApp.name
-output FUNCTIONAPP_NAME string = functionApp.name
 output APPLICATION_INSIGHTS_CONNECTION_STRING string = appInsights.properties.ConnectionString
 output APPLICATION_INSIGHTS_INSTRUMENTATION_KEY string = appInsights.properties.InstrumentationKey

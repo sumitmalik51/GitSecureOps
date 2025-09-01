@@ -48,56 +48,32 @@ jobs:
         # Install SWA CLI
         npm install -g @azure/static-web-apps-cli
         
-        # Deploy frontend only to Static Web Apps
+        # Deploy both frontend and API to Static Web Apps (API functions will be handled by SWA built-in functionality)
         SWA_TOKEN=$(az staticwebapp secrets list --resource-group $RESOURCE_GROUP --name $SWA_NAME --query "properties.apiKey" -o tsv)
-        echo "Deploying frontend to Static Web Apps production environment..."
+        echo "Deploying frontend and API to Static Web Apps production environment..."
         echo "Frontend: ./dist"
-        swa deploy ./dist --deployment-token "$SWA_TOKEN" --env production --verbose
+        echo "API: ./api"
+        swa deploy ./dist --api-location ./api --deployment-token "$SWA_TOKEN" --env production --verbose
         
-        echo "✅ Frontend deployed: https://$SWA_URL"
+        echo "✅ Frontend and API deployed: https://$SWA_URL"
 
-    - name: Deploy Function App
+    - name: Configure Static Web App Environment Variables
       run: |
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
-        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
-        
-        # Install Function App dependencies
-        cd api
-        if [ -f "package-lock.json" ]; then
-          npm ci
-        else
-          npm install
-        fi
-        
-        # Install Azure Functions Core Tools
-        npm install -g azure-functions-core-tools@4 --unsafe-perm true
-        
-        # Deploy Function App
-        echo "Deploying Function App: $FUNCTION_APP_NAME"
-        func azure functionapp publish $FUNCTION_APP_NAME --javascript --build-native-deps
-        
-        echo "✅ Function App deployed: https://$FUNCTION_APP_NAME.azurewebsites.net"
-        cd ..
-
-    - name: Update Function App Settings for OAuth
-      run: |
-        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
-        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
-        
-        # Get the actual Static Web App URL
+        SWA_NAME=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
         SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
         
-        if [ -n "$SWA_URL" ]; then
-          echo "Updating Function App FRONTEND_URL setting to: https://$SWA_URL"
-          az functionapp config appsettings set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$FUNCTION_APP_NAME" \
-            --settings "FRONTEND_URL=https://$SWA_URL" \
-            --output table
-          echo "✅ Function App FRONTEND_URL updated for OAuth redirect fix"
-        else
-          echo "⚠️ Warning: Could not retrieve Static Web App URL"
-        fi
+        # Set environment variables for the API functions
+        echo "Configuring environment variables for API functions..."
+        az staticwebapp appsettings set \
+          --resource-group "$RESOURCE_GROUP" \
+          --name "$SWA_NAME" \
+          --setting-names "GH_WEB_APP=${{ secrets.GH_WEB_APP }}" \
+          --setting-names "GH_WEB_APP_SECRET=${{ secrets.GH_WEB_APP_SECRET }}" \
+          --setting-names "FRONTEND_URL=https://$SWA_URL" \
+          --output table
+        
+        echo "✅ Environment variables configured for API functions"
 
     - name: Azure logout
       run: |

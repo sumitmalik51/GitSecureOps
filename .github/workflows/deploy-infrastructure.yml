@@ -153,48 +153,27 @@ jobs:
         
         $resourceGroup = "rg-gitsecureops-${{ inputs.environment }}"
         $resourceToken = "${{ inputs.environment }}"
-        $functionAppName = "func-gh-$resourceToken"
+        $swaName = "swa-gh-$resourceToken"
         
         # Get the actual Static Web App URL
         $swaResources = Get-AzStaticWebApp -ResourceGroupName $resourceGroup
         if ($swaResources -and $swaResources.Count -gt 0) {
           $actualSwaUrl = "https://$($swaResources[0].DefaultHostname)"
-          Write-Host "Updating Function App settings with actual SWA URL: $actualSwaUrl"
+          Write-Host "Updating Static Web App settings with actual URL: $actualSwaUrl"
           
           try {
-            # Use Azure CLI to update Function App settings (more reliable)
-            Write-Host "Getting current Function App settings..."
-            $currentSettingsJson = az functionapp config appsettings list --resource-group $resourceGroup --name $functionAppName --output json
-            $currentSettingsArray = $currentSettingsJson | ConvertFrom-Json
-            
-            # Find and update FRONTEND_URL
-            $updated = $false
-            foreach ($setting in $currentSettingsArray) {
-              if ($setting.name -eq "FRONTEND_URL") {
-                $setting.value = $actualSwaUrl
-                $updated = $true
-                break
-              }
-            }
-            
-            if ($updated) {
-              # Convert back to key-value format for az cli
-              $settingsString = ""
-              foreach ($setting in $currentSettingsArray) {
-                if ($settingsString -ne "") { $settingsString += " " }
-                $settingsString += "$($setting.name)='$($setting.value)'"
-              }
-              
-              # Update using Azure CLI
-              Write-Host "Updating FRONTEND_URL to: $actualSwaUrl"
-              az functionapp config appsettings set --resource-group $resourceGroup --name $functionAppName --settings "FRONTEND_URL=$actualSwaUrl"
-              Write-Host "✅ Function App FRONTEND_URL updated successfully!"
-            } else {
-              Write-Host "⚠️ FRONTEND_URL setting not found in Function App"
-            }
+            # Update Static Web App settings for API functions
+            Write-Host "Updating FRONTEND_URL and redirect URI settings..."
+            az staticwebapp appsettings set \
+              --resource-group $resourceGroup \
+              --name $swaName \
+              --setting-names "FRONTEND_URL=$actualSwaUrl" \
+              --setting-names "REACT_APP_GITHUB_REDIRECT_URI=$actualSwaUrl/api/github-callback" \
+              --output table
+            Write-Host "✅ Static Web App settings updated successfully!"
           }
           catch {
-            Write-Host "⚠️ Warning: Could not update Function App settings: $($_.Exception.Message)"
+            Write-Host "⚠️ Warning: Could not update Static Web App settings: $($_.Exception.Message)"
           }
         }
         

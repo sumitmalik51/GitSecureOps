@@ -53,4 +53,3 @@ output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output STATICWEBAPP_URL string = main.outputs.STATICWEBAPP_URL
 output STATICWEBAPP_NAME string = main.outputs.STATICWEBAPP_NAME
-output FUNCTIONAPP_NAME string = main.outputs.FUNCTIONAPP_NAME
