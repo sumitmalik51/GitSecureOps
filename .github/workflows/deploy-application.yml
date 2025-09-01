@@ -37,49 +37,108 @@ jobs:
 
     - name: Deploy Frontend to Static Web Apps
       run: |
+        set -e  # Exit on any error
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
         SWA_NAME=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
         SWA_URL=$(az staticwebapp list --resource-group $RESOURCE_GROUP --query "[0].defaultHostname" -o tsv)
         FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
         
+        # Validate resources exist
+        if [ -z "$SWA_NAME" ]; then
+          echo "❌ Error: Static Web App not found in resource group $RESOURCE_GROUP"
+          exit 1
+        fi
+        
+        if [ -z "$SWA_URL" ]; then
+          echo "❌ Error: Could not retrieve Static Web App URL"
+          exit 1
+        fi
+        
+        echo "🔧 Building frontend with environment variables..."
+        echo "  - Static Web App: https://$SWA_URL"
+        echo "  - Function App: https://$FUNCTION_APP_NAME.azurewebsites.net"
+        echo "  - OAuth Client ID: ${{ secrets.GH_WEB_APP }}"
+        
         # Install frontend dependencies and build
         npm ci
-        # Use Function App URL for OAuth callback (not Static Web App)
-        VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} VITE_GITHUB_REDIRECT_URI=https://$FUNCTION_APP_NAME.azurewebsites.net/api/github-callback npm run build
+        # Build with all necessary environment variables
+        VITE_GITHUB_CLIENT_ID=${{ secrets.GH_WEB_APP }} \
+        VITE_FUNCTION_APP_URL=https://$FUNCTION_APP_NAME.azurewebsites.net \
+        VITE_STATIC_WEB_APP_URL=https://$SWA_URL \
+        VITE_GITHUB_REDIRECT_URI=https://$FUNCTION_APP_NAME.azurewebsites.net/api/github-callback \
+        npm run build
+        
+        # Validate build output
+        if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then
+          echo "❌ Error: Build failed - dist directory is missing or empty"
+          exit 1
+        fi
         
         # Install SWA CLI
         npm install -g @azure/static-web-apps-cli
         
         # Deploy frontend only to Static Web Apps (API stays on Function App)
         SWA_TOKEN=$(az staticwebapp secrets list --resource-group $RESOURCE_GROUP --name $SWA_NAME --query "properties.apiKey" -o tsv)
-        echo "Deploying frontend to Static Web Apps production environment..."
-        echo "Frontend: ./dist"
+        
+        if [ -z "$SWA_TOKEN" ]; then
+          echo "❌ Error: Could not retrieve Static Web Apps deployment token"
+          exit 1
+        fi
+        
+        echo "🚀 Deploying frontend to Static Web Apps production environment..."
         swa deploy ./dist --deployment-token "$SWA_TOKEN" --env production --verbose
         
-        echo "✅ Frontend deployed: https://$SWA_URL"
+        echo "✅ Frontend deployed successfully!"
+        echo "🌐 Frontend URL: https://$SWA_URL"
         echo "🔗 OAuth Callback URL: https://$FUNCTION_APP_NAME.azurewebsites.net/api/github-callback"
 
     - name: Deploy Function App
       run: |
+        set -e  # Exit on any error
         RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
         FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
         
+        echo "🔧 Preparing Function App deployment..."
+        echo "  - Resource Group: $RESOURCE_GROUP"
+        echo "  - Function App: $FUNCTION_APP_NAME"
+        
+        # Validate Function App exists
+        FUNCTION_EXISTS=$(az functionapp show --resource-group $RESOURCE_GROUP --name $FUNCTION_APP_NAME --query "name" -o tsv 2>/dev/null || echo "")
+        if [ -z "$FUNCTION_EXISTS" ]; then
+          echo "❌ Error: Function App $FUNCTION_APP_NAME not found in resource group $RESOURCE_GROUP"
+          exit 1
+        fi
+        
         # Install Function App dependencies
         cd api
+        echo "📦 Installing Function App dependencies..."
         if [ -f "package-lock.json" ]; then
           npm ci
         else
           npm install
         fi
         
+        # Validate api structure
+        if [ ! -f "host.json" ]; then
+          echo "❌ Error: host.json not found in api directory"
+          exit 1
+        fi
+        
+        if [ ! -d "github-callback" ]; then
+          echo "❌ Error: github-callback function not found"
+          exit 1
+        fi
+        
         # Install Azure Functions Core Tools
+        echo "🛠️ Installing Azure Functions Core Tools..."
         npm install -g azure-functions-core-tools@4 --unsafe-perm true
         
         # Deploy Function App
-        echo "Deploying Function App: $FUNCTION_APP_NAME"
+        echo "🚀 Deploying Function App: $FUNCTION_APP_NAME"
         func azure functionapp publish $FUNCTION_APP_NAME --javascript --build-native-deps
         
-        echo "✅ Function App deployed: https://$FUNCTION_APP_NAME.azurewebsites.net"
+        echo "✅ Function App deployed successfully!"
+        echo "🔗 Function App URL: https://$FUNCTION_APP_NAME.azurewebsites.net"
         cd ..
 
     - name: Update Function App Settings for OAuth

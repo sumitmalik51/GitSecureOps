@@ -147,9 +147,12 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       cors: {
         allowedOrigins: [
           baseUrl
+          'https://portal.azure.com'
           'http://localhost:4280'
+          'http://localhost:5173'
+          'http://localhost:3000'
         ]
-        supportCredentials: true
+        supportCredentials: false
       }
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'

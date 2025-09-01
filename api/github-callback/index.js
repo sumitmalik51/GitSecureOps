@@ -57,12 +57,15 @@ export default async function (context, req) {
     const frontendUrl = getFrontendUrl();
     context.log(`Determined frontend URL: ${frontendUrl}`);
 
-    // Enable CORS
+    // Enable CORS - Allow specific frontend origin for security
+    const corsOrigin = frontendUrl.includes('localhost') ? '*' : frontendUrl;
+    
     context.res = {
         headers: {
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': corsOrigin,
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '86400', // 24 hours
         }
     };
 

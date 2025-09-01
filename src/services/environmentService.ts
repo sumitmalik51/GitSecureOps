@@ -5,6 +5,8 @@ interface EnvironmentConfig {
   githubClientId: string;
   githubClientSecret: string;
   githubRedirectUri: string;
+  functionAppUrl: string;
+  staticWebAppUrl: string;
 }
 
 class EnvironmentService {
@@ -36,9 +38,17 @@ class EnvironmentService {
         'VITE_GITHUB_CLIENT_SECRET',
         ''
       ),
+      functionAppUrl: getEnvVar(
+        'VITE_FUNCTION_APP_URL',
+        'http://localhost:7071' // Default to Azure Functions local development
+      ),
+      staticWebAppUrl: getEnvVar(
+        'VITE_STATIC_WEB_APP_URL',
+        window.location.origin
+      ),
       githubRedirectUri: getEnvVar(
         'VITE_GITHUB_REDIRECT_URI',
-        `${window.location.origin}/api/github-callback`
+        `${getEnvVar('VITE_FUNCTION_APP_URL', 'http://localhost:7071')}/api/github-callback`
       )
     };
   }
@@ -53,6 +63,14 @@ class EnvironmentService {
 
   getGitHubRedirectUri(): string {
     return this.config.githubRedirectUri;
+  }
+
+  getFunctionAppUrl(): string {
+    return this.config.functionAppUrl;
+  }
+
+  getStaticWebAppUrl(): string {
+    return this.config.staticWebAppUrl;
   }
 
   // Debug method to check configuration
