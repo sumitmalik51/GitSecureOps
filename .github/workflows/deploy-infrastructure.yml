@@ -1,4 +1,4 @@
-name: Deploy Infrastructure to Azure
+gh run list --workflow="deploy-application.yml" --limit 1name: Deploy Infrastructure to Azure
 
 on:
   workflow_dispatch:
