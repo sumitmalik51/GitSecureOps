@@ -10,7 +10,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ onClick, unreadCount = 0 }) => 
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 group"
+      className="fixed bottom-6 left-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 group"
       aria-label="Open repository search chat"
       title="Search repositories with AI assistance"
     >

@@ -16,6 +16,7 @@ import SmartRecommendations from './components/SmartRecommendations';
 import SearchChatbot from './components/SearchChatbot';
 import ChatButton from './components/ChatButton';
 import BookmarkManager from './components/BookmarkManager';
+import ActivitySidebar from './components/ActivitySidebar';
 import githubService, { type GitHubOrg } from './services/githubService';
 
 function App() {
@@ -388,13 +389,72 @@ GitSecureOps will search across all repositories within the selected org(s) and 
     default:
       return (
         <>
-          <Layout username={username} onLogout={handleLogout} currentView={currentView} onNavigate={handleNavigate}>
-            <Dashboard
-              username={username}
-              onLogout={handleLogout}
-              onSelectOption={handleSelectOption}
-            />
-          </Layout>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="flex flex-col min-h-screen">
+              {/* Top Bar */}
+              <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm">🔒</span>
+                      </div>
+                      <div>
+                        <h1 className="text-lg font-bold text-gray-900 dark:text-white">GitSecureOps</h1>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Repository Management</p>
+                      </div>
+                    </div>
+                    <div className="hidden sm:block">
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Welcome {username}
+                      </h2>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Choose from the options below to manage your repositories
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        {username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="hidden sm:block">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{username}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">GitHub User</div>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="inline-flex items-center px-3 sm:px-4 py-2 border border-red-200 dark:border-red-500/50 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-300 dark:hover:border-red-400 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <span className="mr-2">🚪</span>
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              </header>
+
+              {/* Dashboard with Sidebar Layout */}
+              <div className="flex-1 flex overflow-hidden">
+                {/* Main Dashboard Content */}
+                <main className="flex-1 overflow-auto">
+                  <Dashboard
+                    username={username}
+                    onLogout={handleLogout}
+                    onSelectOption={handleSelectOption}
+                  />
+                </main>
+                
+                {/* Activity Sidebar */}
+                <ActivitySidebar 
+                  accessToken={token}
+                  organizations={orgNames}
+                />
+              </div>
+            </div>
+          </div>
           
           {/* Floating Chat Button - Only show when authenticated */}
           {token && (

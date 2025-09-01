@@ -3,6 +3,7 @@ import DarkModeToggle from './ui/DarkModeToggle';
 import NotificationBell from './NotificationBell';
 import NotificationCenter from './NotificationCenter';
 import NotificationSettings from './NotificationSettings';
+import ActivitySidebar from './ActivitySidebar';
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,9 +11,11 @@ interface LayoutProps {
   onLogout: () => void;
   currentView: string;
   onNavigate: (view: string) => void;
+  accessToken?: string;
+  organizations?: string[];
 }
 
-export default function Layout({ children, username, onLogout, currentView }: LayoutProps) {
+export default function Layout({ children, username, onLogout, currentView, accessToken, organizations = [] }: LayoutProps) {
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
 
@@ -82,10 +85,19 @@ export default function Layout({ children, username, onLogout, currentView }: La
           </div>
         </header>
 
-        {/* Page Content - Full Width */}
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+        {/* Page Content with Sidebar Layout */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
+          
+          {/* Activity Sidebar */}
+          <ActivitySidebar 
+            accessToken={accessToken || null}
+            organizations={organizations}
+          />
+        </div>
       </div>
 
       {/* Notification Center */}
