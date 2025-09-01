@@ -109,35 +109,29 @@ jobs:
           exit 1
         fi
         
-        # Install Function App dependencies
-        cd api
-        echo "📦 Installing Function App dependencies..."
-        if [ -f "package-lock.json" ]; then
-          npm ci
-        else
-          npm install
-        fi
-        
         # Validate api structure
+        cd api
         if [ ! -f "host.json" ]; then
           echo "❌ Error: host.json not found in api directory"
           exit 1
         fi
-        
+
         if [ ! -d "github-callback" ]; then
           echo "❌ Error: github-callback function not found"
           exit 1
         fi
-        
-        # Install Azure Functions Core Tools
-        echo "🛠️ Installing Azure Functions Core Tools..."
-        npm install -g azure-functions-core-tools@4 --unsafe-perm true
-        
-        # Deploy Function App
+
+        # Create deployment package (excluding node_modules)
+        echo "� Creating deployment package..."
+        zip -r ../function-app.zip . -x "node_modules/*" "*.log" ".DS_Store" "local.settings.json" "test/*"
+        cd ..
+
+        # Deploy using az functionapp deployment
         echo "🚀 Deploying Function App: $FUNCTION_APP_NAME"
-        func azure functionapp publish $FUNCTION_APP_NAME --javascript --build-native-deps
-        
-        echo "✅ Function App deployed successfully!"
+        az functionapp deployment source config-zip --resource-group $RESOURCE_GROUP --name $FUNCTION_APP_NAME --src function-app.zip
+
+        # Clean up
+        rm -f function-app.zip        echo "✅ Function App deployed successfully!"
         echo "🔗 Function App URL: https://$FUNCTION_APP_NAME.azurewebsites.net"
         cd ..
 
