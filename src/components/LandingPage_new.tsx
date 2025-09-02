@@ -739,59 +739,59 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* Contact/Footer Section */}
-      <footer id="contact" className="bg-gray-900 text-white py-16 relative overflow-hidden">
+      <footer id="contact" className="bg-gray-900 text-white py-12 relative overflow-hidden">
         {/* Subtle background effects */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/10 via-purple-900/10 to-pink-900/10"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-lg font-bold">🔒</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">GitSecureOps</h3>
-                  <p className="text-sm text-gray-400">Repository Management</p>
-                </div>
-              </div>
-              <p className="text-gray-400 mb-4">
-                Enterprise-grade GitHub access controls with built-in automation.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li><button onClick={handleGetStarted} className="text-gray-400 hover:text-white transition-colors">Get Started with GitSecureOps</button></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Developer</h4>
-              <p className="text-gray-400 mb-2">Created by Sumit Malik</p>
-              <div className="flex space-x-4">
+          <div className="flex justify-center">
+            {/* Developer Section Centered */}
+            <div className="text-center">
+              <h4 className="text-lg font-semibold mb-3">Developer</h4>
+              <p className="text-gray-400 mb-4">Created by Sumit Malik</p>
+              <div className="flex flex-wrap gap-4 justify-center">
                 <a 
                   href="https://github.com/sumitmalik51" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors hover:bg-gray-800 px-3 py-2 rounded-lg cursor-pointer z-50 relative"
+                  onClick={(e) => {
+                    console.log('GitHub link clicked!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open('https://github.com/sumitmalik51', '_blank', 'noopener,noreferrer');
+                  }}
                 >
+                  <span className="text-xl">📚</span>
                   GitHub
                 </a>
                 <a 
-                  href="https://linkedin.com/in/sumitmalik51" 
+                  href="https://www.linkedin.com/in/sumitmalik51" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors hover:bg-gray-800 px-3 py-2 rounded-lg cursor-pointer z-50 relative"
+                  onClick={(e) => {
+                    console.log('LinkedIn link clicked!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open('https://www.linkedin.com/in/sumitmalik51', '_blank', 'noopener,noreferrer');
+                  }}
                 >
+                  <span className="text-xl">💼</span>
                   LinkedIn
                 </a>
                 <a 
                   href="https://sumitmalik51.github.io/sumitmalik51/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors hover:bg-gray-800 px-3 py-2 rounded-lg cursor-pointer z-50 relative"
+                  onClick={(e) => {
+                    console.log('Portfolio link clicked!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open('https://sumitmalik51.github.io/sumitmalik51/', '_blank', 'noopener,noreferrer');
+                  }}
                 >
+                  <span className="text-xl">🌐</span>
                   Portfolio
                 </a>
               </div>
