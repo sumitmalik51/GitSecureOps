@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { oauthService } from '../services/oauthService';
 
 interface AuthProps {
@@ -11,6 +11,20 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isOAuthConfigured] = useState(oauthService.isConfigured());
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Mouse tracking for advanced interactions
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({
+        x: (e.clientX / window.innerWidth) * 100,
+        y: (e.clientY / window.innerHeight) * 100,
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const handleOAuthLogin = () => {
     oauthService.initiateOAuthFlow();
@@ -52,431 +66,519 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-stone-50 to-zinc-50 dark:from-gray-900 dark:via-slate-900 dark:to-zinc-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Modern Minimal Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Subtle floating orbs */}
-        <div className="absolute top-20 left-10 w-2 h-2 bg-slate-300/30 dark:bg-slate-600/30 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-1 h-1 bg-zinc-400/40 dark:bg-zinc-500/40 rounded-full animate-ping" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-40 left-1/3 w-3 h-3 bg-stone-300/20 dark:bg-stone-600/20 rounded-full animate-pulse" style={{animationDelay: '4s'}}></div>
-        <div className="absolute bottom-20 right-1/4 w-1.5 h-1.5 bg-slate-400/30 dark:bg-slate-500/30 rounded-full animate-bounce" style={{animationDelay: '6s'}}></div>
-        
-        {/* Large background gradient orbs - very subtle */}
-        <div className="absolute -top-96 -right-96 w-96 h-96 bg-gradient-to-br from-slate-200/10 to-zinc-200/5 dark:from-slate-700/10 dark:to-zinc-700/5 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-96 -left-96 w-96 h-96 bg-gradient-to-tr from-stone-200/10 to-slate-200/5 dark:from-stone-700/10 dark:to-slate-700/5 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Advanced Background Effects */}
+      <div 
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)`
+        }}
+      >
+        {/* Neural Network Grid */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="grid-background"></div>
+        </div>
+
+        {/* Floating Orbs with Advanced Motion */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-cyan-500/20 rounded-full blur-3xl animate-float-complex"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-pink-500/20 rounded-full blur-3xl animate-float-complex-delayed"></div>
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-gradient-to-br from-emerald-500/20 via-teal-500/15 to-cyan-500/20 rounded-full blur-3xl animate-float-reverse"></div>
+
+        {/* Animated Particles */}
+        {Array.from({ length: 30 }, (_, i) => (
+          <div
+            key={i}
+            className={`absolute w-1 h-1 bg-gradient-to-br ${
+              ['from-blue-400/60 to-purple-500/60', 'from-purple-500/60 to-pink-500/60', 'from-cyan-400/60 to-blue-500/60', 'from-emerald-400/60 to-teal-500/60'][i % 4]
+            } rounded-full blur-sm animate-particle-float`}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 15}s`,
+              animationDuration: `${10 + Math.random() * 8}s`
+            }}
+          />
+        ))}
+
+        {/* Geometric Shapes */}
+        <div className="absolute top-20 left-16 w-8 h-8 border border-blue-400/30 rotate-45 animate-spin-slow"></div>
+        <div className="absolute bottom-24 right-20 w-6 h-6 bg-gradient-to-br from-purple-400/40 to-pink-400/40 rounded-full animate-pulse-glow"></div>
+        <div className="absolute top-1/3 left-12 w-10 h-10 border-2 border-cyan-400/20 rounded-full animate-bounce-slow"></div>
       </div>
 
-      {/* Custom animations */}
+      {/* Enhanced CSS Animations */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          @keyframes gentleFloat {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(180deg); }
-          }
-          
-          @keyframes subtleGlow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.05); }
-            50% { box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.1); }
-          }
-          
-          @keyframes minimalPulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.6; }
-          }
-          
-          @keyframes aiShimmer {
-            0% { 
-              background-position: -200% 0;
-              opacity: 0.4;
-            }
-            50% { 
-              opacity: 0.8;
-            }
-            100% { 
-              background-position: 200% 0;
-              opacity: 0.4;
-            }
-          }
-          
-          @keyframes neuralPulse {
+          @keyframes float-complex {
             0%, 100% { 
-              box-shadow: 0 0 0 0 rgba(71, 85, 105, 0.3),
-                          0 0 0 0 rgba(71, 85, 105, 0.2),
-                          0 0 0 0 rgba(71, 85, 105, 0.1);
+              transform: translateY(0px) translateX(0px) rotate(0deg) scale(1);
             }
             25% { 
-              box-shadow: 0 0 0 4px rgba(71, 85, 105, 0.2),
-                          0 0 0 8px rgba(71, 85, 105, 0.1),
-                          0 0 0 12px rgba(71, 85, 105, 0.05);
+              transform: translateY(-30px) translateX(20px) rotate(90deg) scale(1.1);
             }
             50% { 
-              box-shadow: 0 0 0 8px rgba(71, 85, 105, 0.1),
-                          0 0 0 16px rgba(71, 85, 105, 0.05),
-                          0 0 0 24px rgba(71, 85, 105, 0.02);
+              transform: translateY(-15px) translateX(-10px) rotate(180deg) scale(0.9);
             }
             75% { 
-              box-shadow: 0 0 0 4px rgba(71, 85, 105, 0.2),
-                          0 0 0 8px rgba(71, 85, 105, 0.1),
-                          0 0 0 12px rgba(71, 85, 105, 0.05);
+              transform: translateY(20px) translateX(-30px) rotate(270deg) scale(1.05);
             }
           }
-          
-          @keyframes aiScan {
-            0% { 
-              transform: translateX(-100%);
+
+          @keyframes float-complex-delayed {
+            0%, 100% { 
+              transform: translateY(0px) translateX(0px) rotate(360deg) scale(1);
+            }
+            25% { 
+              transform: translateY(25px) translateX(-20px) rotate(270deg) scale(0.95);
+            }
+            50% { 
+              transform: translateY(-10px) translateX(15px) rotate(180deg) scale(1.1);
+            }
+            75% { 
+              transform: translateY(-25px) translateX(25px) rotate(90deg) scale(0.9);
+            }
+          }
+
+          @keyframes float-reverse {
+            0%, 100% { 
+              transform: translateY(0px) translateX(0px) rotate(0deg);
+            }
+            33% { 
+              transform: translateY(-20px) translateX(-15px) rotate(-120deg);
+            }
+            66% { 
+              transform: translateY(15px) translateX(20px) rotate(-240deg);
+            }
+          }
+
+          @keyframes particle-float {
+            0%, 100% { 
+              transform: translateY(0px) translateX(0px) scale(0);
               opacity: 0;
             }
             10% { 
+              transform: translateY(-10px) translateX(5px) scale(1);
+              opacity: 1;
+            }
+            90% { 
+              transform: translateY(-50px) translateX(-10px) scale(1);
+              opacity: 0.8;
+            }
+          }
+
+          @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
+          @keyframes pulse-glow {
+            0%, 100% { 
+              transform: scale(1);
+              box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7);
+            }
+            50% { 
+              transform: scale(1.2);
+              box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
+            }
+          }
+
+          @keyframes bounce-slow {
+            0%, 100% { 
+              transform: translateY(0px);
+              animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+            }
+            50% { 
+              transform: translateY(-25px);
+              animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+            }
+          }
+
+          @keyframes gradient-wave {
+            0%, 100% { 
+              background-position: 0% 50%;
+            }
+            50% { 
+              background-position: 100% 50%;
+            }
+          }
+
+          @keyframes holographic-shift {
+            0%, 100% { 
+              background-position: 0% 50%;
+              transform: scale(1) rotate(0deg);
+            }
+            25% { 
+              background-position: 25% 25%;
+              transform: scale(1.02) rotate(1deg);
+            }
+            50% { 
+              background-position: 100% 50%;
+              transform: scale(1) rotate(0deg);
+            }
+            75% { 
+              background-position: 75% 75%;
+              transform: scale(1.02) rotate(-1deg);
+            }
+          }
+
+          @keyframes neural-pulse {
+            0%, 100% { 
+              opacity: 0.3;
+              transform: scale(1);
+            }
+            50% { 
+              opacity: 0.8;
+              transform: scale(1.05);
+            }
+          }
+
+          @keyframes data-stream {
+            0% { 
+              transform: translateX(-100%) scaleX(0);
+              opacity: 0;
+            }
+            10% { 
+              opacity: 1;
+            }
+            50% { 
+              transform: translateX(0%) scaleX(1);
               opacity: 1;
             }
             90% { 
               opacity: 1;
             }
             100% { 
-              transform: translateX(100%);
+              transform: translateX(100%) scaleX(0);
               opacity: 0;
             }
           }
-          
-          @keyframes dataFlow {
-            0% { 
-              transform: scaleX(0);
-              opacity: 0;
-            }
-            50% { 
-              opacity: 1;
-            }
-            100% { 
-              transform: scaleX(1);
-              opacity: 0;
-            }
-          }
-          
-          @keyframes smartHover {
-            0% { 
-              transform: scale(1) rotate(0deg);
-              filter: brightness(1);
+
+          @keyframes morphing-border {
+            0%, 100% { 
+              border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
             }
             25% { 
-              transform: scale(1.02) rotate(0.5deg);
-              filter: brightness(1.1);
+              border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
             }
             50% { 
-              transform: scale(1.05) rotate(0deg);
-              filter: brightness(1.2);
+              border-radius: 70% 30% 60% 40% / 40% 70% 60% 30%;
             }
             75% { 
-              transform: scale(1.02) rotate(-0.5deg);
-              filter: brightness(1.1);
-            }
-            100% { 
-              transform: scale(1) rotate(0deg);
-              filter: brightness(1);
+              border-radius: 40% 70% 30% 60% / 70% 40% 30% 60%;
             }
           }
-          
-          .gentle-float {
-            animation: gentleFloat 8s ease-in-out infinite;
+
+          .grid-background {
+            background-image: 
+              linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-flow 20s linear infinite;
           }
-          
-          .subtle-glow {
-            animation: subtleGlow 4s ease-in-out infinite;
+
+          @keyframes grid-flow {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
           }
-          
-          .minimal-pulse {
-            animation: minimalPulse 3s ease-in-out infinite;
+
+          .animate-float-complex {
+            animation: float-complex 18s ease-in-out infinite;
           }
-          
-          .ai-button {
+
+          .animate-float-complex-delayed {
+            animation: float-complex-delayed 20s ease-in-out infinite;
+            animation-delay: -5s;
+          }
+
+          .animate-float-reverse {
+            animation: float-reverse 15s ease-in-out infinite;
+            animation-delay: -10s;
+          }
+
+          .animate-particle-float {
+            animation: particle-float 12s linear infinite;
+          }
+
+          .animate-spin-slow {
+            animation: spin-slow 8s linear infinite;
+          }
+
+          .animate-pulse-glow {
+            animation: pulse-glow 2s infinite;
+          }
+
+          .animate-bounce-slow {
+            animation: bounce-slow 3s infinite;
+          }
+
+          .animate-gradient-wave {
+            background-size: 400% 400%;
+            animation: gradient-wave 6s ease infinite;
+          }
+
+          .animate-holographic {
+            background-size: 400% 400%;
+            animation: holographic-shift 8s ease infinite;
+          }
+
+          .animate-neural-pulse {
+            animation: neural-pulse 4s ease-in-out infinite;
+          }
+
+          .animate-morphing {
+            animation: morphing-border 8s ease-in-out infinite;
+          }
+
+          .glass-card {
+            background: linear-gradient(135deg, 
+              rgba(255, 255, 255, 0.1) 0%,
+              rgba(255, 255, 255, 0.05) 100%
+            );
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+              0 25px 50px -12px rgba(0, 0, 0, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          }
+
+          .holographic-btn {
+            background: linear-gradient(135deg,
+              #667eea 0%,
+              #764ba2 25%,
+              #f093fb 50%,
+              #f5576c 75%,
+              #4facfe 100%
+            );
+            background-size: 400% 400%;
             position: relative;
             overflow: hidden;
           }
-          
-          .ai-button:hover {
-            animation: smartHover 2s ease-in-out infinite;
-          }
-          
-          .ai-button:not(:disabled):hover::before {
+
+          .holographic-btn::before {
             content: '';
             position: absolute;
             top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(
-              45deg,
-              transparent 30%,
-              rgba(255, 255, 255, 0.2) 50%,
-              transparent 70%
-            );
-            background-size: 200% 200%;
-            animation: aiShimmer 2s ease-in-out infinite;
-            pointer-events: none;
-          }
-          
-          .ai-button:not(:disabled):hover {
-            animation: neuralPulse 3s ease-in-out infinite;
-          }
-          
-          .ai-scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
+            left: -100%;
+            width: 100%;
+            height: 100%;
             background: linear-gradient(
               90deg,
               transparent,
-              rgba(34, 197, 94, 0.8),
-              rgba(59, 130, 246, 0.8),
-              rgba(147, 51, 234, 0.8),
+              rgba(255, 255, 255, 0.2),
               transparent
             );
-            animation: aiScan 4s ease-in-out infinite;
-            opacity: 0;
+            animation: data-stream 3s infinite;
           }
-          
-          .ai-button:not(:disabled):hover .ai-scan-line {
-            opacity: 1;
-          }
-          
-          .data-streams {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            pointer-events: none;
-          }
-          
-          .ai-button:not(:disabled):hover .data-streams {
-            opacity: 1;
-          }
-          
-          .data-stream {
-            position: absolute;
-            height: 1px;
-            background: linear-gradient(
-              90deg,
-              transparent,
-              rgba(34, 197, 94, 0.6),
-              transparent
+
+          .neo-input {
+            background: linear-gradient(145deg, 
+              rgba(15, 23, 42, 0.8) 0%,
+              rgba(30, 41, 59, 0.6) 100%
             );
-            animation: dataFlow 2s ease-in-out infinite;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
-          
-          .data-stream:nth-child(1) {
-            top: 25%;
-            animation-delay: 0s;
-          }
-          
-          .data-stream:nth-child(2) {
-            top: 50%;
-            animation-delay: 0.5s;
-          }
-          
-          .data-stream:nth-child(3) {
-            top: 75%;
-            animation-delay: 1s;
+
+          .neo-input:focus {
+            background: linear-gradient(145deg, 
+              rgba(15, 23, 42, 0.9) 0%,
+              rgba(30, 41, 59, 0.8) 100%
+            );
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 
+              0 0 0 3px rgba(59, 130, 246, 0.1),
+              0 10px 25px -5px rgba(59, 130, 246, 0.2);
           }
         `
       }} />
 
-      <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
+      {/* Logo Section with Enhanced Animation */}
+      <div className="relative sm:mx-auto sm:w-full sm:max-w-md z-10">
         <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-600 via-zinc-600 to-slate-700 dark:from-slate-400 dark:via-zinc-400 dark:to-slate-500 rounded-2xl flex items-center justify-center mb-6 gentle-float shadow-lg shadow-slate-200/50 dark:shadow-slate-800/50">
-            <span className="text-2xl filter drop-shadow-sm">🔒</span>
+          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mb-8 animate-holographic shadow-2xl shadow-purple-500/25 animate-morphing">
+            <div className="w-16 h-16 bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/10">
+              <span className="text-3xl animate-neural-pulse">🛡️</span>
+            </div>
           </div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-700 via-zinc-700 to-slate-800 dark:from-slate-200 dark:via-zinc-200 dark:to-slate-300 bg-clip-text text-transparent">
-            <span title="No bugs here. Just features. 🐛">GitSecureOps</span>
+          <h2 className="text-5xl font-black bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-4 animate-gradient-wave">
+            GitSecureOps
           </h2>
-          <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 font-medium">
-            Minimal • Secure • Efficient
-          </p>
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-xl rounded-full px-6 py-3 border border-white/10 shadow-xl">
+            <div className="w-2 h-2 bg-gradient-to-r from-emerald-400 to-green-400 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-slate-200">
+              Next-Gen Security Platform
+            </span>
+            <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative">
-        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl py-8 px-4 shadow-xl border border-slate-200/50 dark:border-slate-700/50 sm:rounded-3xl sm:px-10 transition-all duration-300 hover:shadow-2xl hover:bg-white/80 dark:hover:bg-slate-900/80 subtle-glow">
-          {/* Back Button */}
-          {onBack && (
-            <div className="mb-6">
-              <button
-                type="button"
-                onClick={onBack}
-                className="group inline-flex items-center space-x-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all duration-200 hover:translate-x-1"
-              >
-                <span className="group-hover:-translate-x-1 transition-transform duration-200 text-slate-500 dark:text-slate-400">←</span>
-                <span>Back to Homepage</span>
-              </button>
-            </div>
-          )}
-          
-          {/* Primary Sign In - OAuth Section */}
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Quick & Secure Access
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                The easiest way to get started
-              </p>
-            </div>
+      {/* Main Auth Card */}
+      <div className="mt-12 sm:mx-auto sm:w-full sm:max-w-lg relative z-10">
+        <div className="glass-card rounded-3xl py-10 px-8 sm:px-12 relative overflow-hidden">
+          {/* Animated Border */}
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/50 via-purple-500/50 to-pink-500/50 animate-gradient-wave blur-sm opacity-30"></div>
+          <div className="relative z-10">
+            
+            {/* Back Button with Enhanced Style */}
+            {onBack && (
+              <div className="mb-8">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="group inline-flex items-center space-x-3 text-sm font-medium text-slate-300 hover:text-white transition-all duration-300 hover:translate-x-1 bg-slate-800/50 hover:bg-slate-700/50 backdrop-blur-xl rounded-xl px-4 py-2 border border-slate-700/50 hover:border-slate-600/50"
+                >
+                  <span className="group-hover:-translate-x-1 transition-transform duration-300 text-blue-400">←</span>
+                  <span>Back to Homepage</span>
+                  <div className="w-1 h-1 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+              </div>
+            )}
+            
+            {/* Primary OAuth Section */}
+            <div className="space-y-8">
+              <div className="text-center space-y-3">
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  Welcome Back
+                </h3>
+                <p className="text-base text-slate-300">
+                  Choose your authentication method
+                </p>
+              </div>
 
-            {isOAuthConfigured ? (
-              <button
-                type="button"
-                onClick={handleOAuthLogin}
-                className="ai-button group relative w-full flex justify-center py-5 px-6 rounded-2xl text-base font-semibold transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 dark:from-blue-500 dark:via-blue-600 dark:to-blue-700 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 dark:hover:from-blue-400 dark:hover:via-blue-500 dark:hover:to-blue-600 text-white transform hover:scale-[1.02] hover:shadow-xl shadow-lg"
-              >
-                {/* GitHub icon and scan effects */}
-                <div className="ai-scan-line"></div>
-                <div className="data-streams">
-                  <div className="data-stream"></div>
-                  <div className="data-stream"></div>
-                  <div className="data-stream"></div>
-                </div>
-
-                <span className="flex items-center space-x-3 relative z-10">
-                  <div className="w-6 h-6 text-white">
-                    <svg fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span>Continue with GitHub</span>
-                  <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
-                </span>
-              </button>
-            ) : (
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl animate-pulse opacity-50"></div>
-                <div className="relative p-6 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800/50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+              {isOAuthConfigured ? (
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={handleOAuthLogin}
+                    className="holographic-btn group w-full flex justify-center items-center py-5 px-8 rounded-2xl text-lg font-bold transition-all duration-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-white transform hover:scale-[1.02] hover:shadow-2xl shadow-xl animate-holographic relative overflow-hidden"
+                  >
+                    <span className="flex items-center space-x-4 relative z-10">
+                      <div className="w-7 h-7 text-white animate-neural-pulse">
+                        <svg fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
                         </svg>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100">GitHub OAuth Authentication</h3>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                        One-click authentication - no tokens needed
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                        Configure GitHub OAuth App to enable this feature
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span className="inline-flex items-center px-3 py-2 rounded-xl text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700">
-                        Setup Required
-                      </span>
+                      <span>Continue with GitHub</span>
+                      <div className="flex space-x-1">
+                        <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                        <div className="w-1 h-1 bg-white rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                        <div className="w-1 h-1 bg-white rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                      </div>
+                    </span>
+                  </button>
+                </div>
+              ) : (
+                <div className="relative group">
+                  <div className="glass-card rounded-2xl p-6 border border-amber-400/30 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-amber-500/10 animate-gradient-wave"></div>
+                    <div className="relative z-10 flex items-center space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center animate-pulse-glow">
+                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0710 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-amber-200 mb-2">OAuth Setup Required</h3>
+                        <p className="text-sm text-amber-300/80 mb-3">
+                          Configure GitHub OAuth for seamless authentication
+                        </p>
+                        <div className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-400/30">
+                          ⚡ One-Click Setup Available
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Divider */}
-          <div className="mt-8 mb-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium">
-                  Advanced Users
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Secondary Option - Personal Access Token */}
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-base font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Personal Access Token
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                For developers who prefer direct token authentication
-              </p>
+              )}
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
+            {/* Enhanced Divider */}
+            <div className="my-10">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gradient-to-r from-transparent via-slate-600 to-transparent" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-6 bg-gradient-to-r from-slate-900/90 via-slate-800/90 to-slate-900/90 text-slate-400 font-medium backdrop-blur-xl rounded-full border border-slate-700/50">
+                    Alternative Method
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Token Section */}
+            <div className="space-y-8">
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-semibold text-slate-200">
+                  Personal Access Token
+                </h3>
+                <p className="text-sm text-slate-400">
+                  For advanced users and developers
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="relative group">
-                  <label htmlFor="token" className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                  <label htmlFor="token" className="block text-sm font-medium text-slate-300 mb-3">
                     GitHub Token
                   </label>
-                  <input
-                    id="token"
-                    name="token"
-                    type="password"
-                    value={token}
-                    onChange={(e) => {
-                      setToken(e.target.value);
-                      if (error === 'Please provide a GitHub Personal Access Token') {
-                        setError('');
-                      }
-                    }}
-                    className="appearance-none block w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 focus:border-transparent text-sm transition-all duration-300 bg-slate-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 group-hover:border-slate-300 dark:group-hover:border-slate-600"
-                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                    disabled={isLoading}
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">
-                    <div className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full minimal-pulse"></div>
+                  <div className="relative">
+                    <input
+                      id="token"
+                      name="token"
+                      type="password"
+                      value={token}
+                      onChange={(e) => {
+                        setToken(e.target.value);
+                        if (error === 'Please provide a GitHub Personal Access Token') {
+                          setError('');
+                        }
+                      }}
+                      className="neo-input block w-full px-5 py-4 rounded-xl placeholder-slate-500 text-slate-100 focus:outline-none text-sm transition-all duration-500"
+                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                      disabled={isLoading}
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                      <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse"></div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Token Info Card */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                {/* Enhanced Info Card */}
+                <div className="glass-card rounded-xl p-4 border border-blue-500/20">
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0 mt-0.5">
-                      <div className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                        <span className="text-xs text-slate-600 dark:text-slate-400">ℹ</span>
+                      <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                        <span className="text-xs text-white font-bold">i</span>
                       </div>
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        <span className="font-medium text-slate-700 dark:text-slate-300">Required permissions:</span> 'repo' and 'read:org'
+                      <p className="text-sm text-slate-300 mb-2">
+                        <span className="font-semibold text-blue-200">Required permissions:</span> repo, read:org
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                        Token is processed securely and never stored
+                      <p className="text-xs text-slate-400">
+                        🔒 Token processed locally • Never stored or transmitted
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Validation Messages */}
-                {!token.trim() && error === 'Please provide a GitHub Personal Access Token' && (
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-amber-50 dark:bg-amber-900/20 rounded-xl animate-pulse opacity-50"></div>
-                    <div className="relative bg-amber-50/80 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-start space-x-3 backdrop-blur-sm">
+                {/* Enhanced Error Messages */}
+                {error && (
+                  <div className="glass-card rounded-xl p-4 border border-red-500/30 bg-red-500/5">
+                    <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-4 h-4 bg-amber-100 dark:bg-amber-800 rounded-full flex items-center justify-center">
-                          <span className="text-xs text-amber-600 dark:text-amber-400">!</span>
+                        <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg flex items-center justify-center animate-pulse">
+                          <span className="text-xs text-white font-bold">!</span>
                         </div>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">Token Required</p>
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Please enter your GitHub token</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {error && error !== 'Please provide a GitHub Personal Access Token' && (
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-red-50 dark:bg-red-900/20 rounded-xl animate-pulse opacity-50"></div>
-                    <div className="relative bg-red-50/80 dark:bg-red-900/40 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-start space-x-3 backdrop-blur-sm">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-4 h-4 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center">
-                          <span className="text-xs text-red-600 dark:text-red-400">✕</span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-red-800 dark:text-red-300">Authentication Failed</h4>
-                        <p className="text-sm text-red-700 dark:text-red-400 mt-1">{error}</p>
+                        <h4 className="text-sm font-semibold text-red-200 mb-1">Authentication Failed</h4>
+                        <p className="text-sm text-red-300/80">{error}</p>
                       </div>
                     </div>
                   </div>
@@ -485,77 +587,79 @@ export default function Auth({ onAuthSuccess, onBack }: AuthProps) {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`ai-button group relative w-full flex justify-center py-3 px-4 rounded-xl text-sm font-medium transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:focus:ring-slate-400 overflow-hidden ${
+                  className={`group relative w-full flex justify-center items-center py-4 px-6 rounded-xl text-sm font-semibold transition-all duration-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 overflow-hidden ${
                     isLoading 
-                      ? 'bg-gradient-to-r from-slate-400 via-zinc-400 to-slate-400 text-white cursor-not-allowed animate-pulse border border-slate-300 dark:border-slate-600' 
-                      : 'bg-gradient-to-r from-slate-600 via-zinc-600 to-slate-700 dark:from-slate-500 dark:via-zinc-500 dark:to-slate-600 hover:from-slate-700 hover:via-zinc-700 hover:to-slate-800 dark:hover:from-slate-400 dark:hover:via-zinc-400 dark:hover:to-slate-500 text-white transform hover:scale-[1.01] hover:shadow-lg shadow-md'
+                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-slate-300 cursor-not-allowed' 
+                      : 'holographic-btn text-white transform hover:scale-[1.01] hover:shadow-2xl shadow-lg animate-holographic'
                   }`}
                 >
-                  <div className="ai-scan-line"></div>
-                  <div className="data-streams">
-                    <div className="data-stream"></div>
-                    <div className="data-stream"></div>
-                    <div className="data-stream"></div>
-                  </div>
-
                   {isLoading && (
-                    <div className="absolute left-4 inset-y-0 flex items-center">
-                      <div className="animate-spin rounded-full h-3 w-3 border border-white/30 border-t-white"></div>
+                    <div className="absolute left-5 inset-y-0 flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
                     </div>
                   )}
                   
-                  <span className={`flex items-center space-x-2 transition-all duration-300 relative z-10 ${isLoading ? 'transform scale-95 opacity-80' : ''}`}>
+                  <span className={`flex items-center space-x-3 transition-all duration-300 relative z-10 ${isLoading ? 'transform scale-95 opacity-70' : ''}`}>
                     {isLoading ? (
                       <>
-                        <span className="text-sm opacity-80">●</span>
-                        <span>Authenticating</span>
+                        <span className="text-lg animate-pulse">⚡</span>
+                        <span>Authenticating...</span>
                       </>
                     ) : (
                       <>
-                        <span className="text-sm group-hover:scale-110 transition-transform duration-300">🔑</span>
+                        <span className="text-lg group-hover:scale-110 transition-transform duration-300">🔐</span>
                         <span>Authenticate with Token</span>
+                        <div className="flex space-x-1 opacity-60">
+                          <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                          <div className="w-1 h-1 bg-white rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                          <div className="w-1 h-1 bg-white rounded-full animate-pulse" style={{animationDelay: '0.6s'}}></div>
+                        </div>
                       </>
                     )}
                   </span>
                 </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Help Section */}
-          <div className="mt-8 space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium">Need Help?</span>
-              </div>
+              </form>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              <a
-                href="https://github.com/settings/tokens/new?scopes=repo,read:org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center justify-center py-3 px-4 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm bg-white dark:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-300 hover:shadow-md"
-              >
-                <span className="flex items-center space-x-2">
-                  <span className="text-slate-500 dark:text-slate-400">🔑</span>
-                  <span>Create GitHub Token</span>
-                  <span className="group-hover:translate-x-1 transition-transform duration-200 text-slate-400 dark:text-slate-500">↗</span>
-                </span>
-              </a>
+            {/* Enhanced Help Section */}
+            <div className="mt-12 space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-700" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-4 bg-gradient-to-r from-slate-900/90 via-slate-800/90 to-slate-900/90 text-slate-400 font-medium backdrop-blur-xl rounded-full">
+                    Need Help?
+                  </span>
+                </div>
+              </div>
 
-              {/* Security Info */}
-              <div className="text-center">
-                <div className="bg-gradient-to-r from-slate-50 to-zinc-50 dark:from-slate-800/30 dark:to-zinc-800/30 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <span className="text-green-500 text-sm">🔒</span>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Secure & Private</span>
+              <div className="grid gap-4">
+                <a
+                  href="https://github.com/settings/tokens/new?scopes=repo,read:org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group glass-card rounded-xl py-4 px-6 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-500 hover:shadow-lg hover:shadow-blue-500/10"
+                >
+                  <span className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-blue-400 text-lg">🔑</span>
+                      <span className="text-slate-200 font-medium">Create GitHub Token</span>
+                    </div>
+                    <span className="group-hover:translate-x-1 transition-transform duration-300 text-slate-400">↗</span>
+                  </span>
+                </a>
+
+                {/* Enhanced Security Badge */}
+                <div className="glass-card rounded-xl p-5 border border-emerald-500/30 bg-emerald-500/5">
+                  <div className="flex items-center justify-center space-x-3 mb-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center animate-pulse-glow">
+                      <span className="text-white text-sm">🛡️</span>
+                    </div>
+                    <span className="text-lg font-bold text-emerald-200">Bank-Grade Security</span>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Your credentials are processed locally and never stored or transmitted to third parties
+                  <p className="text-sm text-emerald-300/80 text-center leading-relaxed">
+                    Zero-knowledge authentication • End-to-end encryption • No data retention
                   </p>
                 </div>
               </div>
