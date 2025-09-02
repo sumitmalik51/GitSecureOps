@@ -9,12 +9,6 @@ interface GitHubUser {
   avatar_url: string;
 }
 
-interface GitHubTokenResponse {
-  access_token: string;
-  token_type: string;
-  scope: string;
-}
-
 export class GitHubOAuthService {
   private clientId: string;
   private redirectUri: string;
@@ -54,40 +48,63 @@ export class GitHubOAuthService {
   }
 
   /**
-   * Generates a random state parameter for CSRF protection
+   * Generates a cryptographically secure random state parameter for CSRF protection
    */
   private generateState(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
+    // Use crypto.getRandomValues for cryptographically secure random generation
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+    
+    // Fallback for environments without crypto.getRandomValues
+    // Still more secure than basic Math.random()
+    const timestamp = Date.now().toString(36);
+    const random1 = Math.random().toString(36).substring(2, 15);
+    const random2 = Math.random().toString(36).substring(2, 15);
+    const random3 = Math.random().toString(36).substring(2, 15);
+    
+    return `${timestamp}-${random1}-${random2}-${random3}`;
   }
 
   /**
    * Handles the OAuth callback and exchanges code for access token
-   * This now works with Azure Function backend
+   * This now works with Azure Function backend with improved security
    */
   async handleOAuthSuccess(sessionToken: string): Promise<{ token: string; user: GitHubUser }> {
     try {
       // Decode session token from Azure Function (browser-compatible)
       const sessionData = JSON.parse(atob(sessionToken));
       
-      // Validate session data
+      // Validate session data structure
+      if (!sessionData || typeof sessionData !== 'object') {
+        throw new Error('Invalid session data format');
+      }
+      
+      // Validate required fields
       if (!sessionData.token || !sessionData.username) {
-        throw new Error('Invalid session data');
+        throw new Error('Invalid session data - missing required fields');
       }
 
-      // Check if session is not too old (optional security measure)
+      // SECURITY: Check if session is not too old
       const sessionAge = Date.now() - (sessionData.timestamp || 0);
-      const maxAge = 5 * 60 * 1000; // 5 minutes
+      const maxAge = 10 * 60 * 1000; // 10 minutes maximum session age
       
       if (sessionAge > maxAge) {
-        throw new Error('Session expired');
+        throw new Error('Session expired - please authenticate again');
+      }
+
+      // SECURITY: Validate token format (basic GitHub token validation)
+      if (!this.isValidGitHubToken(sessionData.token)) {
+        throw new Error('Invalid token format');
       }
 
       const user: GitHubUser = {
-        id: 0, // Will be populated if needed
+        id: sessionData.id || 0,
         login: sessionData.username,
         name: sessionData.name || sessionData.username,
-        email: '', // Will be populated if needed
+        email: sessionData.email || '', 
         avatar_url: sessionData.avatar || ''
       };
 
@@ -102,9 +119,33 @@ export class GitHubOAuthService {
   }
 
   /**
-   * Legacy method - now deprecated in favor of Azure Function flow
+   * Basic validation for GitHub token format
    */
-  async handleCallback(code: string, state: string): Promise<{ token: string; user: GitHubUser }> {
+  private isValidGitHubToken(token: string): boolean {
+    if (!token || typeof token !== 'string') {
+      return false;
+    }
+    
+    // GitHub tokens are typically 40+ characters for PATs
+    // OAuth tokens can vary but should be reasonable length
+    if (token.length < 20 || token.length > 200) {
+      return false;
+    }
+    
+    // Should not contain suspicious characters
+    if (!/^[a-zA-Z0-9_-]+$/.test(token)) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Legacy method - now deprecated in favor of Azure Function flow
+   * SECURITY NOTE: This method should not be used as it would require
+   * client secret exposure. Use handleOAuthSuccess with backend flow instead.
+   */
+  async handleCallback(_code: string, state: string): Promise<{ token: string; user: GitHubUser }> {
     // Verify state parameter
     const storedState = localStorage.getItem('oauth_state');
     if (!storedState || storedState !== state) {
@@ -114,65 +155,9 @@ export class GitHubOAuthService {
     // Clean up stored state
     localStorage.removeItem('oauth_state');
 
-    try {
-      // Exchange authorization code for access token
-      const tokenResponse = await this.exchangeCodeForToken(code);
-      
-      // Get user information
-      const userResponse = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `token ${tokenResponse.access_token}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      });
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user information');
-      }
-
-      const user = await userResponse.json();
-
-      return {
-        token: tokenResponse.access_token,
-        user: user
-      };
-    } catch (error) {
-      console.error('OAuth callback error:', error);
-      throw new Error('Failed to complete OAuth authentication');
-    }
-  }
-
-  /**
-   * Exchanges authorization code for access token
-   * Note: In production, this should be done on your backend server for security
-   */
-  private async exchangeCodeForToken(code: string): Promise<GitHubTokenResponse> {
-    // For development/demo purposes, we'll use GitHub's CORS-enabled endpoint
-    // In production, this should be handled by your backend server
-    const response = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: this.clientId,
-        client_secret: environmentService.getGitHubClientSecret(),
-        code: code,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to exchange code for token');
-    }
-
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(data.error_description || data.error);
-    }
-
-    return data;
+    // SECURITY FIX: This method is deprecated because it would require
+    // exposing client secret to the frontend. Use Azure Function backend flow instead.
+    throw new Error('Direct client-side OAuth flow is deprecated for security reasons. Please use the backend OAuth callback.');
   }
 
   /**

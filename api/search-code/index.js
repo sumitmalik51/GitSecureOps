@@ -1,16 +1,103 @@
 const https = require('https');
 const { URLSearchParams } = require('url');
 
-// Helper function to make HTTP requests using built-in modules
+// Input validation and sanitization functions
+function sanitizeString(input, maxLength = 500) {
+    if (typeof input !== 'string') return '';
+    
+    // Remove potentially dangerous characters
+    const sanitized = input
+        .replace(/[<>'"&]/g, '') // Remove HTML/XSS characters
+        .replace(/[{}()]/g, '') // Remove potential injection brackets
+        .trim();
+    
+    return sanitized.substring(0, maxLength);
+}
+
+function validateSearchQuery(query) {
+    if (!query || typeof query !== 'string') {
+        throw new Error('Search query must be a non-empty string');
+    }
+    
+    const sanitized = sanitizeString(query, 200);
+    if (sanitized.length === 0) {
+        throw new Error('Search query cannot be empty after sanitization');
+    }
+    
+    if (sanitized.length < 2) {
+        throw new Error('Search query must be at least 2 characters long');
+    }
+    
+    return sanitized;
+}
+
+function validateOrganization(org) {
+    if (!org) return '';
+    
+    if (typeof org !== 'string') {
+        throw new Error('Organization name must be a string');
+    }
+    
+    const sanitized = sanitizeString(org, 100);
+    
+    if (sanitized && !/^[a-zA-Z0-9\-_]+$/.test(sanitized)) {
+        throw new Error('Organization name contains invalid characters');
+    }
+    
+    return sanitized;
+}
+
+function isValidAuthToken(token) {
+    if (!token || typeof token !== 'string') {
+        return false;
+    }
+    
+    if (token.length < 20 || token.length > 200) {
+        return false;
+    }
+    
+    if (!/^[a-zA-Z0-9_\-]+$/.test(token)) {
+        return false;
+    }
+    
+    return true;
+}
+
+// Helper function to make HTTP requests using built-in modules with security improvements
 function makeRequest(url, options = {}) {
     return new Promise((resolve, reject) => {
-        const parsedUrl = new URL(url);
+        // SECURITY: Validate URL to prevent SSRF
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch (error) {
+            reject(new Error('Invalid URL format'));
+            return;
+        }
+        
+        // SECURITY: Only allow HTTPS requests to GitHub API
+        if (parsedUrl.protocol !== 'https:') {
+            reject(new Error('Only HTTPS requests are allowed'));
+            return;
+        }
+        
+        // SECURITY: Restrict to GitHub domains
+        const allowedDomains = ['api.github.com', 'github.com'];
+        if (!allowedDomains.includes(parsedUrl.hostname)) {
+            reject(new Error('Requests only allowed to GitHub domains'));
+            return;
+        }
+        
         const requestOptions = {
             hostname: parsedUrl.hostname,
             port: parsedUrl.port || 443,
             path: parsedUrl.pathname + parsedUrl.search,
             method: options.method || 'GET',
-            headers: options.headers || {}
+            headers: {
+                'User-Agent': 'GitSecureOps/1.0',
+                ...options.headers
+            },
+            timeout: 30000 // 30 second timeout
         };
 
         if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
@@ -20,9 +107,21 @@ function makeRequest(url, options = {}) {
 
         const req = https.request(requestOptions, (res) => {
             let data = '';
+            let dataLength = 0;
+            const maxDataLength = 10 * 1024 * 1024; // 10MB max response
+            
             res.on('data', (chunk) => {
+                dataLength += chunk.length;
+                
+                if (dataLength > maxDataLength) {
+                    req.destroy();
+                    reject(new Error('Response too large'));
+                    return;
+                }
+                
                 data += chunk;
             });
+            
             res.on('end', () => {
                 const response = {
                     ok: res.statusCode >= 200 && res.statusCode < 300,
@@ -33,7 +132,7 @@ function makeRequest(url, options = {}) {
                         try {
                             return Promise.resolve(JSON.parse(data));
                         } catch (e) {
-                            return Promise.reject(new Error(`JSON parse error: ${e.message}. Response: ${data.substring(0, 200)}`));
+                            return Promise.reject(new Error(`JSON parse error: ${e.message}`));
                         }
                     },
                     text: () => Promise.resolve(data)
@@ -44,6 +143,11 @@ function makeRequest(url, options = {}) {
 
         req.on('error', (error) => {
             reject(error);
+        });
+        
+        req.on('timeout', () => {
+            req.destroy();
+            reject(new Error('Request timeout'));
         });
 
         if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
@@ -400,15 +504,26 @@ module.exports = async function (context, req) {
     };
 
     const frontendUrl = getFrontendUrl();
-    const corsOrigin = frontendUrl.includes('localhost') ? '*' : frontendUrl;
     
-    // Set CORS headers
+    // SECURITY: More restrictive CORS configuration
+    let corsOrigin;
+    if (frontendUrl.includes('localhost') || frontendUrl.includes('127.0.0.1')) {
+        corsOrigin = frontendUrl;
+    } else {
+        corsOrigin = frontendUrl;
+    }
+    
+    // Set CORS headers with security improvements
     context.res = {
         headers: {
             'Access-Control-Allow-Origin': corsOrigin,
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Max-Age': '86400',
+            'Access-Control-Max-Age': '3600', // Reduced from 24 hours to 1 hour
+            // Security headers
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY',
+            'X-XSS-Protection': '1; mode=block'
         }
     };
 
@@ -419,15 +534,44 @@ module.exports = async function (context, req) {
     }
 
     try {
-        // Extract query parameters or POST body
-        const query = req.query.q || req.query.query || (req.body && req.body.query) || '';
-        const organization = req.query.org || (req.body && req.body.organization) || '';
-        const organizations = req.body && req.body.organizations ? req.body.organizations : []; // Support multiple orgs
-        const language = req.query.language || (req.body && req.body.language) || '';
-        const fileType = req.query.extension || req.query.ext || (req.body && req.body.fileType) || '';
+        // Extract and validate query parameters or POST body
+        const rawQuery = req.query.q || req.query.query || (req.body && req.body.query) || '';
+        const rawOrganization = req.query.org || (req.body && req.body.organization) || '';
+        const rawOrganizations = req.body && req.body.organizations ? req.body.organizations : [];
+        const rawLanguage = req.query.language || (req.body && req.body.language) || '';
+        const rawFileType = req.query.extension || req.query.ext || (req.body && req.body.fileType) || '';
         const repositories = req.body && req.body.repositories ? req.body.repositories : [];
         const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
-        const streaming = req.query.stream === 'true' || (req.body && req.body.streaming === true); // Support streaming mode
+        const streaming = req.query.stream === 'true' || (req.body && req.body.streaming === true);
+
+        // SECURITY: Validate and sanitize all inputs
+        let query, organization, language, fileType;
+        let organizations = [];
+        
+        try {
+            query = validateSearchQuery(rawQuery);
+            organization = validateOrganization(rawOrganization);
+            language = sanitizeString(rawLanguage, 50);
+            fileType = sanitizeString(rawFileType, 20);
+            
+            // Validate organizations array
+            if (Array.isArray(rawOrganizations)) {
+                organizations = rawOrganizations
+                    .map(org => validateOrganization(org))
+                    .filter(org => org.length > 0)
+                    .slice(0, 10); // Limit to 10 organizations max
+            }
+        } catch (validationError) {
+            context.res = {
+                ...context.res,
+                status: 400,
+                body: {
+                    error: 'Input validation failed',
+                    message: validationError.message
+                }
+            };
+            return;
+        }
 
         // Combine single org and multiple orgs into one array
         const allOrganizations = [];
@@ -438,18 +582,6 @@ module.exports = async function (context, req) {
 
         context.log(`Code search query: ${query}, Organizations: ${allOrganizations.join(', ') || 'none'}, Language: ${language}, FileType: ${fileType}, Streaming: ${streaming}`);
 
-        if (!query || query.trim().length === 0) {
-            context.res = {
-                ...context.res,
-                status: 400,
-                body: {
-                    error: 'Missing search query',
-                    message: 'Please provide a search query using "q" or "query" parameter'
-                }
-            };
-            return;
-        }
-
         if (!accessToken) {
             context.res = {
                 ...context.res,
@@ -457,6 +589,19 @@ module.exports = async function (context, req) {
                 body: {
                     error: 'Missing authorization token',
                     message: 'Authorization header with Bearer token is required'
+                }
+            };
+            return;
+        }
+
+        // SECURITY: Validate token format
+        if (!isValidAuthToken(accessToken)) {
+            context.res = {
+                ...context.res,
+                status: 401,
+                body: {
+                    error: 'Invalid authorization token',
+                    message: 'Authorization token format is invalid'
                 }
             };
             return;
@@ -634,13 +779,18 @@ module.exports = async function (context, req) {
     } catch (error) {
         context.log.error('Code search function error:', error);
         
+        // SECURITY: Don't expose sensitive error details in production
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        
         context.res = {
             ...context.res,
             status: 500,
             body: {
                 error: 'Internal server error',
                 message: 'An error occurred while processing your code search request',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                // Only include details in development
+                details: isDevelopment ? error.message : undefined,
+                timestamp: new Date().toISOString()
             }
         };
     }

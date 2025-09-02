@@ -3,7 +3,6 @@
 
 interface EnvironmentConfig {
   githubClientId: string;
-  githubClientSecret: string;
   githubRedirectUri: string;
   functionAppUrl: string;
   staticWebAppUrl: string;
@@ -34,10 +33,6 @@ class EnvironmentService {
         'VITE_GITHUB_CLIENT_ID', 
         'your-github-client-id'
       ),
-      githubClientSecret: getEnvVar(
-        'VITE_GITHUB_CLIENT_SECRET',
-        ''
-      ),
       functionAppUrl: getEnvVar(
         'VITE_FUNCTION_APP_URL',
         'http://localhost:7071' // Default to Azure Functions local development
@@ -57,9 +52,9 @@ class EnvironmentService {
     return this.config.githubClientId;
   }
 
-  getGitHubClientSecret(): string {
-    return this.config.githubClientSecret;
-  }
+  // SECURITY FIX: Removed getGitHubClientSecret() method
+  // Client secrets should NEVER be exposed to the frontend
+  // OAuth secrets must only be handled on the backend
 
   getGitHubRedirectUri(): string {
     return this.config.githubRedirectUri;
@@ -73,7 +68,7 @@ class EnvironmentService {
     return this.config.staticWebAppUrl;
   }
 
-  // Debug method to check configuration
+  // Debug method to check configuration (removed sensitive data)
   getConfiguration(): EnvironmentConfig {
     return { ...this.config };
   }
