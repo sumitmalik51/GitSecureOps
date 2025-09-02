@@ -8,7 +8,7 @@ interface GrantAccessProps {
 }
 
 type OrgRole = 'member' | 'admin';
-type RepoRole = 'pull' | 'triage' | 'push' | 'maintain' | 'admin';
+type RepoRole = 'pull' | 'triage' | 'write' | 'maintain' | 'admin';
 
 interface InviteResult {
   success: boolean;
@@ -17,7 +17,7 @@ interface InviteResult {
 }
 
 export default function GrantAccess({ token, onBack }: GrantAccessProps) {
-  const [step, setStep] = useState<'org-selection' | 'org-flow' | 'result' | 'select-level' | 'repo-flow'>('select-level');
+  const [step, setStep] = useState<'select-level' | 'org-flow' | 'repo-flow' | 'result'>('select-level');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -28,8 +28,8 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
   const [orgRole, setOrgRole] = useState<OrgRole>('member');
   
   // Repository flow state
-  const [repoPath, setRepoPath] = useState('');
-  const [repoRole, setRepoRole] = useState<RepoRole>('pull');
+  const [repositoryName, setRepositoryName] = useState('');
+  const [repoRole, setRepoRole] = useState<RepoRole>('write');
   
   // Result state
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
@@ -40,26 +40,21 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     return regex.test(username) && username.length <= 39;
   };
 
-  const validateRepoPath = (path: string): boolean => {
-    const regex = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
-    return regex.test(path);
-  };
-
   const handleAccessLevelSelect = (accessType: 'organization' | 'repository') => {
     if (accessType === 'organization') {
-      loadOrganizations();
+      loadOrganizations('org-flow');
     } else {
-      setStep('repo-flow');
+      loadOrganizations('repo-flow');
     }
   };
 
-  const loadOrganizations = async () => {
+  const loadOrganizations = async (targetStep: 'org-flow' | 'repo-flow') => {
     setIsLoading(true);
     setError('');
     try {
       const orgs = await githubService.getUserOrganizations();
       setOrganizations(orgs);
-      setStep('org-flow');
+      setStep(targetStep);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch organizations');
     } finally {
@@ -82,7 +77,6 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     setError('');
 
     try {
-      // Call GitHub API to add user to organization
       const response = await fetch(`https://api.github.com/orgs/${selectedOrg}/memberships/${targetUsername}`, {
         method: 'PUT',
         headers: {
@@ -121,7 +115,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
   };
 
   const handleRepoInvite = async () => {
-    if (!repoPath || !targetUsername) {
+    if (!selectedOrg || !repositoryName || !targetUsername) {
       setError('Please fill in all required fields');
       return;
     }
@@ -131,17 +125,13 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
       return;
     }
 
-    if (!validateRepoPath(repoPath)) {
-      setError('Invalid repository format. Use: organization/repository');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
+    const fullRepoPath = `${selectedOrg}/${repositoryName}`;
+
     try {
-      // Call GitHub API to add collaborator to repository
-      const response = await fetch(`https://api.github.com/repos/${repoPath}/collaborators/${targetUsername}`, {
+      const response = await fetch(`https://api.github.com/repos/${fullRepoPath}/collaborators/${targetUsername}`, {
         method: 'PUT',
         headers: {
           'Authorization': `token ${token}`,
@@ -160,7 +150,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
 
       setInviteResult({
         success: true,
-        message: `Successfully invited ${targetUsername} to ${repoPath} with ${repoRole} permission`
+        message: `Successfully invited ${targetUsername} to ${fullRepoPath} with ${repoRole} permission`
       });
       setStep('result');
     } catch (err) {
@@ -180,7 +170,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     setError('');
     setInviteResult(null);
     setTargetUsername('');
-    setRepoPath('');
+    setRepositoryName('');
     setSelectedOrg('');
   };
 
@@ -191,7 +181,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     // Repository roles
     pull: "Can read and clone the repository",
     triage: "Can read, clone, and manage issues and pull requests",
-    push: "Can read, clone, and push to the repository",
+    write: "Can read, clone, and push to the repository",
     maintain: "Can read, clone, push, and manage some repository settings"
   };
 
@@ -263,15 +253,15 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
                 Repository Level
               </h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Add collaborators to specific repositories with granular permissions
+                Select organization and enter repository name manually
               </p>
             </button>
           </div>
 
           {isLoading && (
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Loading organizations...</p>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading organizations...</span>
             </div>
           )}
         </div>
@@ -386,20 +376,44 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
             </button>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+            <p className="text-blue-800 dark:text-blue-200 text-sm">
+              Select an organization and enter the repository name to grant access.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Repository Path
+                Select Organization
+              </label>
+              <select
+                value={selectedOrg}
+                onChange={(e) => setSelectedOrg(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">Choose an organization...</option>
+                {organizations.map((org) => (
+                  <option key={org.login} value={org.login}>
+                    {org.login}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Repository Name
               </label>
               <input
                 type="text"
-                value={repoPath}
-                onChange={(e) => setRepoPath(e.target.value)}
-                placeholder="organization/repository"
+                value={repositoryName}
+                onChange={(e) => setRepositoryName(e.target.value)}
+                placeholder="repository-name"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Format: organization/repository
+                Just the repository name (not the full path)
               </p>
             </div>
 
@@ -416,12 +430,12 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Repository Permission
               </label>
               <div className="space-y-2">
-                {(['pull', 'triage', 'push', 'maintain', 'admin'] as RepoRole[]).map((role) => (
+                {(['pull', 'triage', 'write', 'maintain', 'admin'] as RepoRole[]).map((role) => (
                   <label key={role} className="flex items-center">
                     <input
                       type="radio"
@@ -454,7 +468,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
             </button>
             <button
               onClick={handleRepoInvite}
-              disabled={isLoading || !repoPath || !targetUsername}
+              disabled={isLoading || !selectedOrg || !repositoryName || !targetUsername}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? 'Sending Invite...' : 'Send Invitation'}
