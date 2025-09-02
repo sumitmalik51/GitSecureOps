@@ -414,11 +414,22 @@ class GitHubDataService {
       headers: {
         'Authorization': `Bearer ${options.accessToken}`,
         'Accept': 'application/vnd.github.v3+json',
+        'X-GitHub-Api-Version': '2022-11-28'
       },
     });
 
     if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      // Handle common API errors gracefully
+      if (response.status === 403) {
+        console.warn(`GitHub API rate limit or permission issue for ${type} search. Status: ${response.status}`);
+        return []; // Return empty array instead of throwing
+      }
+      if (response.status === 422) {
+        console.warn(`GitHub API validation error for ${type} search. Query may be too complex.`);
+        return [];
+      }
+      console.error(`GitHub API error for ${type} search: ${response.status} ${response.statusText}`);
+      return []; // Return empty array for other errors too
     }
 
     const data = await response.json();
@@ -433,7 +444,9 @@ class GitHubDataService {
     let query = options.query!.includes(' ') ? `"${options.query}"` : options.query!;
     
     if (options.organizations?.length) {
-      const orgQuery = options.organizations.map(org => `org:${org}`).join(' OR ');
+      // Limit to first 3 organizations to prevent complex queries that hit rate limits
+      const limitedOrgs = options.organizations.slice(0, 3);
+      const orgQuery = limitedOrgs.map(org => `org:${org}`).join(' OR ');
       query += ` (${orgQuery})`;
     }
     
@@ -448,7 +461,9 @@ class GitHubDataService {
     let query = options.query!.includes(' ') ? `"${options.query}"` : options.query!;
     
     if (options.organizations?.length) {
-      const orgQuery = options.organizations.map(org => `org:${org}`).join(' OR ');
+      // Limit to first 3 organizations to prevent complex queries
+      const limitedOrgs = options.organizations.slice(0, 3);
+      const orgQuery = limitedOrgs.map(org => `org:${org}`).join(' OR ');
       query += ` (${orgQuery})`;
     }
     
@@ -464,7 +479,9 @@ class GitHubDataService {
     let query = `${baseQuery} type:pr`;
     
     if (options.organizations?.length) {
-      const orgQuery = options.organizations.map(org => `org:${org}`).join(' OR ');
+      // Limit to first 3 organizations to prevent complex queries
+      const limitedOrgs = options.organizations.slice(0, 3);
+      const orgQuery = limitedOrgs.map(org => `org:${org}`).join(' OR ');
       query += ` (${orgQuery})`;
     }
     
@@ -484,7 +501,9 @@ class GitHubDataService {
     let query = `${baseQuery} type:issue`;
     
     if (options.organizations?.length) {
-      const orgQuery = options.organizations.map(org => `org:${org}`).join(' OR ');
+      // Limit to first 3 organizations to prevent complex queries
+      const limitedOrgs = options.organizations.slice(0, 3);
+      const orgQuery = limitedOrgs.map(org => `org:${org}`).join(' OR ');
       query += ` (${orgQuery})`;
     }
     
@@ -503,7 +522,9 @@ class GitHubDataService {
     let query = options.query!.includes(' ') ? `"${options.query}"` : options.query!;
     
     if (options.organizations?.length) {
-      const orgQuery = options.organizations.map(org => `org:${org}`).join(' OR ');
+      // Limit to first 3 organizations to prevent complex queries
+      const limitedOrgs = options.organizations.slice(0, 3);
+      const orgQuery = limitedOrgs.map(org => `org:${org}`).join(' OR ');
       query += ` (${orgQuery})`;
     }
     
@@ -729,13 +750,21 @@ class GitHubDataService {
     organizations: string[],
     accessToken: string
   ): Promise<FacetedSearchResult> {
-    const [repositories, code, pullRequests, issues, commits] = await Promise.all([
+    // Use Promise.allSettled to handle individual search failures gracefully
+    const searchPromises = [
       this.searchByType('repo', { mode: 'search', query, organizations, accessToken }, 10),
       this.searchByType('code', { mode: 'search', query, organizations, accessToken }, 10),
       this.searchByType('pr', { mode: 'search', query, organizations, accessToken }, 10),
       this.searchByType('issue', { mode: 'search', query, organizations, accessToken }, 10),
       this.searchByType('commit', { mode: 'search', query, organizations, accessToken }, 10)
-    ]);
+    ];
+
+    const results = await Promise.allSettled(searchPromises);
+    
+    // Extract successful results, defaulting to empty arrays for failed searches
+    const [repositories, code, pullRequests, issues, commits] = results.map(result => 
+      result.status === 'fulfilled' ? result.value : []
+    );
 
     return {
       repositories,
