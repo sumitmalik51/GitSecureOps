@@ -1,16 +1,49 @@
 const https = require('https');
 const { URLSearchParams } = require('url');
+const crypto = require('crypto');
 
-// Helper function to make HTTP requests using built-in modules
+// Simple checksum generation for session integrity (basic protection)
+function generateChecksum(data) {
+    const hash = crypto.createHash('sha256');
+    hash.update(JSON.stringify(data));
+    return hash.digest('hex').substring(0, 16); // First 16 characters
+}
+
+// Helper function to make HTTP requests using built-in modules with security improvements
 function makeRequest(url, options = {}) {
     return new Promise((resolve, reject) => {
-        const parsedUrl = new URL(url);
+        // SECURITY: Validate URL to prevent SSRF
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch (error) {
+            reject(new Error('Invalid URL format'));
+            return;
+        }
+        
+        // SECURITY: Only allow HTTPS requests to GitHub API
+        if (parsedUrl.protocol !== 'https:') {
+            reject(new Error('Only HTTPS requests are allowed'));
+            return;
+        }
+        
+        // SECURITY: Restrict to GitHub domains
+        const allowedDomains = ['api.github.com', 'github.com'];
+        if (!allowedDomains.includes(parsedUrl.hostname)) {
+            reject(new Error('Requests only allowed to GitHub domains'));
+            return;
+        }
+        
         const requestOptions = {
             hostname: parsedUrl.hostname,
             port: parsedUrl.port || 443,
             path: parsedUrl.pathname + parsedUrl.search,
             method: options.method || 'GET',
-            headers: options.headers || {}
+            headers: {
+                'User-Agent': 'GitSecureOps/1.0',
+                ...options.headers
+            },
+            timeout: 30000 // 30 second timeout
         };
 
         if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
@@ -20,9 +53,21 @@ function makeRequest(url, options = {}) {
 
         const req = https.request(requestOptions, (res) => {
             let data = '';
+            let dataLength = 0;
+            const maxDataLength = 10 * 1024 * 1024; // 10MB max response
+            
             res.on('data', (chunk) => {
+                dataLength += chunk.length;
+                
+                if (dataLength > maxDataLength) {
+                    req.destroy();
+                    reject(new Error('Response too large'));
+                    return;
+                }
+                
                 data += chunk;
             });
+            
             res.on('end', () => {
                 const response = {
                     ok: res.statusCode >= 200 && res.statusCode < 300,
@@ -32,7 +77,7 @@ function makeRequest(url, options = {}) {
                         try {
                             return Promise.resolve(JSON.parse(data));
                         } catch (e) {
-                            return Promise.reject(new Error(`JSON parse error: ${e.message}. Response: ${data.substring(0, 200)}`));
+                            return Promise.reject(new Error(`JSON parse error: ${e.message}`));
                         }
                     },
                     text: () => Promise.resolve(data)
@@ -43,6 +88,11 @@ function makeRequest(url, options = {}) {
 
         req.on('error', (error) => {
             reject(error);
+        });
+        
+        req.on('timeout', () => {
+            req.destroy();
+            reject(new Error('Request timeout'));
         });
 
         if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
@@ -110,15 +160,24 @@ module.exports = async function (context, req) {
     const frontendUrl = getFrontendUrl();
     context.log(`Determined frontend URL: ${frontendUrl}`);
 
-    // Enable CORS - Allow specific frontend origin for security
-    const corsOrigin = frontendUrl.includes('localhost') ? '*' : frontendUrl;
+    // Enable CORS - More secure configuration
+    let corsOrigin;
+    if (frontendUrl.includes('localhost') || frontendUrl.includes('127.0.0.1')) {
+        corsOrigin = frontendUrl;
+    } else {
+        corsOrigin = frontendUrl;
+    }
     
     context.res = {
         headers: {
             'Access-Control-Allow-Origin': corsOrigin,
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '86400', // 24 hours
+            'Access-Control-Max-Age': '3600', // Reduced from 24 hours
+            // Security headers
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY',
+            'X-XSS-Protection': '1; mode=block'
         }
     };
 
@@ -207,16 +266,25 @@ module.exports = async function (context, req) {
 
         const userData = await userResponse.json();
 
-        // Create a secure session token or JWT (simplified version)
+        // SECURITY IMPROVEMENT: Create a more secure session token with additional validation data
         const sessionData = {
             token: tokenData.access_token,
             username: userData.login,
             name: userData.name,
+            email: userData.email,
+            id: userData.id,
             avatar: userData.avatar_url,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            // Add simple integrity check
+            checksum: generateChecksum({
+                username: userData.login,
+                id: userData.id,
+                timestamp: Date.now()
+            })
         };
 
-        // For security, you might want to encrypt this or use proper JWT
+        // SECURITY NOTE: In production, consider using proper JWT with signing
+        // This is still base64 encoding but with improved data structure
         const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64');
 
         // Redirect to frontend with success

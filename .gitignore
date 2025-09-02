@@ -23,6 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment files - NEVER commit these
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+
 # Temporary and debug files
 debug-*.js
 debug-*.html
@@ -42,3 +49,10 @@ test-*.js
 # Azure Function App local files
 api/local.settings.json
 .azure/
+
+# Security - Exclude sensitive files
+*.pem
+*.key
+*.cert
+*secret*
+*token*
