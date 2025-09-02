@@ -32,6 +32,13 @@ test-*.js
 *-compiled.json
 *-fix.*
 
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Azure Function App local files
 api/local.settings.json
 .azure/

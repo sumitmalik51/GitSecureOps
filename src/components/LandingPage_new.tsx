@@ -85,14 +85,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       color: "purple"
     },
     {
-      icon: "�",
+      icon: "🔐",
       title: "Smart Access Control",
       description: "Intelligent user invitation system with role-based permissions, automated workflows, and compliance tracking for enterprise security.",
       gradient: "from-blue-500 to-cyan-500",
       color: "blue"
     },
     {
-      icon: "�️",
+      icon: "🛡️",
       title: "2FA Compliance Scanner",
       description: "Organization-wide 2FA audit with detailed compliance reports, user identification, and automated remediation workflows for security teams.",
       gradient: "from-green-500 to-emerald-500",
@@ -113,7 +113,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       color: "indigo"
     },
     {
-      icon: "�",
+      icon: "💻",
       title: "Code Snippet Vault",
       description: "Secure code snippet management with syntax highlighting, version control, team collaboration, and intelligent search capabilities.",
       gradient: "from-pink-500 to-rose-500",
@@ -332,7 +332,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </nav>
 
       {/* Enhanced Hero Section with Parallax */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden hero-gradient" 
+      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden hero-gradient py-8" 
                style={{ transform: `translateY(${scrollY * 0.1}px)` }}>
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
@@ -359,8 +359,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="mb-8 animate-fade-in">
-            <div className="inline-flex items-center gap-3 bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-full px-6 py-3 mb-8 border border-white/20 dark:border-gray-700/20 shadow-lg">
+          <div className="mb-4 animate-fade-in">
+            <div className="inline-flex items-center gap-3 bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-full px-6 py-3 mb-4 border border-white/20 dark:border-gray-700/20 shadow-lg">
               <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Enterprise GitHub Management Platform
@@ -371,7 +371,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
           </div>
 
-          <h1 className="text-6xl md:text-8xl font-black mb-8 leading-tight animate-fade-in">
+          <h1 className="text-4xl md:text-6xl font-black mb-4 leading-tight animate-fade-in">
             <span className="block bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent animate-gradient">
               Secure Your
             </span>
@@ -380,7 +380,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-4xl mx-auto font-light leading-relaxed animate-fade-in" style={{animationDelay: '0.5s'}}>
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 max-w-3xl mx-auto font-light leading-relaxed animate-fade-in" style={{animationDelay: '0.5s'}}>
             Enterprise-grade security management for GitHub organizations. 
             <span className="block mt-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
               Control access, enforce compliance, and protect your code with AI-powered insights.
@@ -388,10 +388,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </p>
 
           {/* Enhanced CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 animate-fade-in" style={{animationDelay: '1s'}}>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8 animate-fade-in" style={{animationDelay: '1s'}}>
             <button
               onClick={handleGetStarted}
-              className="group relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl overflow-hidden min-w-64"
+              className="group relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl overflow-hidden min-w-64"
             >
               <span className="relative z-10 flex items-center gap-3">
                 <span className="text-2xl animate-bounce">🚀</span>
@@ -415,19 +415,19 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* Enhanced Features Section */}
-      <section id="features" className="py-24 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden">
+      <section id="features" className="py-8 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-50"></div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-20 animate-fade-in">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 rounded-full px-6 py-2 mb-6">
+          <div className="text-center mb-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 rounded-full px-6 py-2 mb-4">
               <span className="text-2xl">⚡</span>
               <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 POWERFUL FEATURES
               </span>
             </div>
-            <h2 className="text-5xl md:text-6xl font-black mb-6">
+            <h2 className="text-5xl md:text-6xl font-black mb-4">
               <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent">
                 Enterprise-Grade
               </span>
@@ -460,21 +460,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   <div className={`absolute -inset-2 bg-gradient-to-br ${feature.gradient} rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-all duration-500`}></div>
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:via-cyan-400 group-hover:to-emerald-400 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
                   {feature.title}
                 </h3>
                 
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
+                <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
                   {feature.description}
                 </p>
-
-                {/* Enhanced CTA */}
-                <div className="flex items-center text-sm font-semibold text-gray-500 dark:text-gray-400 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-                  <span>Learn more</span>
-                  <svg className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </div>
 
                 {/* Floating particles on hover */}
                 <div className="absolute top-4 right-4 w-2 h-2 bg-blue-400 rounded-full opacity-0 group-hover:opacity-60 transition-all duration-500 animate-bounce" style={{animationDelay: '0s'}}></div>
@@ -485,7 +477,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           {/* Call to action under features */}
           <div className="text-center mt-16 animate-fade-in" style={{animationDelay: '0.8s'}}>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
               Ready to secure your GitHub organization? GitSecureOps is completely free to use.
             </p>
             <button
