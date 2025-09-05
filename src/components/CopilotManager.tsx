@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubOrg, CopilotSeat, CopilotBilling } from '../services/githubService';
+import { validateGitHubUsernames } from '../utils/validation';
 
 interface CopilotManagerProps {
   onBack: () => void;
@@ -81,13 +82,26 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
       return;
     }
 
-    const usernames = newUsernames
+    const inputUsernames = newUsernames
       .split('\n')
       .map(u => u.trim())
       .filter(u => u.length > 0);
 
-    if (usernames.length === 0) {
+    if (inputUsernames.length === 0) {
       setError('Please enter valid usernames');
+      return;
+    }
+
+    // Validate all usernames before processing
+    const { validUsernames, errors } = validateGitHubUsernames(inputUsernames);
+
+    if (errors.length > 0) {
+      setError('Invalid usernames detected:\n' + errors.join('\n'));
+      return;
+    }
+
+    if (validUsernames.length === 0) {
+      setError('No valid usernames found. Please enter GitHub usernames, not email addresses.');
       return;
     }
 
@@ -96,7 +110,7 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
     setSuccess('');
 
     try {
-      const result = await githubService.addCopilotUsersWithInvite(selectedOrg, usernames);
+      const result = await githubService.addCopilotUsersWithInvite(selectedOrg, validUsernames);
       
       if (result.success) {
         const inviteCount = result.results.filter(r => r.status === 'invited_and_added').length;
@@ -510,12 +524,14 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
               GitHub Usernames
             </label>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Enter one username per line. Users who are not organization members will be automatically invited before being added to Copilot.
+              Enter GitHub usernames (not email addresses), one per line. Users who are not organization members will be automatically invited before being added to Copilot.
+              <br />
+              <span className="text-xs text-gray-500 dark:text-gray-500">Example: octocat, not user@example.com</span>
             </p>
             <textarea
               value={newUsernames}
               onChange={(e) => setNewUsernames(e.target.value)}
-              placeholder="username1&#10;username2&#10;username3"
+              placeholder="octocat&#10;github-user&#10;username123"
               className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
             />
             <div className="mt-4 flex gap-4">

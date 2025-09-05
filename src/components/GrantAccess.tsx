@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubOrg } from '../services/githubService';
+import { validateGitHubUsername, isEmailAddress } from '../utils/validation';
 
 interface GrantAccessProps {
   token: string;
@@ -34,12 +35,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
   // Result state
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
 
-  // Utility functions
-  const validateGitHubUsername = (username: string): boolean => {
-    const regex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/;
-    return regex.test(username) && username.length <= 39;
-  };
-
+  // Remove the local validation function since we're using the shared one
   const handleAccessLevelSelect = (accessType: 'organization' | 'repository') => {
     if (accessType === 'organization') {
       loadOrganizations('org-flow');
@@ -69,7 +65,11 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     }
 
     if (!validateGitHubUsername(targetUsername)) {
-      setError('Invalid GitHub username format');
+      if (isEmailAddress(targetUsername)) {
+        setError('Please use GitHub username, not email address');
+      } else {
+        setError('Invalid GitHub username format');
+      }
       return;
     }
 
@@ -121,7 +121,11 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     }
 
     if (!validateGitHubUsername(targetUsername)) {
-      setError('Invalid GitHub username format');
+      if (isEmailAddress(targetUsername)) {
+        setError('Please use GitHub username, not email address');
+      } else {
+        setError('Invalid GitHub username format');
+      }
       return;
     }
 
