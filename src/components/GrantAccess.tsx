@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubOrg } from '../services/githubService';
+import { validateGitHubUsername, isEmailAddress, validateEmailAddress } from '../utils/validation';
 
 interface GrantAccessProps {
   token: string;
@@ -34,12 +35,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
   // Result state
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
 
-  // Utility functions
-  const validateGitHubUsername = (username: string): boolean => {
-    const regex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/;
-    return regex.test(username) && username.length <= 39;
-  };
-
+  // Remove the local validation function since we're using the shared one
   const handleAccessLevelSelect = (accessType: 'organization' | 'repository') => {
     if (accessType === 'organization') {
       loadOrganizations('org-flow');
@@ -69,8 +65,16 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     }
 
     if (!validateGitHubUsername(targetUsername)) {
-      setError('Invalid GitHub username format');
-      return;
+      if (isEmailAddress(targetUsername)) {
+        if (!validateEmailAddress(targetUsername)) {
+          setError('Invalid email address format');
+          return;
+        }
+        // Email is valid, proceed with invitation
+      } else {
+        setError('Invalid GitHub username format');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -121,8 +125,16 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     }
 
     if (!validateGitHubUsername(targetUsername)) {
-      setError('Invalid GitHub username format');
-      return;
+      if (isEmailAddress(targetUsername)) {
+        if (!validateEmailAddress(targetUsername)) {
+          setError('Invalid email address format');
+          return;
+        }
+        // Email is valid, proceed with invitation
+      } else {
+        setError('Invalid GitHub username format');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -303,13 +315,13 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                GitHub Username
+                GitHub Username or Email
               </label>
               <input
                 type="text"
                 value={targetUsername}
                 onChange={(e) => setTargetUsername(e.target.value)}
-                placeholder="Enter GitHub username"
+                placeholder="Enter GitHub username or email"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
@@ -419,13 +431,13 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                GitHub Username
+                GitHub Username or Email
               </label>
               <input
                 type="text"
                 value={targetUsername}
                 onChange={(e) => setTargetUsername(e.target.value)}
-                placeholder="Enter GitHub username"
+                placeholder="Enter GitHub username or email"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
