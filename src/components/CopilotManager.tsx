@@ -96,8 +96,44 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
     setSuccess('');
 
     try {
-      const result = await githubService.addCopilotUsers(selectedOrg, usernames);
-      setSuccess(`Successfully added ${result.seats_created.length} user(s) to Copilot`);
+      const result = await githubService.addCopilotUsersWithInvite(selectedOrg, usernames);
+      
+      if (result.success) {
+        const inviteCount = result.results.filter(r => r.status === 'invited_and_added').length;
+        const addedCount = result.results.filter(r => r.status === 'added').length;
+        const failedCount = result.results.filter(r => r.status === 'failed').length;
+        
+        let successMessage = result.message;
+        if (inviteCount > 0) {
+          successMessage += `\n• ${inviteCount} user(s) were invited to the organization and added to Copilot`;
+        }
+        if (addedCount > 0) {
+          successMessage += `\n• ${addedCount} existing member(s) were added to Copilot`;
+        }
+        if (failedCount > 0) {
+          successMessage += `\n• ${failedCount} user(s) failed to be processed`;
+          
+          // Show detailed failure information
+          const failedUsers = result.results.filter(r => r.status === 'failed');
+          if (failedUsers.length > 0) {
+            successMessage += '\n\nFailures:';
+            failedUsers.forEach(user => {
+              successMessage += `\n• ${user.username}: ${user.message}`;
+            });
+          }
+        }
+        
+        setSuccess(successMessage);
+        
+        // Show invite URLs if any
+        const invitedUsers = result.results.filter(r => r.inviteUrl);
+        if (invitedUsers.length > 0) {
+          console.log('Invitation URLs:', invitedUsers.map(u => ({ username: u.username, url: u.inviteUrl })));
+        }
+      } else {
+        setError(result.message);
+      }
+      
       setNewUsernames('');
       // Refresh copilot data
       await loadCopilotData(selectedOrg);
@@ -182,7 +218,7 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
       {/* Success Banner */}
       {success && (
         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <p className="text-green-800 dark:text-green-200">{success}</p>
+          <pre className="text-green-800 dark:text-green-200 whitespace-pre-wrap text-sm">{success}</pre>
         </div>
       )}
 
@@ -474,7 +510,7 @@ export default function CopilotManager({ onBack }: CopilotManagerProps) {
               GitHub Usernames
             </label>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Enter one username per line. Users must be members of the organization to be added to Copilot.
+              Enter one username per line. Users who are not organization members will be automatically invited before being added to Copilot.
             </p>
             <textarea
               value={newUsernames}

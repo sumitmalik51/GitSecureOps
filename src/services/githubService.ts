@@ -554,6 +554,216 @@ class GitHubService {
       return false;
     }
   }
+
+  // Check if user is a member of an organization
+  async checkOrganizationMembership(org: string, username: string): Promise<boolean> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/orgs/${org}/members/${username}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      // 204 means user is a public member, 404 means not a member or private membership
+      return response.status === 204;
+    } catch (error) {
+      console.warn(`Failed to check organization membership for ${username}:`, error);
+      return false;
+    }
+  }
+
+  // Invite user to organization
+  async inviteUserToOrganization(org: string, username: string, role: 'member' | 'admin' = 'member'): Promise<{ success: boolean; message: string; inviteUrl?: string }> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/orgs/${org}/memberships/${username}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: role
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return {
+          success: false,
+          message: errorData.message || 'Failed to invite user to organization'
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        message: `Successfully invited ${username} to ${org} as ${role}`,
+        inviteUrl: data.url
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to invite user to organization'
+      };
+    }
+  }
+
+  // Enhanced method to add users to Copilot with automatic organization invitation
+  async addCopilotUsersWithInvite(org: string, usernames: string[]): Promise<{
+    success: boolean;
+    message: string;
+    results: {
+      username: string;
+      status: 'added' | 'invited_and_added' | 'failed';
+      message: string;
+      inviteUrl?: string;
+    }[];
+    seats_created: CopilotSeat[];
+  }> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const results: {
+      username: string;
+      status: 'added' | 'invited_and_added' | 'failed';
+      message: string;
+      inviteUrl?: string;
+    }[] = [];
+
+    const usersToInvite: string[] = [];
+    const usersToAddDirectly: string[] = [];
+
+    // First, check membership status for all users
+    for (const username of usernames) {
+      try {
+        const isMember = await this.checkOrganizationMembership(org, username);
+        if (isMember) {
+          usersToAddDirectly.push(username);
+        } else {
+          usersToInvite.push(username);
+        }
+      } catch (error) {
+        results.push({
+          username,
+          status: 'failed',
+          message: `Failed to check membership: ${error instanceof Error ? error.message : 'Unknown error'}`
+        });
+      }
+    }
+
+    // Invite users who are not members
+    for (const username of usersToInvite) {
+      try {
+        const inviteResult = await this.inviteUserToOrganization(org, username, 'member');
+        if (inviteResult.success) {
+          // After successful invitation, add to the list to add to Copilot
+          usersToAddDirectly.push(username);
+          results.push({
+            username,
+            status: 'invited_and_added',
+            message: `Invited to organization and will be added to Copilot`,
+            inviteUrl: inviteResult.inviteUrl
+          });
+        } else {
+          results.push({
+            username,
+            status: 'failed',
+            message: `Failed to invite to organization: ${inviteResult.message}`
+          });
+        }
+      } catch (error) {
+        results.push({
+          username,
+          status: 'failed',
+          message: `Failed to invite to organization: ${error instanceof Error ? error.message : 'Unknown error'}`
+        });
+      }
+    }
+
+    // Now add all users (existing members + newly invited) to Copilot
+    let seats_created: CopilotSeat[] = [];
+    if (usersToAddDirectly.length > 0) {
+      try {
+        const copilotResult = await this.addCopilotUsers(org, usersToAddDirectly);
+        seats_created = copilotResult.seats_created;
+
+        // Update results for users who were successfully added to Copilot
+        for (const seat of seats_created) {
+          const existingResult = results.find(r => r.username === seat.assignee.login);
+          if (existingResult) {
+            if (existingResult.status === 'invited_and_added') {
+              existingResult.message = `Successfully invited to organization and added to Copilot`;
+            }
+          } else {
+            results.push({
+              username: seat.assignee.login,
+              status: 'added',
+              message: 'Successfully added to Copilot'
+            });
+          }
+        }
+
+        // Handle users who failed to be added to Copilot
+        for (const username of usersToAddDirectly) {
+          if (!seats_created.some(seat => seat.assignee.login === username)) {
+            const existingResult = results.find(r => r.username === username);
+            if (existingResult && existingResult.status === 'invited_and_added') {
+              existingResult.status = 'failed';
+              existingResult.message = 'Invited to organization but failed to add to Copilot';
+            } else if (!existingResult) {
+              results.push({
+                username,
+                status: 'failed',
+                message: 'Failed to add to Copilot'
+              });
+            }
+          }
+        }
+      } catch (error) {
+        // Handle Copilot assignment failure
+        const errorMessage = error instanceof Error ? error.message : 'Failed to add users to Copilot';
+        for (const username of usersToAddDirectly) {
+          const existingResult = results.find(r => r.username === username);
+          if (existingResult && existingResult.status === 'invited_and_added') {
+            existingResult.status = 'failed';
+            existingResult.message = `Invited to organization but failed to add to Copilot: ${errorMessage}`;
+          } else if (!existingResult) {
+            results.push({
+              username,
+              status: 'failed',
+              message: `Failed to add to Copilot: ${errorMessage}`
+            });
+          }
+        }
+      }
+    }
+
+    const successCount = results.filter(r => r.status === 'added' || r.status === 'invited_and_added').length;
+    const inviteCount = results.filter(r => r.status === 'invited_and_added').length;
+    
+    let message = `Successfully processed ${successCount} user(s)`;
+    if (inviteCount > 0) {
+      message += ` (${inviteCount} invited to organization)`;
+    }
+
+    return {
+      success: successCount > 0,
+      message,
+      results,
+      seats_created
+    };
+  }
 }
 
 export default new GitHubService();
