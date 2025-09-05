@@ -618,7 +618,13 @@ class GitHubService {
     }
   }
 
+  // Helper method to check if input is an email address
+  private isEmailAddress(input: string): boolean {
+    return input.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+  }
+
   // Enhanced method to add users to Copilot with automatic organization invitation
+  // Supports both GitHub usernames and email addresses
   async addCopilotUsersWithInvite(org: string, usernames: string[]): Promise<{
     success: boolean;
     message: string;
@@ -627,6 +633,7 @@ class GitHubService {
       status: 'added' | 'invited_and_added' | 'failed';
       message: string;
       inviteUrl?: string;
+      isEmail?: boolean;
     }[];
     seats_created: CopilotSeat[];
   }> {
@@ -639,30 +646,39 @@ class GitHubService {
       status: 'added' | 'invited_and_added' | 'failed';
       message: string;
       inviteUrl?: string;
+      isEmail?: boolean;
     }[] = [];
 
     const usersToInvite: string[] = [];
+    const emailsToInvite: string[] = [];
     const usersToAddDirectly: string[] = [];
 
-    // First, check membership status for all users
-    for (const username of usernames) {
-      try {
-        const isMember = await this.checkOrganizationMembership(org, username);
-        if (isMember) {
-          usersToAddDirectly.push(username);
-        } else {
-          usersToInvite.push(username);
+    // Separate usernames and emails, check membership status for usernames only
+    for (const input of usernames) {
+      if (this.isEmailAddress(input)) {
+        // For email addresses, skip membership check and go straight to invitation
+        emailsToInvite.push(input);
+      } else {
+        // For usernames, check membership status
+        try {
+          const isMember = await this.checkOrganizationMembership(org, input);
+          if (isMember) {
+            usersToAddDirectly.push(input);
+          } else {
+            usersToInvite.push(input);
+          }
+        } catch (error) {
+          results.push({
+            username: input,
+            status: 'failed',
+            message: `Failed to check membership: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            isEmail: false
+          });
         }
-      } catch (error) {
-        results.push({
-          username,
-          status: 'failed',
-          message: `Failed to check membership: ${error instanceof Error ? error.message : 'Unknown error'}`
-        });
       }
     }
 
-    // Invite users who are not members
+    // Invite users by username who are not members
     for (const username of usersToInvite) {
       try {
         const inviteResult = await this.inviteUserToOrganization(org, username, 'member');
@@ -673,25 +689,58 @@ class GitHubService {
             username,
             status: 'invited_and_added',
             message: `Invited to organization and will be added to Copilot`,
-            inviteUrl: inviteResult.inviteUrl
+            inviteUrl: inviteResult.inviteUrl,
+            isEmail: false
           });
         } else {
           results.push({
             username,
             status: 'failed',
-            message: `Failed to invite to organization: ${inviteResult.message}`
+            message: `Failed to invite to organization: ${inviteResult.message}`,
+            isEmail: false
           });
         }
       } catch (error) {
         results.push({
           username,
           status: 'failed',
-          message: `Failed to invite to organization: ${error instanceof Error ? error.message : 'Unknown error'}`
+          message: `Failed to invite to organization: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isEmail: false
         });
       }
     }
 
-    // Now add all users (existing members + newly invited) to Copilot
+    // Invite users by email address
+    for (const email of emailsToInvite) {
+      try {
+        const inviteResult = await this.inviteUserToOrganization(org, email, 'member');
+        if (inviteResult.success) {
+          results.push({
+            username: email,
+            status: 'invited_and_added',
+            message: `Invited to organization via email. User will need to accept invitation and may then be added to Copilot.`,
+            inviteUrl: inviteResult.inviteUrl,
+            isEmail: true
+          });
+        } else {
+          results.push({
+            username: email,
+            status: 'failed',
+            message: `Failed to invite via email: ${inviteResult.message}`,
+            isEmail: true
+          });
+        }
+      } catch (error) {
+        results.push({
+          username: email,
+          status: 'failed',
+          message: `Failed to invite via email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isEmail: true
+        });
+      }
+    }
+
+    // Now add users to Copilot (only existing members + newly invited usernames, not email invites)
     let seats_created: CopilotSeat[] = [];
     if (usersToAddDirectly.length > 0) {
       try {
@@ -709,7 +758,8 @@ class GitHubService {
             results.push({
               username: seat.assignee.login,
               status: 'added',
-              message: 'Successfully added to Copilot'
+              message: 'Successfully added to Copilot',
+              isEmail: false
             });
           }
         }
@@ -725,7 +775,8 @@ class GitHubService {
               results.push({
                 username,
                 status: 'failed',
-                message: 'Failed to add to Copilot'
+                message: 'Failed to add to Copilot',
+                isEmail: false
               });
             }
           }
@@ -742,7 +793,8 @@ class GitHubService {
             results.push({
               username,
               status: 'failed',
-              message: `Failed to add to Copilot: ${errorMessage}`
+              message: `Failed to add to Copilot: ${errorMessage}`,
+              isEmail: false
             });
           }
         }
@@ -750,11 +802,15 @@ class GitHubService {
     }
 
     const successCount = results.filter(r => r.status === 'added' || r.status === 'invited_and_added').length;
-    const inviteCount = results.filter(r => r.status === 'invited_and_added').length;
+    const inviteCount = results.filter(r => r.status === 'invited_and_added' && !r.isEmail).length;
+    const emailInviteCount = results.filter(r => r.status === 'invited_and_added' && r.isEmail).length;
     
     let message = `Successfully processed ${successCount} user(s)`;
     if (inviteCount > 0) {
       message += ` (${inviteCount} invited to organization)`;
+    }
+    if (emailInviteCount > 0) {
+      message += ` (${emailInviteCount} invited via email)`;
     }
 
     return {

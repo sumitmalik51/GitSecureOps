@@ -34,25 +34,46 @@ export function isEmailAddress(input: string): boolean {
 }
 
 /**
- * Validates and sanitizes a list of GitHub usernames
- * Returns both valid usernames and validation errors
+ * Validates email address format
+ * Basic email validation to ensure it looks like a valid email
+ */
+export function validateEmailAddress(email: string): boolean {
+  if (!email || typeof email !== 'string') {
+    return false;
+  }
+
+  // Basic email regex - checks for @ symbol and basic structure
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Validates and sanitizes a list of GitHub usernames and email addresses
+ * Returns both valid inputs and validation errors
  */
 export function validateGitHubUsernames(usernames: string[]): {
   validUsernames: string[];
+  validEmails: string[];
   errors: string[];
 } {
   const validUsernames: string[] = [];
+  const validEmails: string[] = [];
   const errors: string[] = [];
 
-  for (const username of usernames) {
-    const trimmed = username.trim();
+  for (const input of usernames) {
+    const trimmed = input.trim();
     
     if (trimmed.length === 0) {
-      continue; // Skip empty usernames
+      continue; // Skip empty inputs
     }
 
     if (isEmailAddress(trimmed)) {
-      errors.push(`"${trimmed}" appears to be an email address. Please use GitHub username instead.`);
+      // Validate email format
+      if (validateEmailAddress(trimmed)) {
+        validEmails.push(trimmed);
+      } else {
+        errors.push(`"${trimmed}" is not a valid email address format.`);
+      }
     } else if (!validateGitHubUsername(trimmed)) {
       errors.push(`"${trimmed}" is not a valid GitHub username format.`);
     } else {
@@ -60,5 +81,5 @@ export function validateGitHubUsernames(usernames: string[]): {
     }
   }
 
-  return { validUsernames, errors };
+  return { validUsernames, validEmails, errors };
 }
