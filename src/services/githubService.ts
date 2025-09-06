@@ -617,10 +617,39 @@ class GitHubService {
       }
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorMessage = 'Failed to invite user to organization';
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If we can't parse the error response, use the default message
+        }
+
+        // Provide specific guidance for common errors
+        if (response.status === 403) {
+          if (this.isEmailAddress(username)) {
+            errorMessage = `Insufficient permissions to invite users via email. Your GitHub token needs 'admin:org' scope and you must be an organization owner or have invitation permissions. Original error: ${errorMessage}`;
+          } else {
+            errorMessage = `Insufficient permissions to invite user to organization. Your GitHub token needs 'admin:org' scope and you must be an organization owner. Original error: ${errorMessage}`;
+          }
+        } else if (response.status === 404) {
+          if (this.isEmailAddress(username)) {
+            errorMessage = `Organization not found or you don't have access to invite users via email. Check the organization name and your permissions.`;
+          } else {
+            errorMessage = `User '${username}' not found or organization '${org}' not accessible. Check the username and organization name.`;
+          }
+        } else if (response.status === 422) {
+          if (this.isEmailAddress(username)) {
+            errorMessage = `Invalid email address or user is already a member of the organization: ${errorMessage}`;
+          } else {
+            errorMessage = `User '${username}' is already a member of the organization or invitation failed: ${errorMessage}`;
+          }
+        }
+
         return {
           success: false,
-          message: errorData.message || 'Failed to invite user to organization'
+          message: errorMessage
         };
       }
 
@@ -641,6 +670,64 @@ class GitHubService {
   // Helper method to check if input is an email address
   private isEmailAddress(input: string): boolean {
     return input.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+  }
+
+  // Check token permissions and provide guidance
+  async checkTokenPermissions(): Promise<{
+    hasOrgPermissions: boolean;
+    scopes: string[];
+    message: string;
+  }> {
+    if (!this.token) {
+      return {
+        hasOrgPermissions: false,
+        scopes: [],
+        message: 'No GitHub token provided'
+      };
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/user`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (!response.ok) {
+        return {
+          hasOrgPermissions: false,
+          scopes: [],
+          message: 'Invalid or expired GitHub token'
+        };
+      }
+
+      // Check token scopes from response headers
+      const scopesHeader = response.headers.get('X-OAuth-Scopes');
+      const scopes = scopesHeader ? scopesHeader.split(', ') : [];
+      
+      const hasOrgPermissions = scopes.includes('admin:org') || scopes.includes('write:org');
+      
+      let message = '';
+      if (!hasOrgPermissions) {
+        message = 'Token lacks organization permissions. For inviting users to organizations, your token needs "admin:org" scope. ';
+        message += 'Create a new token at: https://github.com/settings/tokens with the required scopes.';
+      } else {
+        message = 'Token has sufficient organization permissions.';
+      }
+
+      return {
+        hasOrgPermissions,
+        scopes,
+        message
+      };
+    } catch (error) {
+      return {
+        hasOrgPermissions: false,
+        scopes: [],
+        message: `Failed to check token permissions: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   }
 
   // Enhanced method to add users to Copilot with automatic organization invitation
@@ -743,10 +830,15 @@ class GitHubService {
             isEmail: true
           });
         } else {
+          // Enhanced error message for email invitations
+          let failureMessage = `Failed to invite via email: ${inviteResult.message}`;
+          if (inviteResult.message.includes('Insufficient permissions')) {
+            failureMessage += ' Note: Email invitations require admin:org token scope and organization owner permissions.';
+          }
           results.push({
             username: email,
             status: 'failed',
-            message: `Failed to invite via email: ${inviteResult.message}`,
+            message: failureMessage,
             isEmail: true
           });
         }
