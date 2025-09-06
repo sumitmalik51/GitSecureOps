@@ -584,17 +584,37 @@ class GitHubService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/orgs/${org}/memberships/${username}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: role
-        })
-      });
+      let response: Response;
+      
+      // Check if the input is an email address
+      if (this.isEmailAddress(username)) {
+        // Use invitations endpoint for email addresses
+        response = await fetch(`${this.baseUrl}/orgs/${org}/invitations`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: username,
+            role: role
+          })
+        });
+      } else {
+        // Use memberships endpoint for GitHub usernames
+        response = await fetch(`${this.baseUrl}/orgs/${org}/memberships/${username}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            role: role
+          })
+        });
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -608,7 +628,7 @@ class GitHubService {
       return {
         success: true,
         message: `Successfully invited ${username} to ${org} as ${role}`,
-        inviteUrl: data.url
+        inviteUrl: data.url || data.html_url
       };
     } catch (error) {
       return {
