@@ -618,10 +618,12 @@ class GitHubService {
 
       if (!response.ok) {
         let errorMessage = 'Failed to invite user to organization';
+        let originalError = '';
         
         try {
           const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
+          originalError = errorData.message || '';
+          errorMessage = originalError || errorMessage;
         } catch {
           // If we can't parse the error response, use the default message
         }
@@ -629,9 +631,25 @@ class GitHubService {
         // Provide specific guidance for common errors
         if (response.status === 403) {
           if (this.isEmailAddress(username)) {
-            errorMessage = `Insufficient permissions to invite users via email. Your GitHub token needs 'admin:org' scope and you must be an organization owner or have invitation permissions. Original error: ${errorMessage}`;
+            errorMessage = `Insufficient permissions to invite users via email. This could be due to:
+1. Missing 'admin:org' scope on your GitHub token
+2. Not being an organization owner or lacking invitation permissions
+3. SSO (Single Sign-On) token authorization required
+
+If your organization uses SSO:
+- Your personal access token needs to be explicitly authorized for SSO use
+- Go to your token settings and click "Enable SSO" next to your organization
+- Token authorization is separate from having organizational permissions
+
+Original error: ${originalError}`;
           } else {
-            errorMessage = `Insufficient permissions to invite user to organization. Your GitHub token needs 'admin:org' scope and you must be an organization owner. Original error: ${errorMessage}`;
+            errorMessage = `Insufficient permissions to invite user to organization. This could be due to:
+1. Missing 'admin:org' scope on your GitHub token  
+2. Not being an organization owner
+3. SSO (Single Sign-On) token authorization required
+
+If your organization uses SSO, ensure your token is authorized for SSO use.
+Original error: ${originalError}`;
           }
         } else if (response.status === 404) {
           if (this.isEmailAddress(username)) {
@@ -641,9 +659,9 @@ class GitHubService {
           }
         } else if (response.status === 422) {
           if (this.isEmailAddress(username)) {
-            errorMessage = `Invalid email address or user is already a member of the organization: ${errorMessage}`;
+            errorMessage = `Invalid email address or user is already a member of the organization: ${originalError}`;
           } else {
-            errorMessage = `User '${username}' is already a member of the organization or invitation failed: ${errorMessage}`;
+            errorMessage = `User '${username}' is already a member of the organization or invitation failed: ${originalError}`;
           }
         }
 
@@ -677,6 +695,7 @@ class GitHubService {
     hasOrgPermissions: boolean;
     scopes: string[];
     message: string;
+    ssoGuidance?: string;
   }> {
     if (!this.token) {
       return {
@@ -695,6 +714,23 @@ class GitHubService {
       });
 
       if (!response.ok) {
+        // Check if this might be an SSO authorization issue
+        if (response.status === 403) {
+          try {
+            const errorData = await response.json();
+            if (errorData.message && errorData.message.includes('SSO') || errorData.message.includes('SAML')) {
+              return {
+                hasOrgPermissions: false,
+                scopes: [],
+                message: 'Token requires SSO authorization',
+                ssoGuidance: 'Your organization requires SSO (Single Sign-On). Please authorize your personal access token for SSO use:\n1. Go to https://github.com/settings/tokens\n2. Find your token and click "Enable SSO" next to your organization\n3. Complete the SSO authorization process'
+              };
+            }
+          } catch {
+            // If we can't parse the error, fall back to generic message
+          }
+        }
+        
         return {
           hasOrgPermissions: false,
           scopes: [],
@@ -709,17 +745,26 @@ class GitHubService {
       const hasOrgPermissions = scopes.includes('admin:org') || scopes.includes('write:org');
       
       let message = '';
+      let ssoGuidance = undefined;
+      
       if (!hasOrgPermissions) {
         message = 'Token lacks organization permissions. For inviting users to organizations, your token needs "admin:org" scope. ';
         message += 'Create a new token at: https://github.com/settings/tokens with the required scopes.';
+        
+        // Add SSO guidance as a note
+        ssoGuidance = 'Note: If your organization uses SSO, you\'ll also need to authorize your token for SSO use after creating it.';
       } else {
         message = 'Token has sufficient organization permissions.';
+        
+        // Still provide SSO guidance even if token has permissions
+        ssoGuidance = 'If you encounter 403 errors with organizations that use SSO, ensure your token is authorized for SSO use at: https://github.com/settings/tokens';
       }
 
       return {
         hasOrgPermissions,
         scopes,
-        message
+        message,
+        ssoGuidance
       };
     } catch (error) {
       return {
@@ -730,7 +775,63 @@ class GitHubService {
     }
   }
 
-  // Enhanced method to add users to Copilot with automatic organization invitation
+  // Check if an organization requires SSO authorization
+  async checkOrganizationSSO(org: string): Promise<{
+    requiresSSO: boolean;
+    message: string;
+  }> {
+    if (!this.token) {
+      return {
+        requiresSSO: false,
+        message: 'No GitHub token provided'
+      };
+    }
+
+    try {
+      // Try to access organization information
+      const response = await fetch(`${this.baseUrl}/orgs/${org}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (response.status === 403) {
+        try {
+          const errorData = await response.json();
+          if (errorData.message && (errorData.message.includes('SSO') || errorData.message.includes('SAML') || errorData.message.includes('must be granted'))) {
+            return {
+              requiresSSO: true,
+              message: 'This organization requires SSO authorization for your token. Please authorize your token at: https://github.com/settings/tokens'
+            };
+          }
+        } catch {
+          // If we can't parse the error, assume SSO might be required
+          return {
+            requiresSSO: true,
+            message: 'Access forbidden. This organization may require SSO authorization for your token.'
+          };
+        }
+      }
+
+      if (response.ok) {
+        return {
+          requiresSSO: false,
+          message: 'Organization accessible, no SSO authorization issues detected'
+        };
+      }
+
+      return {
+        requiresSSO: false,
+        message: `Unable to determine SSO status: ${response.status} ${response.statusText}`
+      };
+    } catch (error) {
+      return {
+        requiresSSO: false,
+        message: `Failed to check organization SSO status: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
   // Supports both GitHub usernames and email addresses
   async addCopilotUsersWithInvite(org: string, usernames: string[]): Promise<{
     success: boolean;
@@ -833,7 +934,7 @@ class GitHubService {
           // Enhanced error message for email invitations
           let failureMessage = `Failed to invite via email: ${inviteResult.message}`;
           if (inviteResult.message.includes('Insufficient permissions')) {
-            failureMessage += ' Note: Email invitations require admin:org token scope and organization owner permissions.';
+            failureMessage += '\n\nTroubleshooting steps:\n1. Ensure your token has admin:org scope\n2. Verify you have organization owner permissions\n3. If using SSO, authorize your token for SSO use at: https://github.com/settings/tokens';
           }
           results.push({
             username: email,

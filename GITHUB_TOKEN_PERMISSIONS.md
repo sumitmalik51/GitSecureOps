@@ -31,9 +31,20 @@ For managing GitHub Copilot seats:
 ## Common Issues
 
 ### 403 Forbidden Error
-- **Cause**: Token lacks required permissions
-- **Solution**: Regenerate token with `admin:org` scope
-- **Note**: You must be an organization owner to invite users via email
+- **Cause**: Token lacks required permissions or SSO authorization required
+- **Solution**: 
+  1. Regenerate token with `admin:org` scope
+  2. If your organization uses SSO, authorize your token for SSO use
+  3. Ensure you are an organization owner
+- **SSO Note**: Even with correct permissions, tokens need explicit SSO authorization
+
+### SSO (Single Sign-On) Organizations
+If your organization requires SSO:
+1. **Create token**: Generate a personal access token with required scopes
+2. **Authorize for SSO**: Go to [Token Settings](https://github.com/settings/tokens)
+3. **Enable SSO**: Click "Enable SSO" next to your organization
+4. **Complete authorization**: Follow the SSO authorization flow
+5. **Note**: SSO authorization is separate from having organizational permissions
 
 ### 404 Not Found Error
 - **Cause**: User/organization not found or insufficient access
@@ -55,10 +66,22 @@ For managing GitHub Copilot seats:
 
 If you continue to experience permission issues:
 
-1. Verify your token has the correct scopes at [GitHub Token Settings](https://github.com/settings/tokens)
-2. Check your role in the organization (Settings → Member privileges)
-3. Ensure the organization allows member invitations (Organization Settings → Member privileges)
-4. Use the "Check Token Permissions" feature in GitSecureOps to verify your token setup
+1. **Check token scopes**: Verify your token has the correct scopes at [GitHub Token Settings](https://github.com/settings/tokens)
+2. **SSO authorization**: If your organization uses SSO, ensure your token is authorized:
+   - Click "Enable SSO" next to your organization in token settings
+   - Complete the SSO authorization process
+3. **Organization role**: Check your role in the organization (Settings → Member privileges)
+4. **Invitation permissions**: Ensure the organization allows member invitations (Organization Settings → Member privileges)
+5. **Token validation**: Use the "Check Token Permissions" feature in GitSecureOps to verify your token setup
+
+### Debugging 403 Errors in SSO Environments
+
+If you're getting 403 errors despite having permissions and using SSO:
+
+1. **Verify SSO authorization status**: Check if your token shows "Authorized" next to your organization
+2. **Re-authorize if needed**: SSO authorization can expire; re-authorize your token
+3. **Check organization SSO policy**: Some organizations have strict SSO policies that may affect API access
+4. **Contact organization admins**: They may need to adjust SSO settings or grant additional permissions
 
 ## Support
 
