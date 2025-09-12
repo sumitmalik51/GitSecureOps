@@ -130,7 +130,7 @@ export const DASHBOARD_OPTIONS = [
     id: 'snippets',
     title: '📝 Code Snippets',
     description: 'Save, organize and share code snippets from your search results and repositories',
-    icon: '� SNIPPETS'
+    icon: '📝 SNIPPETS'
   },
   {
     id: 'actions-manager',

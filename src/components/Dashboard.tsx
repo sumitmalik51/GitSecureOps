@@ -114,27 +114,6 @@ export default function Dashboard({ onSelectOption }: DashboardProps) {
         </div>
 
         <div className="space-y-12 dashboard-section">
-          {/* Productivity Section */}
-          <section className="overflow-hidden">
-            <SectionHeader
-              title="Productivity"
-              description="Daily-use tools for efficient development workflow"
-              icon="⚡"
-            />
-            <div className="cards-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {productivityOptions.map((option) => (
-                <Card
-                  key={option.id}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  onClick={() => onSelectOption(option.id)}
-                  category="productivity"
-                />
-              ))}
-            </div>
-          </section>
-
           {/* Management Section */}
           <section className="overflow-hidden">
             <SectionHeader
@@ -161,7 +140,7 @@ export default function Dashboard({ onSelectOption }: DashboardProps) {
             <SectionHeader
               title="Security & Compliance"
               description="Security auditing and compliance monitoring tools"
-              icon="🛡️"
+              icon="�️"
             />
             <div className="cards-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {complianceOptions.map((option) => (
@@ -172,6 +151,27 @@ export default function Dashboard({ onSelectOption }: DashboardProps) {
                   icon={option.icon}
                   onClick={() => onSelectOption(option.id)}
                   category="compliance"
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Productivity Section */}
+          <section className="overflow-hidden">
+            <SectionHeader
+              title="Productivity"
+              description="Daily-use tools for efficient development workflow"
+              icon="⚡"
+            />
+            <div className="cards-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {productivityOptions.map((option) => (
+                <Card
+                  key={option.id}
+                  title={option.title}
+                  description={option.description}
+                  icon={option.icon}
+                  onClick={() => onSelectOption(option.id)}
+                  category="productivity"
                 />
               ))}
             </div>
