@@ -1,0 +1,8 @@
+name: GitSecureOps
+infra:
+  provider: bicep
+services:
+  gitsecureops-web:
+    project: ./
+    host: staticwebapp
+    language: ts

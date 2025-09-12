@@ -16,7 +16,7 @@ class EnvironmentService {
   }
 
   private loadConfiguration(): EnvironmentConfig {
-    // For Azure Static Web Apps, environment variables are injected at build time with REACT_APP_ prefix
+    // For Azure Static Web Apps, environment variables are injected at build time
     // For local development, we use Vite's import.meta.env with VITE_ prefix
     
     const getEnvVar = (viteKey: string, fallback: string = ''): string => {
@@ -51,10 +51,6 @@ class EnvironmentService {
   getGitHubClientId(): string {
     return this.config.githubClientId;
   }
-
-  // SECURITY FIX: Removed getGitHubClientSecret() method
-  // Client secrets should NEVER be exposed to the frontend
-  // OAuth secrets must only be handled on the backend
 
   getGitHubRedirectUri(): string {
     return this.config.githubRedirectUri;

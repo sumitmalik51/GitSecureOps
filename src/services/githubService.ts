@@ -4,6 +4,8 @@ export interface GitHubUser {
   id: number;
   avatar_url: string;
   html_url: string;
+  name?: string;
+  email?: string;
   permissions?: {
     admin: boolean;
     maintain: boolean;
@@ -72,18 +74,6 @@ export interface CopilotBilling {
   };
   seat_management_setting: 'assign_all' | 'assign_selected' | 'disabled';
   public_code_suggestions: 'allow' | 'block' | 'unconfigured';
-}
-
-export interface CopilotUsageStats {
-  day: string;
-  total_suggestions_count?: number;
-  total_acceptances_count?: number;
-  total_lines_suggested?: number;
-  total_lines_accepted?: number;
-  total_active_users?: number;
-  total_chat_acceptances?: number;
-  total_chat_turns?: number;
-  total_active_chat_users?: number;
 }
 
 class GitHubService {
@@ -185,37 +175,6 @@ class GitHubService {
     return results;
   }
 
-  // Helper method to get all paginated results with retry logic
-  private async getAllPaginatedResultsWithRetry<T>(endpoint: string, maxRetries: number = 3): Promise<T[]> {
-    let lastError: Error | null = null;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await this.getAllPaginatedResults<T>(endpoint);
-      } catch (error: unknown) {
-        const err = error as Error;
-        lastError = err;
-        
-        // Don't retry on auth/permission errors (401, 403)
-        if (err.message?.includes('401') || err.message?.includes('forbidden') || err.message?.includes('invalid')) {
-          throw err;
-        }
-        
-        // Don't retry on the last attempt
-        if (attempt === maxRetries) {
-          throw err;
-        }
-        
-        // Wait before retrying (exponential backoff)
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-        console.warn(`GitHub API attempt ${attempt} failed, retrying in ${delay}ms...`, err.message);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-    
-    throw lastError || new Error('Maximum retry attempts exceeded');
-  }
-
   // Get authenticated user info
   async getAuthenticatedUser(): Promise<GitHubUser> {
     return this.makeRequest<GitHubUser>('/user');
@@ -224,15 +183,14 @@ class GitHubService {
   // Get user's organizations with improved error handling
   async getUserOrganizations(): Promise<GitHubOrg[]> {
     try {
-      // Try to get organizations with retry logic
-      return await this.getAllPaginatedResultsWithRetry<GitHubOrg>('/user/orgs', 3);
+      return await this.getAllPaginatedResults<GitHubOrg>('/user/orgs');
     } catch (error: unknown) {
       const err = error as Error;
       // If organizations endpoint fails, try the memberships endpoint as fallback
       if (err.message?.includes('403') || err.message?.includes('forbidden')) {
         console.warn('Organization access limited, trying alternative endpoint...');
         try {
-          return await this.getAllPaginatedResultsWithRetry<GitHubOrg>('/user/memberships/orgs?state=active', 2);
+          return await this.getAllPaginatedResults<GitHubOrg>('/user/memberships/orgs?state=active');
         } catch {
           console.warn('Alternative endpoint also failed, returning empty array');
           return [];
@@ -385,22 +343,21 @@ class GitHubService {
     }
   }
 
-  // GitHub Copilot Management Methods
-  
   // Get Copilot billing information for an organization
   async getCopilotBilling(org: string): Promise<CopilotBilling> {
     return this.makeRequest<CopilotBilling>(`/orgs/${org}/copilot/billing`);
   }
 
   // Get Copilot seat assignments for an organization
-  async getCopilotSeats(org: string): Promise<{ seats: CopilotSeat[] }> {
+  async getCopilotSeats(org: string): Promise<{ seats: CopilotSeat[]; total_seats: number }> {
     const result = await this.getAllPaginatedCopilotSeats(`/orgs/${org}/copilot/billing/seats`);
-    return { seats: result };
+    return result;
   }
 
   // Specialized pagination for Copilot seats API that returns { seats: [], total_seats: number }
-  private async getAllPaginatedCopilotSeats(endpoint: string): Promise<CopilotSeat[]> {
+  private async getAllPaginatedCopilotSeats(endpoint: string): Promise<{ seats: CopilotSeat[]; total_seats: number }> {
     const results: CopilotSeat[] = [];
+    let totalSeats = 0;
     let page = 1;
     let hasNextPage = true;
 
@@ -416,38 +373,23 @@ class GitHubService {
       });
 
       if (!response.ok) {
-        if (response.status === 403) {
-          const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
-          const rateLimitReset = response.headers.get('X-RateLimit-Reset');
-          
-          if (rateLimitRemaining === '0') {
-            const resetTime = rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString() : 'unknown';
-            throw new Error(`GitHub API rate limit exceeded. Rate limit resets at ${resetTime}`);
-          }
-          
-          throw new Error(`GitHub API access forbidden. Please check your token permissions.`);
-        }
-        
-        if (response.status === 401) {
-          throw new Error('GitHub token is invalid or expired');
-        }
-        
-        if (response.status === 404) {
-          throw new Error(`Resource not found: ${endpoint}`);
-        }
-        
         throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
       }
 
       const data: { seats: CopilotSeat[]; total_seats: number } = await response.json();
       results.push(...data.seats);
+      
+      // Keep track of total_seats from the first response
+      if (page === 1) {
+        totalSeats = data.total_seats;
+      }
 
       // Check if there are more pages
       hasNextPage = data.seats.length === 100;
       page++;
     }
 
-    return results;
+    return { seats: results, total_seats: totalSeats };
   }
 
   // Add users to Copilot in an organization
@@ -469,21 +411,8 @@ class GitHubService {
     });
 
     if (!response.ok) {
-      let errorMessage = `Failed to add Copilot users: ${response.status} ${response.statusText}`;
-      
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = `${response.status}: ${errorData.message}`;
-        }
-        if (errorData.documentation_url) {
-          errorMessage += ` (See: ${errorData.documentation_url})`;
-        }
-      } catch {
-        // If we can't parse the error response, use the basic error message
-      }
-      
-      throw new Error(errorMessage);
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Failed to add Copilot users: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
@@ -508,317 +437,244 @@ class GitHubService {
     });
 
     if (!response.ok) {
-      let errorMessage = `Failed to remove Copilot users: ${response.status} ${response.statusText}`;
-      
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = `${response.status}: ${errorData.message}`;
-        }
-        if (errorData.documentation_url) {
-          errorMessage += ` (See: ${errorData.documentation_url})`;
-        }
-      } catch {
-        // If we can't parse the error response, use the basic error message
-      }
-      
-      throw new Error(errorMessage);
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Failed to remove Copilot users: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
   }
 
-  // Get Copilot usage statistics for an organization
-  async getCopilotUsage(org: string, since?: string, until?: string): Promise<CopilotUsageStats[]> {
-    let endpoint = `/orgs/${org}/copilot/usage`;
-    const params = new URLSearchParams();
-    
-    if (since) params.append('since', since);
-    if (until) params.append('until', until);
-    
-    if (params.toString()) {
-      endpoint += `?${params.toString()}`;
-    }
-
-    const response = await this.makeRequest<CopilotUsageStats[]>(endpoint);
-    return response;
-  }
-
-  // Check if user has Copilot access in organization
-  async checkUserCopilotAccess(org: string, username: string): Promise<boolean> {
-    try {
-      const { seats } = await this.getCopilotSeats(org);
-      return seats.some(seat => seat.assignee.login === username);
-    } catch (error) {
-      console.warn(`Failed to check Copilot access for ${username}:`, error);
-      return false;
-    }
-  }
-
-  // Check if user is a member of an organization
-  async checkOrganizationMembership(org: string, username: string): Promise<boolean> {
+  // Get user's recent activity events
+  async getUserEvents(): Promise<any[]> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/orgs/${org}/members/${username}`, {
+      // Try to fetch user events first
+      const response = await fetch(`${this.baseUrl}/user/events`, {
+        method: 'GET',
         headers: {
           'Authorization': `token ${this.token}`,
           'Accept': 'application/vnd.github.v3+json',
         },
       });
 
-      // 204 means user is a public member, 404 means not a member or private membership
-      return response.status === 204;
+      if (response.ok) {
+        return response.json();
+      }
+
+      // If user events fail (404, permissions), try to get received events as fallback
+      if (response.status === 404 || response.status === 403) {
+        console.warn('User events not accessible, trying received events...');
+        const receivedResponse = await fetch(`${this.baseUrl}/user/received_events`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        });
+
+        if (receivedResponse.ok) {
+          return receivedResponse.json();
+        }
+      }
+
+      // If both fail, try to get public events for the user
+      const user = await this.getAuthenticatedUser();
+      const publicResponse = await fetch(`${this.baseUrl}/users/${user.login}/events/public`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (publicResponse.ok) {
+        return publicResponse.json();
+      }
+
+      // If all fail, return empty array instead of throwing
+      console.warn('Could not fetch any user events, returning empty array');
+      return [];
+
     } catch (error) {
-      console.warn(`Failed to check organization membership for ${username}:`, error);
-      return false;
+      console.warn('Error fetching user events:', error);
+      return [];
     }
   }
 
-  // Invite user to organization
-  async inviteUserToOrganization(org: string, username: string, role: 'member' | 'admin' = 'member'): Promise<{ success: boolean; message: string; inviteUrl?: string }> {
+  // Get organization members
+  async getOrgMembers(org: string): Promise<GitHubUser[]> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/members`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch organization members: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  // Get repository collaborators
+  async getRepoCollaborators(owner: string, repo: string): Promise<GitHubUser[]> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch repository collaborators: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  // Add collaborator to repository
+  async addRepoCollaborator(owner: string, repo: string, username: string, permission: 'pull' | 'push' | 'admin' = 'push'): Promise<void> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ permission }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to add collaborator: ${response.status} ${response.statusText}`);
+    }
+  }
+
+  // Remove collaborator from repository
+  async removeRepoCollaborator(owner: string, repo: string, username: string): Promise<void> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to remove collaborator: ${response.status} ${response.statusText}`);
+    }
+  }
+
+  // Add user to organization
+  async addOrgMember(org: string, username: string, role: 'member' | 'admin' = 'member'): Promise<void> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/memberships/${username}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        role: role
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to add organization member: ${response.status} ${response.statusText}`);
+    }
+  }
+
+  // Remove user from organization
+  async removeOrgMember(org: string, username: string): Promise<void> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/members/${username}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to remove organization member: ${response.status} ${response.statusText}`);
+    }
+  }
+
+  // Remove user from all repositories in organization
+  async removeUserFromAllOrgRepos(org: string, username: string): Promise<void> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/orgs/${org}/memberships/${username}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: role
-        })
-      });
+      // Get all organization repositories
+      const repos = await this.getOrgRepositories(org);
+      
+      // Remove user from each repository
+      const removePromises = repos.map(repo => 
+        this.removeCollaborator(repo.owner.login, repo.name, username)
+          .catch(error => {
+            // Log error but don't fail the entire operation
+            console.warn(`Failed to remove ${username} from ${repo.name}:`, error.message);
+          })
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return {
-          success: false,
-          message: errorData.message || 'Failed to invite user to organization'
-        };
-      }
-
-      const data = await response.json();
-      return {
-        success: true,
-        message: `Successfully invited ${username} to ${org} as ${role}`,
-        inviteUrl: data.url
-      };
+      await Promise.all(removePromises);
     } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to invite user to organization'
-      };
+      throw new Error(`Failed to remove user from organization repositories: ${error}`);
     }
   }
 
-  // Helper method to check if input is an email address
-  private isEmailAddress(input: string): boolean {
-    return input.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
-  }
-
-  // Enhanced method to add users to Copilot with automatic organization invitation
-  // Supports both GitHub usernames and email addresses
-  async addCopilotUsersWithInvite(org: string, usernames: string[]): Promise<{
-    success: boolean;
-    message: string;
-    results: {
-      username: string;
-      status: 'added' | 'invited_and_added' | 'failed';
-      message: string;
-      inviteUrl?: string;
-      isEmail?: boolean;
-    }[];
-    seats_created: CopilotSeat[];
-  }> {
+  // Get user's repository permissions
+  async getUserRepoPermission(owner: string, repo: string, username: string): Promise<any> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
 
-    const results: {
-      username: string;
-      status: 'added' | 'invited_and_added' | 'failed';
-      message: string;
-      inviteUrl?: string;
-      isEmail?: boolean;
-    }[] = [];
+    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}/permission`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
 
-    const usersToInvite: string[] = [];
-    const emailsToInvite: string[] = [];
-    const usersToAddDirectly: string[] = [];
-
-    // Separate usernames and emails, check membership status for usernames only
-    for (const input of usernames) {
-      if (this.isEmailAddress(input)) {
-        // For email addresses, skip membership check and go straight to invitation
-        emailsToInvite.push(input);
-      } else {
-        // For usernames, check membership status
-        try {
-          const isMember = await this.checkOrganizationMembership(org, input);
-          if (isMember) {
-            usersToAddDirectly.push(input);
-          } else {
-            usersToInvite.push(input);
-          }
-        } catch (error) {
-          results.push({
-            username: input,
-            status: 'failed',
-            message: `Failed to check membership: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            isEmail: false
-          });
-        }
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { permission: 'none' };
       }
+      throw new Error(`Failed to get user permission: ${response.status} ${response.statusText}`);
     }
 
-    // Invite users by username who are not members
-    for (const username of usersToInvite) {
-      try {
-        const inviteResult = await this.inviteUserToOrganization(org, username, 'member');
-        if (inviteResult.success) {
-          // After successful invitation, add to the list to add to Copilot
-          usersToAddDirectly.push(username);
-          results.push({
-            username,
-            status: 'invited_and_added',
-            message: `Invited to organization and will be added to Copilot`,
-            inviteUrl: inviteResult.inviteUrl,
-            isEmail: false
-          });
-        } else {
-          results.push({
-            username,
-            status: 'failed',
-            message: `Failed to invite to organization: ${inviteResult.message}`,
-            isEmail: false
-          });
-        }
-      } catch (error) {
-        results.push({
-          username,
-          status: 'failed',
-          message: `Failed to invite to organization: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          isEmail: false
-        });
-      }
-    }
-
-    // Invite users by email address
-    for (const email of emailsToInvite) {
-      try {
-        const inviteResult = await this.inviteUserToOrganization(org, email, 'member');
-        if (inviteResult.success) {
-          results.push({
-            username: email,
-            status: 'invited_and_added',
-            message: `Invited to organization via email. User will need to accept invitation and may then be added to Copilot.`,
-            inviteUrl: inviteResult.inviteUrl,
-            isEmail: true
-          });
-        } else {
-          results.push({
-            username: email,
-            status: 'failed',
-            message: `Failed to invite via email: ${inviteResult.message}`,
-            isEmail: true
-          });
-        }
-      } catch (error) {
-        results.push({
-          username: email,
-          status: 'failed',
-          message: `Failed to invite via email: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          isEmail: true
-        });
-      }
-    }
-
-    // Now add users to Copilot (only existing members + newly invited usernames, not email invites)
-    let seats_created: CopilotSeat[] = [];
-    if (usersToAddDirectly.length > 0) {
-      try {
-        const copilotResult = await this.addCopilotUsers(org, usersToAddDirectly);
-        seats_created = copilotResult.seats_created;
-
-        // Update results for users who were successfully added to Copilot
-        for (const seat of seats_created) {
-          const existingResult = results.find(r => r.username === seat.assignee.login);
-          if (existingResult) {
-            if (existingResult.status === 'invited_and_added') {
-              existingResult.message = `Successfully invited to organization and added to Copilot`;
-            }
-          } else {
-            results.push({
-              username: seat.assignee.login,
-              status: 'added',
-              message: 'Successfully added to Copilot',
-              isEmail: false
-            });
-          }
-        }
-
-        // Handle users who failed to be added to Copilot
-        for (const username of usersToAddDirectly) {
-          if (!seats_created.some(seat => seat.assignee.login === username)) {
-            const existingResult = results.find(r => r.username === username);
-            if (existingResult && existingResult.status === 'invited_and_added') {
-              existingResult.status = 'failed';
-              existingResult.message = 'Invited to organization but failed to add to Copilot';
-            } else if (!existingResult) {
-              results.push({
-                username,
-                status: 'failed',
-                message: 'Failed to add to Copilot',
-                isEmail: false
-              });
-            }
-          }
-        }
-      } catch (error) {
-        // Handle Copilot assignment failure
-        const errorMessage = error instanceof Error ? error.message : 'Failed to add users to Copilot';
-        for (const username of usersToAddDirectly) {
-          const existingResult = results.find(r => r.username === username);
-          if (existingResult && existingResult.status === 'invited_and_added') {
-            existingResult.status = 'failed';
-            existingResult.message = `Invited to organization but failed to add to Copilot: ${errorMessage}`;
-          } else if (!existingResult) {
-            results.push({
-              username,
-              status: 'failed',
-              message: `Failed to add to Copilot: ${errorMessage}`,
-              isEmail: false
-            });
-          }
-        }
-      }
-    }
-
-    const successCount = results.filter(r => r.status === 'added' || r.status === 'invited_and_added').length;
-    const inviteCount = results.filter(r => r.status === 'invited_and_added' && !r.isEmail).length;
-    const emailInviteCount = results.filter(r => r.status === 'invited_and_added' && r.isEmail).length;
-    
-    let message = `Successfully processed ${successCount} user(s)`;
-    if (inviteCount > 0) {
-      message += ` (${inviteCount} invited to organization)`;
-    }
-    if (emailInviteCount > 0) {
-      message += ` (${emailInviteCount} invited via email)`;
-    }
-
-    return {
-      success: successCount > 0,
-      message,
-      results,
-      seats_created
-    };
+    return response.json();
   }
 }
 

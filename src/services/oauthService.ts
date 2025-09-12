@@ -59,7 +59,6 @@ export class GitHubOAuthService {
     }
     
     // Fallback for environments without crypto.getRandomValues
-    // Still more secure than basic Math.random()
     const timestamp = Date.now().toString(36);
     const random1 = Math.random().toString(36).substring(2, 15);
     const random2 = Math.random().toString(36).substring(2, 15);
@@ -141,26 +140,6 @@ export class GitHubOAuthService {
   }
 
   /**
-   * Legacy method - now deprecated in favor of Azure Function flow
-   * SECURITY NOTE: This method should not be used as it would require
-   * client secret exposure. Use handleOAuthSuccess with backend flow instead.
-   */
-  async handleCallback(_code: string, state: string): Promise<{ token: string; user: GitHubUser }> {
-    // Verify state parameter
-    const storedState = localStorage.getItem('oauth_state');
-    if (!storedState || storedState !== state) {
-      throw new Error('Invalid state parameter. Possible CSRF attack.');
-    }
-
-    // Clean up stored state
-    localStorage.removeItem('oauth_state');
-
-    // SECURITY FIX: This method is deprecated because it would require
-    // exposing client secret to the frontend. Use Azure Function backend flow instead.
-    throw new Error('Direct client-side OAuth flow is deprecated for security reasons. Please use the backend OAuth callback.');
-  }
-
-  /**
    * Parses OAuth callback URL parameters
    */
   parseCallbackUrl(url: string): { code?: string; state?: string; error?: string } {
@@ -183,3 +162,4 @@ export class GitHubOAuthService {
 }
 
 export const oauthService = new GitHubOAuthService();
+export type { GitHubUser };

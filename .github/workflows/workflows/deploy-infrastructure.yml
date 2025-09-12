@@ -1,0 +1,99 @@
+name: Deploy Infrastructure to Azure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      region:
+        description: 'Azure region'
+        required: true
+        default: 'eastus2'
+        type: string
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Set environment-specific GitHub secrets
+      run: |
+        if [ "${{ inputs.environment }}" == "dev" ]; then
+          echo "GH_CLIENT_ID=${{ secrets.GH_WEB_APP_DEV }}" >> $GITHUB_ENV
+          echo "GH_CLIENT_SECRET=${{ secrets.GH_WEB_APP_SECRET_DEV }}" >> $GITHUB_ENV
+        else
+          echo "GH_CLIENT_ID=${{ secrets.GH_WEB_APP }}" >> $GITHUB_ENV
+          echo "GH_CLIENT_SECRET=${{ secrets.GH_WEB_APP_SECRET }}" >> $GITHUB_ENV
+        fi
+
+    - name: Create Resource Group
+      run: |
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        az group create --name "$RESOURCE_GROUP" --location "${{ inputs.region }}" --tags "azd-env-name=${{ inputs.environment }}"
+        echo "✅ Resource Group $RESOURCE_GROUP created/verified"
+    
+    - name: Deploy Bicep Infrastructure
+      run: |
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        RESOURCE_TOKEN="${{ inputs.environment }}"
+        FUNCTION_APP_NAME="func-gh-$RESOURCE_TOKEN"
+
+        # Predictable Function App redirect URI
+        REDIRECT_URI="https://$FUNCTION_APP_NAME.azurewebsites.net/api/github-callback"
+
+        echo "🔧 Deploying Bicep template to $RESOURCE_GROUP..."
+        az deployment group create \
+          --resource-group "$RESOURCE_GROUP" \
+          --template-file "infra/main-resources.bicep" \
+          --parameters \
+            environmentName="${{ inputs.environment }}" \
+            location="${{ inputs.region }}" \
+            resourceToken="$RESOURCE_TOKEN" \
+            resourcePrefix="gh" \
+            githubClientId="$GH_CLIENT_ID" \
+            githubRedirectUri="$REDIRECT_URI" \
+            githubClientSecret="$GH_CLIENT_SECRET" \
+          --verbose
+
+        echo "✅ Infrastructure deployed to $RESOURCE_GROUP"
+
+    - name: Update Function App settings
+      run: |
+        RESOURCE_GROUP="rg-gitsecureops-${{ inputs.environment }}"
+        FUNCTION_APP_NAME="func-gh-${{ inputs.environment }}"
+
+        # Get Static Web App URL
+        SWA_URL=$(az staticwebapp list --resource-group "$RESOURCE_GROUP" --query "[0].defaultHostname" -o tsv 2>/dev/null)
+        if [ -n "$SWA_URL" ]; then
+          FRONTEND_URL="https://$SWA_URL"
+          echo "🔧 Updating Function App FRONTEND_URL: $FRONTEND_URL"
+
+          az functionapp config appsettings set \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$FUNCTION_APP_NAME" \
+            --settings "FRONTEND_URL=$FRONTEND_URL" \
+            --output table
+
+          echo "✅ Function App FRONTEND_URL updated successfully!"
+        else
+          echo "⚠️ Could not retrieve Static Web App URL"
+        fi
+
+    - name: Azure logout
+      run: az logout
+      if: always()

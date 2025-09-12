@@ -1,878 +1,560 @@
-import { useState } from 'react';
-import githubService, { type RepoAccess } from '../services/githubService';
-import notificationService from '../services/notificationService';
-import ProgressBar from './ProgressBar';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Shield, 
+  Users, 
+  Search, 
+  Trash2, 
+  AlertTriangle, 
+  CheckCircle, 
+  X, 
+  Plus, 
+  ArrowLeft,
+  Filter,
+  RefreshCw
+} from 'lucide-react';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import githubService, { type GitHubOrg } from '../services/githubService';
+import { useToast } from '../hooks/useToast';
 
 interface DeleteUserAccessProps {
   token: string;
-  username: string;
   onBack: () => void;
-  selectedScope?: 'user' | 'org' | 'all' | 'multi-org';
-  selectedOrg?: string;
-  selectedOrgs?: string[];
 }
 
-export default function DeleteUserAccess({ 
-  token, 
-  onBack, 
-  selectedScope = 'user', 
-  selectedOrg = '',
-  selectedOrgs = []
-}: DeleteUserAccessProps) {
-  const [targetUsernames, setTargetUsernames] = useState<string[]>(['']);
-  const [searching, setSearching] = useState(false);
-  const [removing, setRemoving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [userRepos, setUserRepos] = useState<RepoAccess[]>([]);
-  const [searchProgress, setSearchProgress] = useState('');
-  const [searchProgressValue, setSearchProgressValue] = useState(0);
-  const [removeProgressValue, setRemoveProgressValue] = useState(0);
-  const [totalRepos, setTotalRepos] = useState(0);
-  const [processedRepos, setProcessedRepos] = useState(0);
-  const [removeErrors, setRemoveErrors] = useState<{ repo: string; error: string }[]>([]);
-  const [currentPhase, setCurrentPhase] = useState('');
+interface UserAccess {
+  username: string;
+  repository: string;
+  permission: string;
+  organization?: string;
+}
 
-  // Helper functions for multi-user management
-  const addUserField = () => {
-    setTargetUsernames([...targetUsernames, '']);
+interface OrgSelection {
+  login: string;
+  selected: boolean;
+}
+
+export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProps) {
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [usernames, setUsernames] = useState<string[]>(['']);
+  const [organizations, setOrganizations] = useState<GitHubOrg[]>([]);
+  const [orgSelections, setOrgSelections] = useState<OrgSelection[]>([]);
+  const [selectedScope, setSelectedScope] = useState<'user' | 'org' | 'selected'>('user');
+  const [userAccess, setUserAccess] = useState<UserAccess[]>([]);
+  const [filteredAccess, setFilteredAccess] = useState<UserAccess[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [error, setError] = useState('');
+  const [showOrgSelector, setShowOrgSelector] = useState(false);
+
+  // Load organizations on component mount
+  useEffect(() => {
+    const loadOrganizations = async () => {
+      try {
+        githubService.setToken(token);
+        const orgs = await githubService.getUserOrganizations();
+        setOrganizations(orgs);
+        setOrgSelections(orgs.map(org => ({ login: org.login, selected: false })));
+      } catch (error) {
+        console.warn('Failed to load organizations:', error);
+      }
+    };
+    loadOrganizations();
+  }, [token]);
+
+  // Filter access based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredAccess(userAccess);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = userAccess.filter(access => 
+        access.username.toLowerCase().includes(query) ||
+        access.repository.toLowerCase().includes(query) ||
+        (access.organization && access.organization.toLowerCase().includes(query))
+      );
+      setFilteredAccess(filtered);
+    }
+  }, [searchQuery, userAccess]);
+
+  const addUsername = () => {
+    setUsernames([...usernames, '']);
   };
 
-  const removeUserField = (index: number) => {
-    if (targetUsernames.length > 1) {
-      const newUsernames = targetUsernames.filter((_, i) => i !== index);
-      setTargetUsernames(newUsernames);
+  const removeUsername = (index: number) => {
+    if (usernames.length > 1) {
+      setUsernames(usernames.filter((_, i) => i !== index));
     }
   };
 
   const updateUsername = (index: number, value: string) => {
-    const newUsernames = [...targetUsernames];
+    const newUsernames = [...usernames];
     newUsernames[index] = value;
-    setTargetUsernames(newUsernames);
+    setUsernames(newUsernames);
   };
 
-  const getValidUsernames = () => {
-    return targetUsernames.filter(username => username.trim() !== '');
+  const toggleOrgSelection = (orgLogin: string) => {
+    setOrgSelections(prev => 
+      prev.map(org => 
+        org.login === orgLogin 
+          ? { ...org, selected: !org.selected }
+          : org
+      )
+    );
   };
 
   const searchUserAccess = async () => {
-    const validUsernames = getValidUsernames();
+    const validUsernames = usernames.filter(u => u.trim() !== '');
     if (validUsernames.length === 0) {
-      setError('Please enter at least one username to search');
+      setError('Please enter at least one username');
       return;
     }
 
-    setSearching(true);
+    setIsSearching(true);
     setError('');
-    setSuccess('');
-    setProcessedRepos(0);
-    setSearchProgressValue(0);
-    githubService.setToken(token);
+    setUserAccess([]);
 
     try {
-      // Phase 1: Load repositories
-      setCurrentPhase('Loading Repositories');
-      setSearchProgress('🚀 Initializing repository search...');
-      setSearchProgressValue(5);
-      
-      let allRepos;
+      githubService.setToken(token);
+      const allAccess: UserAccess[] = [];
+
       if (selectedScope === 'user') {
-        setSearchProgress(`🚀 Loading your personal repositories...`);
-        allRepos = await githubService.getUserRepositories();
-        setSearchProgress(`🚀 Loaded ${allRepos.length} personal repositories`);
-      } else if (selectedScope === 'org' && selectedOrg) {
-        setSearchProgress(`🏢 Loading ${selectedOrg} organization repositories...`);
-        allRepos = await githubService.getOrgRepositories(selectedOrg);
-        setSearchProgress(`🏢 Loaded ${allRepos.length} ${selectedOrg} organization repositories`);
-      } else if (selectedScope === 'multi-org' && selectedOrgs && selectedOrgs.length > 0) {
-        setSearchProgress(`🏢 Loading ${selectedOrgs.length} selected organizations...`);
-        setSearchProgressValue(10);
-        const orgRepoArrays = await Promise.all(
-          selectedOrgs.map(orgLogin => 
-            githubService.getOrgRepositories(orgLogin).catch(() => [])
-          )
-        );
-        allRepos = orgRepoArrays.flat();
-        setSearchProgress(`🏢 Loaded ${allRepos.length} repositories from ${selectedOrgs.length} organizations`);
-      } else {
-        setSearchProgress(`🔍 Loading all repositories + organizations...`);
-        setSearchProgressValue(10);
-        const userRepos = await githubService.getUserRepositories();
-        const orgs = await githubService.getUserOrganizations();
-        const orgRepoArrays = await Promise.all(
-          orgs.map(org => githubService.getOrgRepositories(org.login).catch(() => []))
-        );
-        allRepos = [...userRepos, ...orgRepoArrays.flat()];
-        setSearchProgress(`🔍 Loaded ${allRepos.length} repositories from all sources`);
-      }
-      
-      setTotalRepos(allRepos.length);
-      setSearchProgressValue(20);
-      
-      // Phase 2: Search for user access
-      setCurrentPhase('Searching for User Access');
-      const userList = validUsernames.join(', ');
-      let searchMessage;
-      if (selectedScope === 'user') {
-        searchMessage = `🚀 Searching ${allRepos.length} personal repositories for users: ${userList}...`;
-      } else if (selectedScope === 'org' && selectedOrg) {
-        searchMessage = `🏢 Searching ${allRepos.length} ${selectedOrg} repositories for users: ${userList}...`;
-      } else if (selectedScope === 'multi-org' && selectedOrgs && selectedOrgs.length > 0) {
-        searchMessage = `🏢 Searching ${allRepos.length} repositories from ${selectedOrgs.length} orgs for users: ${userList}...`;
-      } else {
-        searchMessage = `🔍 Searching ${allRepos.length} repositories + orgs for users: ${userList}...`;
-      }
-      setSearchProgress(searchMessage);
-      
-      // Find repositories where any of the target users have access - with batching
-      const reposWithAccess: RepoAccess[] = [];
-      const BATCH_SIZE = 10; // Process 10 repos at a time to avoid overwhelming the API
-      
-      for (let i = 0; i < allRepos.length; i += BATCH_SIZE) {
-        const batch = allRepos.slice(i, i + BATCH_SIZE);
+        // Search in user repositories
+        const repos = await githubService.getUserRepositories();
         
-        const batchPromises = batch.map(async (repo) => {
+        for (const repo of repos) {
           try {
-            // First, only check if any target user is a direct collaborator
             const collaborators = await githubService.getRepositoryCollaborators(
               repo.owner.login,
               repo.name
             );
             
-            const foundUsers = collaborators.filter(collab => 
-              validUsernames.some(username => 
-                collab.login.toLowerCase() === username.toLowerCase()
-              )
-            );
-            
-            // Return info for each found user
-            const userAccesses = [];
-            for (const user of foundUsers) {
-              const repoAccess = await githubService.getUserPermissionForRepo(
-                repo.owner.login,
-                repo.name,
-                user.login
-              );
-              
-              userAccesses.push({
-                repo: repo.full_name,
-                hasAccess: true,
-                permission: repoAccess.permission,
-                permissionIcon: repoAccess.permissionIcon,
-                permissionColor: repoAccess.permissionColor,
-                user: user.login
-              });
+            for (const collab of collaborators) {
+              if (validUsernames.some(u => u.toLowerCase() === collab.login.toLowerCase())) {
+                const permission = await githubService.getUserPermissionForRepo(
+                  repo.owner.login,
+                  repo.name,
+                  collab.login
+                );
+                
+                allAccess.push({
+                  username: collab.login,
+                  repository: repo.full_name,
+                  permission: permission.permission
+                });
+              }
             }
+          } catch (repoError) {
+            console.warn(`Failed to check ${repo.full_name}:`, repoError);
+          }
+        }
+      } else if (selectedScope === 'selected') {
+        // Search in selected organizations
+        const selectedOrgs = orgSelections.filter(org => org.selected);
+        
+        for (const orgSelection of selectedOrgs) {
+          try {
+            const repos = await githubService.getOrgRepositories(orgSelection.login);
             
-            return userAccesses;
-          } catch (err) {
-            // If we can't check collaborators, the user likely doesn't have admin access to this repo
-            console.warn(`Cannot check collaborators for ${repo.full_name} - likely no admin access:`, err);
-            return [];
+            for (const repo of repos) {
+              try {
+                const collaborators = await githubService.getRepositoryCollaborators(
+                  repo.owner.login,
+                  repo.name
+                );
+                
+                for (const collab of collaborators) {
+                  if (validUsernames.some(u => u.toLowerCase() === collab.login.toLowerCase())) {
+                    const permission = await githubService.getUserPermissionForRepo(
+                      repo.owner.login,
+                      repo.name,
+                      collab.login
+                    );
+                    
+                    allAccess.push({
+                      username: collab.login,
+                      repository: repo.full_name,
+                      permission: permission.permission,
+                      organization: orgSelection.login
+                    });
+                  }
+                }
+              } catch (repoError) {
+                console.warn(`Failed to check ${repo.full_name}:`, repoError);
+              }
+            }
+          } catch (orgError) {
+            console.warn(`Failed to check org ${orgSelection.login}:`, orgError);
           }
-        });
-        
-        const batchResults = await Promise.all(batchPromises);
-        const foundRepos = batchResults.flat().filter(repo => repo !== null) as RepoAccess[];
-        reposWithAccess.push(...foundRepos);
-        
-        const newProcessed = i + batch.length;
-        setProcessedRepos(newProcessed);
-        
-        // Calculate progress (20% for repo loading, 75% for searching, 5% for completion)
-        const searchingProgress = 20 + ((newProcessed / allRepos.length) * 75);
-        setSearchProgressValue(searchingProgress);
-        
-        let progressMessage;
-        if (selectedScope === 'user') {
-          progressMessage = `🚀 Processed ${newProcessed}/${allRepos.length} personal repositories... Found ${reposWithAccess.length} matches`;
-        } else if (selectedScope === 'org' && selectedOrg) {
-          progressMessage = `🏢 Processed ${newProcessed}/${allRepos.length} ${selectedOrg} repositories... Found ${reposWithAccess.length} matches`;
-        } else if (selectedScope === 'multi-org' && selectedOrgs && selectedOrgs.length > 0) {
-          progressMessage = `🏢 Processed ${newProcessed}/${allRepos.length} repositories from ${selectedOrgs.length} orgs... Found ${reposWithAccess.length} matches`;
-        } else {
-          progressMessage = `🔍 Processed ${newProcessed}/${allRepos.length} repositories + orgs... Found ${reposWithAccess.length} matches`;
-        }
-        setSearchProgress(progressMessage);
-        
-        // Small delay between batches to be respectful to the API
-        if (i + BATCH_SIZE < allRepos.length) {
-          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
+
+      setUserAccess(allAccess);
       
-      // Phase 3: Finalization
-      setCurrentPhase('Finalizing Search');
-      setSearchProgressValue(98);
-      setUserRepos(reposWithAccess);
-      setSearchProgressValue(100);
-      
-      if (reposWithAccess.length === 0) {
-        setError(`None of the specified users (${userList}) have access to any of your ${allRepos.length} repositories`);
-        setSearchProgress(`❌ Search complete - No access found for users: ${userList}`);
-        
-        // Send notification
-        notificationService.warning(
-          'No Access Found',
-          `No repository access found for users: ${userList}`,
-          'user_access_search',
-          {
-            usersSearched: userList,
-            repositoriesScanned: allRepos.length,
-            scope: selectedScope,
-            organization: selectedOrg || 'All'
-          }
-        );
+      if (allAccess.length === 0) {
+        setError(`No access found for users: ${validUsernames.join(', ')}`);
+        toast.warning('No Access Found', `No repository access found for the specified users.`);
       } else {
-        setSuccess(`Found ${reposWithAccess.length} repository access entries for users: ${userList}`);
-        setSearchProgress(`✅ Search complete - Found ${reposWithAccess.length} access entries for users: ${userList}`);
-        
-        // Send notification
-        notificationService.success(
-          'Access Search Complete',
-          `Found ${reposWithAccess.length} repository access entries for users: ${userList}`,
-          'user_access_search',
-          {
-            usersSearched: userList,
-            accessEntriesFound: reposWithAccess.length,
-            repositoriesScanned: allRepos.length,
-            scope: selectedScope,
-            organization: selectedOrg || 'All'
-          }
-        );
+        toast.success('Search Complete', `Found ${allAccess.length} access entries.`);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search user access');
-      setSearchProgressValue(0);
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to search user access';
+      setError(errorMessage);
+      toast.error('Search Failed', errorMessage);
     } finally {
-      setSearching(false);
-      // Keep progress visible for a moment after completion
-      setTimeout(() => {
-        if (!searching) {
-          setSearchProgress('');
-          setCurrentPhase('');
-          setSearchProgressValue(0);
-        }
-      }, 3000);
+      setIsSearching(false);
     }
   };
 
   const removeUserAccess = async () => {
-    if (userRepos.length === 0) return;
-    
-    setRemoving(true);
-    setError('');
-    setSuccess('');
-    setRemoveErrors([]);
-    setRemoveProgressValue(0);
-    setCurrentPhase('Removing User Access');
-    
-    const results = { success: 0, failed: 0 };
-    const errors: { repo: string; error: string }[] = [];
-    let processed = 0;
-    
-    const uniqueUsers = [...new Set(userRepos.map(repo => repo.user))];
-    const userList = uniqueUsers.join(', ');
-    
-    setSearchProgress(`🚨 Starting removal of users (${userList}) from ${userRepos.length} repository access entries...`);
-    setRemoveProgressValue(5);
-    
-    for (const repoAccess of userRepos) {
-      const [owner, repoName] = repoAccess.repo.split('/');
-      if (!repoAccess.user) {
-        console.warn(`No user specified for repository ${repoAccess.repo}`);
-        continue;
-      }
-      
-      try {
-        setSearchProgress(`🗑️ Removing "${repoAccess.user}" from ${repoAccess.repo}...`);
-        await githubService.removeCollaborator(owner, repoName, repoAccess.user);
-        results.success++;
-        setSearchProgress(`✅ Removed "${repoAccess.user}" from ${repoAccess.repo}`);
-      } catch (err) {
-        results.failed++;
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        errors.push({ repo: `${repoAccess.repo} (${repoAccess.user})`, error: errorMessage });
-        console.error(`Failed to remove ${repoAccess.user} from ${repoAccess.repo}:`, err);
-        setSearchProgress(`❌ Failed to remove "${repoAccess.user}" from ${repoAccess.repo}`);
-      }
-      
-      processed++;
-      const progress = (processed / userRepos.length) * 95; // Reserve 5% for finalization
-      setRemoveProgressValue(5 + progress);
-      setSearchProgress(`🔄 Progress: ${processed}/${userRepos.length} access entries processed (${results.success} successful, ${results.failed} failed)`);
-      
-      // Small delay between removals to be respectful to the API
-      if (processed < userRepos.length) {
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
-    
-    // Finalization
-    setRemoveProgressValue(100);
-    setRemoveErrors(errors);
-    
-    if (results.success > 0) {
-      setSuccess(`Successfully removed user access from ${results.success} repository entries for users: ${userList}`);
-      setUserRepos([]);
-      setSearchProgress(`✅ Removal complete! Successfully removed access from ${results.success} repository entries`);
-      
-      // Send success notification
-      notificationService.success(
-        'Access Removal Complete',
-        `Successfully removed user access from ${results.success} repository entries`,
-        'user_access_removed',
-        {
-          usersAffected: userList,
-          repositoriesModified: results.success,
-          failedOperations: results.failed,
-          scope: selectedScope,
-          organization: selectedOrg || 'All'
+    if (filteredAccess.length === 0) return;
+
+    setIsRemoving(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (const access of filteredAccess) {
+        try {
+          const [owner, repoName] = access.repository.split('/');
+          await githubService.removeCollaborator(owner, repoName, access.username);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to remove ${access.username} from ${access.repository}:`, error);
+          errorCount++;
         }
-      );
-    }
-    
-    if (results.failed > 0) {
-      setError(`Failed to remove access from ${results.failed} repository entries. See details below.`);
-      setSearchProgress(`⚠️ Removal completed with ${results.failed} failures. Check details below.`);
-      
-      // Send warning notification for failures
-      notificationService.warning(
-        'Some Access Removals Failed',
-        `${results.failed} access removal operations failed. Check the error details.`,
-        'user_access_removal_failed',
-        {
-          usersAffected: userList,
-          successfulRemovals: results.success,
-          failedRemovals: results.failed,
-          scope: selectedScope,
-          organization: selectedOrg || 'All'
-        }
-      );
-    }
-    
-    setRemoving(false);
-    
-    // Keep progress visible for a moment after completion
-    setTimeout(() => {
-      if (!removing) {
-        setSearchProgress('');
-        setCurrentPhase('');
-        setRemoveProgressValue(0);
       }
-    }, 3000);
+
+      if (successCount > 0) {
+        toast.success('Removal Complete', `Successfully removed access from ${successCount} repositories.`);
+        setUserAccess(prev => prev.filter(access => !filteredAccess.includes(access)));
+      }
+
+      if (errorCount > 0) {
+        toast.warning('Partial Success', `${errorCount} removals failed. Check console for details.`);
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to remove user access';
+      toast.error('Removal Failed', errorMessage);
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.5 }
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-black">
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-red-600/20 to-pink-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-pink-600/20 to-purple-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-purple-600/20 to-red-600/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '4s'}}></div>
-      </div>
-
-      {/* Header */}
-      <div className="relative bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-700/50 dark:border-gray-600/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-8">
-            <div className="flex items-center">
-              <button
-                onClick={onBack}
-                className="mr-6 group inline-flex items-center px-4 py-2 text-gray-300 hover:text-white bg-gray-800/80 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-600 rounded-lg transition-all duration-300 transform hover:scale-[1.01] backdrop-blur-sm border border-gray-700/50 hover:border-transparent font-semibold"
-              >
-                <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-              </button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
-                  Delete User Access
-                </h1>
-                <p className="text-gray-300 dark:text-gray-400 mt-2 text-lg font-medium">Remove a specific user's access from all repositories</p>
-                <div className="flex items-center mt-3 space-x-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-semibold text-red-400">DANGER ZONE</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Verification Info Banner */}
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 rounded-xl blur opacity-40"></div>
-          <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mr-4">
-                <span className="text-white text-xl">🔍</span>
-              </div>
-              <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                Enhanced User Access Verification
-              </h3>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-accent">
+      <div className="p-8 max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-center mb-8 relative"
+        >
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Button
+              variant="ghost"
+              onClick={onBack}
+              className="absolute left-0 top-0 flex items-center gap-2 text-gray-400 hover:text-white"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-200 dark:text-gray-300 flex items-center">
-                  <span className="text-green-500 mr-2">✅</span>
-                  What We Verify
-                </h4>
-                <ul className="text-sm text-gray-300 dark:text-gray-400 space-y-1 ml-6 font-medium">
-                  <li>• Direct collaborator status only</li>
-                  <li>• Explicit repository permissions</li>
-                  <li>• Your admin access to each repo</li>
-                  <li>• Actual removal capabilities</li>
-                </ul>
-              </div>
-              
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-200 dark:text-gray-300 flex items-center">
-                  <span className="text-red-500 mr-2">❌</span>
-                  What We Filter Out
-                </h4>
-                <ul className="text-sm text-gray-300 dark:text-gray-400 space-y-1 ml-6 font-medium">
-                  <li>• Public repository visibility</li>
-                  <li>• Organization-level access</li>
-                  <li>• Team-inherited permissions</li>
-                  <li>• Repos without your admin rights</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
-              <div className="flex items-center">
-                <span className="text-lg mr-3">🛡️</span>
-                <div className="text-sm text-green-800">
-                  <strong>Improved Accuracy:</strong> Now showing only repositories where the user is a direct collaborator and you have admin permissions to remove them.
-                </div>
-              </div>
-            </div>
+            <Trash2 className="w-10 h-10 text-red-500" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
+              Delete User Access
+            </h1>
           </div>
-        </div>
-      </div>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Remove specific users' access from repositories across your account and organizations
+          </p>
+        </motion.div>
 
-      {/* Main Content */}
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search Form */}
-        <div className="relative group mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/50">
-            <div className="flex items-center mb-6">
-              <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
-                <span className="text-white text-xl">🔍</span>
-              </div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-                Search User Access
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-8"
+        >
+          {/* Scope Selection */}
+          <motion.div variants={itemVariants}>
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <Filter className="w-6 h-6 text-primary" />
+                Search Scope
               </h2>
-            </div>
-            
-            {/* Current Scope Display */}
-            <div className="mb-6 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl blur opacity-50"></div>
-              <div className="relative bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 rounded-xl border border-gray-700/50">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-white text-sm">📍</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-200 dark:text-gray-300">
-                    <span className="text-blue-400">Search Scope:</span> 
-                    {selectedScope === 'user' && <span className="ml-2 text-blue-300">👤 Your personal repositories</span>}
-                    {selectedScope === 'org' && <span className="ml-2 text-purple-300">🏢 {selectedOrg} organization</span>}
-                    {selectedScope === 'multi-org' && selectedOrgs && (
-                      <span className="ml-2 text-purple-300">
-                        🏢 {selectedOrgs.length} organizations: {selectedOrgs.join(', ')}
-                      </span>
-                    )}
-                    {selectedScope === 'all' && <span className="ml-2 text-green-300">🌐 All repositories + organizations</span>}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            
-            {/* Multi-User Input Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-200 dark:text-gray-300">
-                  <span className="text-red-400">👥</span> Target Users
-                </h3>
-                <button
-                  onClick={addUserField}
-                  className="px-4 py-2 bg-gray-700 border-2 border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                  disabled={searching}
+              
+              <div className="flex flex-wrap gap-4 mb-6">
+                <Button
+                  variant={selectedScope === 'user' ? 'primary' : 'secondary'}
+                  onClick={() => setSelectedScope('user')}
+                  className="flex items-center gap-2"
                 >
-                  + Add User
-                </button>
+                  <Users className="w-4 h-4" />
+                  My Repositories
+                </Button>
+                
+                <Button
+                  variant={selectedScope === 'selected' ? 'primary' : 'secondary'}
+                  onClick={() => {
+                    setSelectedScope('selected');
+                    setShowOrgSelector(true);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Shield className="w-4 h-4" />
+                  Selected Organizations ({orgSelections.filter(org => org.selected).length})
+                </Button>
               </div>
-              
-              {targetUsernames.map((username, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => updateUsername(index, e.target.value)}
-                      placeholder={`Enter GitHub username ${index + 1}...`}
-                      className="block w-full px-4 py-3 bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-400 text-gray-200 dark:text-gray-300 font-medium transition-all duration-300 hover:bg-gray-800/90 dark:hover:bg-gray-900/90"
-                      onKeyPress={(e) => e.key === 'Enter' && !searching && searchUserAccess()}
-                      disabled={searching}
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+
+              {/* Organization Selector */}
+              <AnimatePresence>
+                {showOrgSelector && selectedScope === 'selected' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="border-t border-gray-700 pt-6"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Select Organizations</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowOrgSelector(false)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </div>
-                  
-                  {targetUsernames.length > 1 && (
-                    <button
-                      onClick={() => removeUserField(index)}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-all duration-300"
-                      disabled={searching}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            <div className="flex gap-4 mt-6">
-              <div className="flex-1">
-                {/* Additional info or status */}
-                <p className="text-sm text-gray-300 dark:text-gray-400 font-medium">
-                  <span className="font-semibold">💡 Tip:</span> You can search for multiple users at once to bulk manage their repository access.
-                </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                      {organizations.map((org) => {
+                        const selection = orgSelections.find(s => s.login === org.login);
+                        return (
+                          <div
+                            key={org.login}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              selection?.selected
+                                ? 'bg-primary/20 border-primary text-primary'
+                                : 'bg-dark-card border-gray-700 text-gray-300 hover:border-gray-600'
+                            }`}
+                            onClick={() => toggleOrgSelection(org.login)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded border ${
+                                selection?.selected ? 'bg-primary border-primary' : 'border-gray-500'
+                              } flex items-center justify-center`}>
+                                {selection?.selected && <CheckCircle className="w-3 h-3 text-white" />}
+                              </div>
+                              <span className="font-medium">{org.login}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+
+          {/* User Input */}
+          <motion.div variants={itemVariants}>
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <Users className="w-6 h-6 text-primary" />
+                  Target Users
+                </h2>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={addUsername}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add User
+                </Button>
               </div>
-              
-              <button
-                onClick={searchUserAccess}
-                disabled={searching || getValidUsernames().length === 0}
-                className="group relative px-8 py-3 bg-gray-700 border-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                <div className="flex items-center">
-                  {searching ? (
+
+              <div className="space-y-4">
+                {usernames.map((username, index) => (
+                  <div key={index} className="flex gap-3 items-center">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => updateUsername(index, e.target.value)}
+                        placeholder={`GitHub username ${index + 1}...`}
+                        className="w-full px-4 py-3 bg-gray-800/50 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none focus:bg-gray-700/50"
+                      />
+                    </div>
+                    {usernames.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeUsername(index)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <Button
+                  onClick={searchUserAccess}
+                  disabled={isSearching || usernames.every(u => u.trim() === '')}
+                  className="flex items-center gap-2"
+                >
+                  {isSearching ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
                       Searching...
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5 mr-2 group-hover:scale-105 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      Search ({getValidUsernames().length} user{getValidUsernames().length !== 1 ? 's' : ''})
+                      <Search className="w-4 h-4" />
+                      Search Access ({usernames.filter(u => u.trim() !== '').length} users)
                     </>
                   )}
-                </div>
-              </button>
-            </div>
-          
-            {/* Search/Remove Progress */}
-            {(searching || removing) && (
-              <div className="mt-6 relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl blur opacity-50"></div>
-                <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-                  <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-white text-xl">{removing ? '🗑️' : '🔍'}</span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-                        {currentPhase || (removing ? 'Removing User Access' : 'Searching User Access')}
-                      </h3>
-                      <p className="text-gray-300 dark:text-gray-400 text-sm mt-1 font-medium">Please wait while we process your request...</p>
-                    </div>
-                  </div>
-                  
-                  <ProgressBar 
-                    progress={removing ? removeProgressValue : searchProgressValue}
-                    message={searchProgress}
-                    subMessage={`⚠️ This process may take several minutes for accounts with many repositories. ${processedRepos > 0 && totalRepos > 0 ? `Processing ${processedRepos}/${totalRepos} repositories.` : ''}`}
-                    color={removing ? "red" : "purple"}
-                    size="lg"
-                    animated={true}
-                    showPercentage={true}
-                  />
-                </div>
+                </Button>
               </div>
+            </Card>
+          </motion.div>
+
+          {/* Error Display */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                variants={itemVariants}
+              >
+                <Card className="p-4 bg-red-900/20 border-red-500/50">
+                  <div className="flex items-center gap-3 text-red-300">
+                    <AlertTriangle className="w-5 h-5" />
+                    <span>{error}</span>
+                  </div>
+                </Card>
+              </motion.div>
             )}
-          </div>
-        </div>
+          </AnimatePresence>
 
-        {/* Permission Legend */}
-        {userRepos.length > 0 && (
-          <div className="mb-8 relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl blur opacity-30"></div>
-            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-white text-xl">🔑</span>
-                </div>
-                <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Permission Levels Explained
-                </h3>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex items-center p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
-                  <span className="text-lg mr-3">🟢</span>
-                  <div>
-                    <div className="font-semibold text-green-300">ADMIN</div>
-                    <div className="text-xs text-green-400">Can manage all settings</div>
+          {/* Search Results */}
+          <AnimatePresence>
+            {userAccess.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                variants={itemVariants}
+              >
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                      Found Access ({filteredAccess.length} entries)
+                    </h2>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Filter results..."
+                          className="pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none focus:bg-gray-700/50"
+                        />
+                      </div>
+                      
+                      <Button
+                        onClick={removeUserAccess}
+                        disabled={isRemoving || filteredAccess.length === 0}
+                        variant="outline"
+                        className="flex items-center gap-2 text-red-400 border-red-500 hover:bg-red-500 hover:text-white"
+                      >
+                        {isRemoving ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Removing...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" />
+                            Remove All ({filteredAccess.length})
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
-                  <span className="text-lg mr-3">🟡</span>
-                  <div>
-                    <div className="font-semibold text-yellow-300">WRITE</div>
-                    <div className="text-xs text-yellow-400">Can push but not manage</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center p-3 bg-blue-900/30 border border-blue-500/50 rounded-lg">
-                  <span className="text-lg mr-3">🔵</span>
-                  <div>
-                    <div className="font-semibold text-blue-300">READ</div>
-                    <div className="text-xs text-blue-400">Can view but not modify</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
-                  <span className="text-lg mr-3">🌍</span>
-                  <div>
-                    <div className="font-semibold text-green-300">PUBLIC</div>
-                    <div className="text-xs text-green-400">Public repository access</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4 p-3 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-500/30 rounded-lg">
-                <div className="flex items-center">
-                  <span className="text-lg mr-3">💡</span>
-                  <div className="text-sm text-gray-300 dark:text-gray-400 font-medium">
-                    <strong>Note:</strong> You can only remove access from repositories where you have admin permissions (🟢).
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Results */}
-        {error && (
-          <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 rounded-xl blur opacity-75"></div>
-            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-red-500/30">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-white text-xl">❌</span>
-                </div>
-                <div className="text-red-300 font-semibold">{error}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {success && (
-          <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-700 rounded-xl blur opacity-75"></div>
-            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-white text-xl">✅</span>
-                </div>
-                <div className="text-green-300 font-semibold">{success}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {userRepos.length > 0 && (
-          <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-pink-700 to-purple-800 rounded-2xl blur-lg opacity-75"></div>
-            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/20">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-white text-xl">🚨</span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-                      Repositories with User Access
-                    </h3>
-                    <p className="text-gray-300 dark:text-gray-400 text-sm mt-1 font-medium">Found {userRepos.length} repositories with user access</p>
-                  </div>
-                </div>
-                <button
-                  onClick={removeUserAccess}
-                  disabled={removing}
-                  className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all duration-300 disabled:opacity-50 disabled:transform-none overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative flex items-center">
-                    {removing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Removing Access...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5 mr-2 group-hover:scale-105 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Remove Access from All ({userRepos.length})
-                      </>
-                    )}
-                  </div>
-                </button>
-              </div>
-              
-              <div className="grid gap-3 max-h-96 overflow-y-auto">
-                {userRepos.map((repoAccess, index) => (
-                  <div key={repoAccess.repo} className="group relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-900/30 to-pink-900/30 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                    <div className="relative flex items-center justify-between p-4 bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg border border-gray-600/30 hover:border-red-500/50 transition-all duration-300">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-gradient-to-r from-red-400 to-pink-500 rounded-full flex items-center justify-center mr-3 text-white text-sm font-bold">
-                          {index + 1}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-gray-100 dark:text-gray-200 font-medium">{repoAccess.repo}</span>
-                          <div className="flex items-center justify-between mt-1">
-                            <div className="flex items-center">
-                              <span className="text-lg mr-1">{repoAccess.permissionIcon}</span>
-                              <span className={`text-xs px-2 py-1 rounded-full font-semibold border ${repoAccess.permissionColor}`}>
-                                {repoAccess.permission.toUpperCase()}
-                              </span>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {filteredAccess.map((access, index) => (
+                      <div
+                        key={`${access.username}-${access.repository}`}
+                        className="p-4 bg-dark-secondary rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm">
+                              {index + 1}
                             </div>
-                            {repoAccess.user && (
-                              <div className="text-xs text-gray-300 dark:text-gray-400 ml-2 font-medium">
-                                <span className="font-medium">User:</span> 
-                                <span className="ml-1 px-2 py-1 bg-blue-800/50 text-blue-300 rounded-full font-semibold">
-                                  {repoAccess.user}
-                                </span>
-                              </div>
-                            )}
+                            <div>
+                              <div className="font-semibold text-white">{access.username}</div>
+                              <div className="text-sm text-gray-400">{access.repository}</div>
+                              {access.organization && (
+                                <div className="text-xs text-gray-500">Org: {access.organization}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              access.permission === 'admin' 
+                                ? 'bg-red-900/50 text-red-300 border border-red-500/50'
+                                : access.permission === 'write'
+                                ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-500/50'
+                                : 'bg-blue-900/50 text-blue-300 border border-blue-500/50'
+                            }`}>
+                              {access.permission.toUpperCase()}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center">
-                        {repoAccess.hasAccess ? (
-                          <span className="text-xs px-3 py-1 bg-gradient-to-r from-red-100 to-pink-100 text-red-700 font-semibold rounded-full">
-                            HAS ACCESS
-                          </span>
-                        ) : (
-                          <span className="text-xs px-3 py-1 bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300 font-semibold rounded-full">
-                            VISIBLE ONLY
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Error Details */}
-        {removeErrors.length > 0 && (
-          <div className="relative group mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-700 rounded-2xl blur-lg opacity-75"></div>
-            <div className="relative bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-700/20">
-              <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-white text-xl">⚠️</span>
-                </div>
-                <h3 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-                  Removal Errors ({removeErrors.length})
-                </h3>
-              </div>
-              
-              <div className="space-y-4 mb-6">
-                {removeErrors.map((errorInfo, index) => (
-                  <div key={index} className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-900/30 to-orange-900/30 rounded-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-                    <div className="relative p-4 bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm border border-red-500/30 rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-red-300 flex items-center">
-                            <span className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs mr-2">
-                              {index + 1}
-                            </span>
-                            {errorInfo.repo}
-                          </p>
-                          <p className="text-xs text-red-400 mt-2 ml-8">{errorInfo.error}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-900/40 to-orange-900/40 rounded-xl opacity-50"></div>
-                <div className="relative bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 border border-yellow-500/30 rounded-xl">
-                  <div className="flex items-start">
-                    <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                      <span className="text-white text-sm">💡</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-yellow-300 mb-2">
-                        Common reasons for failures:
-                      </p>
-                      <ul className="text-xs text-yellow-400 space-y-1">
-                        <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
-                          You don't have admin access to the repository
-                        </li>
-                        <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
-                          The user is the repository owner (cannot remove owner)
-                        </li>
-                        <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
-                          The user is not actually a collaborator (might be org member)
-                        </li>
-                        <li className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-2"></span>
-                          Repository doesn't exist or is private to you
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Reset Button */}
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => {
-              setTargetUsernames(['']);
-              setUserRepos([]);
-              setError('');
-              setSuccess('');
-              setRemoveErrors([]);
-            }}
-            className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all duration-300"
-          >
-            <svg className="w-5 h-5 mr-2 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Reset Form
-          </button>
-        </div>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );
