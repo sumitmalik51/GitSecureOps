@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubRepo, GitHubUser } from '../services/githubService';
+import { LoadingState, ButtonLoading, ProgressBar } from './ui/Loading';
 
 interface RepositoryListProps {
   token: string;
@@ -196,32 +197,48 @@ export default function RepositoryList({ token, username, onLogout }: Repository
   });
 
   if (loading) {
+    const progressValue = loadingStep.includes('collaborators') && repositories.length > 0 
+      ? Math.round((collaborators.length / repositories.length) * 100) 
+      : 0;
+
     return (
       <div className="min-h-screen bg-gray-900 dark:bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-200 dark:text-gray-300 font-medium">{loadingStep}</p>
-          <p className="mt-2 text-sm text-gray-300 dark:text-gray-400">
-            This may take a moment for accounts with many repositories...
-          </p>
-          {repositories.length > 0 && (
-            <p className="mt-2 text-sm text-green-400">
-              Found {repositories.length} repositories so far
-            </p>
-          )}
-          {loadingStep.includes('collaborators') && (
-            <button
-              onClick={() => {
-                setSkipCollaborators(true);
-                setCollaborators([]);
-                setLoading(false);
-                setLoadingStep('');
-              }}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700"
-            >
-              Skip Collaborator Loading
-            </button>
-          )}
+        <div className="max-w-md w-full px-4">
+          <LoadingState 
+            message={loadingStep}
+            description="This may take a moment for accounts with many repositories..."
+            size="lg"
+          >
+            {repositories.length > 0 && (
+              <p className="text-sm text-green-400 mb-4">
+                Found {repositories.length} repositories so far
+              </p>
+            )}
+            
+            {loadingStep.includes('collaborators') && repositories.length > 0 && (
+              <div className="mb-4">
+                <ProgressBar 
+                  progress={progressValue}
+                  message={`Loading collaborators: ${collaborators.length}/${repositories.length}`}
+                  color="primary"
+                />
+              </div>
+            )}
+            
+            {loadingStep.includes('collaborators') && (
+              <button
+                onClick={() => {
+                  setSkipCollaborators(true);
+                  setCollaborators([]);
+                  setLoading(false);
+                  setLoadingStep('');
+                }}
+                className="inline-flex items-center px-4 py-2 border border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700"
+              >
+                Skip Collaborator Loading
+              </button>
+            )}
+          </LoadingState>
         </div>
       </div>
     );
@@ -311,13 +328,15 @@ export default function RepositoryList({ token, username, onLogout }: Repository
                   Collaborators ({collaborators.length})
                 </h3>
                 {selectedCollaborators.size > 0 && (
-                  <button
+                  <ButtonLoading
+                    loading={removing}
+                    loadingText="Removing..."
                     onClick={removeSelectedCollaborators}
-                    disabled={removing}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                    variant="danger"
+                    className="px-4 py-2 text-sm"
                   >
-                    {removing ? 'Removing...' : `Remove Selected (${selectedCollaborators.size})`}
-                  </button>
+                    Remove Selected ({selectedCollaborators.size})
+                  </ButtonLoading>
                 )}
               </div>
               

@@ -3,6 +3,7 @@ import { X, Send, Search, GitBranch, Star, Eye, Bookmark, BookmarkCheck, Maximiz
 import environmentService from '../services/environmentService';
 import bookmarkService from '../services/bookmarkService';
 import snippetService from '../services/snippetService';
+import { InlineLoading } from './ui/Loading';
 
 interface Repository {
   id: number;
@@ -956,10 +957,7 @@ const SearchChatbot: React.FC<SearchChatbotProps> = ({
           {isLoading && (
             <div className="flex justify-start mb-4">
               <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <Search className="animate-spin" size={16} />
-                  <span className="text-gray-600 dark:text-gray-400">Searching...</span>
-                </div>
+                <InlineLoading message="Searching..." />
               </div>
             </div>
           )}

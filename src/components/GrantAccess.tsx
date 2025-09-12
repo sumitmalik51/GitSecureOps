@@ -2,6 +2,8 @@ import { useState } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubOrg } from '../services/githubService';
 import { validateGitHubUsername, isEmailAddress, validateEmailAddress, parseGitHubRepoUrl, type ParsedGitHubRepo } from '../utils/validation';
+import { ButtonLoading, InlineLoading } from './ui/Loading';
+import { handleGitHubAPIError } from '../utils/errorHandling';
 
 interface GrantAccessProps {
   token: string;
@@ -101,7 +103,8 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to invite user to organization');
+        const enhancedError = handleGitHubAPIError(errorData, 'organization_invitation');
+        throw new Error(enhancedError.message);
       }
 
       const data = await response.json();
@@ -368,9 +371,8 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
           </div>
 
           {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading organizations...</span>
+            <div className="flex justify-center py-8">
+              <InlineLoading message="Loading organizations..." />
             </div>
           )}
         </div>
@@ -459,13 +461,15 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
             >
               Cancel
             </button>
-            <button
+            <ButtonLoading
+              loading={isLoading}
+              loadingText="Sending Invite..."
               onClick={handleOrgInvite}
-              disabled={isLoading || !selectedOrg || !targetUsername}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              disabled={!selectedOrg || !targetUsername}
+              className="px-6 py-2"
             >
-              {isLoading ? 'Sending Invite...' : 'Send Invitation'}
-            </button>
+              Send Invitation
+            </ButtonLoading>
           </div>
         </div>
       )}
@@ -575,13 +579,15 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
             >
               Cancel
             </button>
-            <button
+            <ButtonLoading
+              loading={isLoading}
+              loadingText="Sending Invite..."
               onClick={handleRepoInvite}
-              disabled={isLoading || !selectedOrg || !repositoryName || !targetUsername}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              disabled={!selectedOrg || !repositoryName || !targetUsername}
+              className="px-6 py-2"
             >
-              {isLoading ? 'Sending Invite...' : 'Send Invitation'}
-            </button>
+              Send Invitation
+            </ButtonLoading>
           </div>
         </div>
       )}
@@ -680,13 +686,15 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
             >
               Cancel
             </button>
-            <button
+            <ButtonLoading
+              loading={isLoading}
+              loadingText="Sending Invite..."
               onClick={handleRepoUrlInvite}
-              disabled={isLoading || !parsedRepo?.isValid || !targetUsername}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              disabled={!parsedRepo?.isValid || !targetUsername}
+              className="px-6 py-2"
             >
-              {isLoading ? 'Sending Invite...' : 'Send Invitation'}
-            </button>
+              Send Invitation
+            </ButtonLoading>
           </div>
         </div>
       )}
