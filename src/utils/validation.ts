@@ -83,3 +83,113 @@ export function validateGitHubUsernames(usernames: string[]): {
 
   return { validUsernames, validEmails, errors };
 }
+
+/**
+ * Parses GitHub repository URL and extracts owner and repository name
+ * Supports various GitHub URL formats
+ */
+export interface ParsedGitHubRepo {
+  owner: string;
+  repo: string;
+  isValid: boolean;
+  originalUrl: string;
+  error?: string;
+}
+
+export function parseGitHubRepoUrl(url: string): ParsedGitHubRepo {
+  const result: ParsedGitHubRepo = {
+    owner: '',
+    repo: '',
+    isValid: false,
+    originalUrl: url.trim()
+  };
+
+  if (!url || typeof url !== 'string') {
+    result.error = 'URL is required';
+    return result;
+  }
+
+  const trimmedUrl = url.trim();
+  
+  if (trimmedUrl.length === 0) {
+    result.error = 'URL is required';
+    return result;
+  }
+
+  try {
+    // Support various GitHub URL formats
+    let cleanUrl = trimmedUrl;
+    
+    // Remove trailing slashes
+    cleanUrl = cleanUrl.replace(/\/$/, '');
+    
+    // Try to match GitHub repository patterns
+    const patterns = [
+      // https://github.com/owner/repo
+      /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)(?:\.git)?$/i,
+      // github.com/owner/repo
+      /^github\.com\/([^\/]+)\/([^\/]+)(?:\.git)?$/i,
+      // owner/repo format
+      /^([^\/\s]+)\/([^\/\s]+)$/
+    ];
+
+    let match: RegExpMatchArray | null = null;
+    
+    for (const pattern of patterns) {
+      match = cleanUrl.match(pattern);
+      if (match) {
+        break;
+      }
+    }
+
+    if (!match) {
+      result.error = 'Invalid GitHub repository URL format. Expected formats: https://github.com/owner/repo, github.com/owner/repo, or owner/repo';
+      return result;
+    }
+
+    const [, owner, repo] = match;
+    
+    // Validate owner and repository names
+    if (!owner || !repo) {
+      result.error = 'Could not extract owner and repository name from URL';
+      return result;
+    }
+
+    // Basic validation for GitHub names (alphanumeric, hyphens, underscores, dots)
+    const githubNamePattern = /^[a-zA-Z0-9._-]+$/;
+    
+    if (!githubNamePattern.test(owner)) {
+      result.error = `Invalid owner name: "${owner}". Owner names can only contain alphanumeric characters, hyphens, underscores, and dots.`;
+      return result;
+    }
+    
+    if (!githubNamePattern.test(repo)) {
+      result.error = `Invalid repository name: "${repo}". Repository names can only contain alphanumeric characters, hyphens, underscores, and dots.`;
+      return result;
+    }
+
+    // Remove common suffixes
+    let cleanRepo = repo.replace(/\.git$/i, '');
+    
+    result.owner = owner;
+    result.repo = cleanRepo;
+    result.isValid = true;
+    
+    return result;
+    
+  } catch (error) {
+    result.error = 'Failed to parse URL';
+    return result;
+  }
+}
+
+/**
+ * Validates GitHub repository URL and returns a user-friendly error message
+ */
+export function validateGitHubRepoUrl(url: string): { isValid: boolean; error?: string } {
+  const parsed = parseGitHubRepoUrl(url);
+  return {
+    isValid: parsed.isValid,
+    error: parsed.error
+  };
+}

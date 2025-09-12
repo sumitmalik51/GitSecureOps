@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import githubService from '../services/githubService';
 import type { GitHubOrg } from '../services/githubService';
-import { validateGitHubUsername, isEmailAddress, validateEmailAddress } from '../utils/validation';
+import { validateGitHubUsername, isEmailAddress, validateEmailAddress, parseGitHubRepoUrl, type ParsedGitHubRepo } from '../utils/validation';
 
 interface GrantAccessProps {
   token: string;
@@ -18,7 +18,7 @@ interface InviteResult {
 }
 
 export default function GrantAccess({ token, onBack }: GrantAccessProps) {
-  const [step, setStep] = useState<'select-level' | 'org-flow' | 'repo-flow' | 'result'>('select-level');
+  const [step, setStep] = useState<'select-level' | 'org-flow' | 'repo-flow' | 'repo-url-flow' | 'result'>('select-level');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -32,15 +32,21 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
   const [repositoryName, setRepositoryName] = useState('');
   const [repoRole, setRepoRole] = useState<RepoRole>('write');
   
+  // Repository URL flow state
+  const [repositoryUrl, setRepositoryUrl] = useState('');
+  const [parsedRepo, setParsedRepo] = useState<ParsedGitHubRepo | null>(null);
+  
   // Result state
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
 
   // Remove the local validation function since we're using the shared one
-  const handleAccessLevelSelect = (accessType: 'organization' | 'repository') => {
+  const handleAccessLevelSelect = (accessType: 'organization' | 'repository' | 'repository-url') => {
     if (accessType === 'organization') {
       loadOrganizations('org-flow');
-    } else {
+    } else if (accessType === 'repository') {
       loadOrganizations('repo-flow');
+    } else if (accessType === 'repository-url') {
+      setStep('repo-url-flow');
     }
   };
 
@@ -177,6 +183,81 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     }
   };
 
+  const handleRepoUrlInvite = async () => {
+    if (!parsedRepo || !parsedRepo.isValid || !targetUsername) {
+      setError('Please provide a valid repository URL and username');
+      return;
+    }
+
+    if (!validateGitHubUsername(targetUsername)) {
+      if (isEmailAddress(targetUsername)) {
+        if (!validateEmailAddress(targetUsername)) {
+          setError('Invalid email address format');
+          return;
+        }
+        // Email is valid, proceed with invitation
+      } else {
+        setError('Invalid GitHub username format');
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    const fullRepoPath = `${parsedRepo.owner}/${parsedRepo.repo}`;
+
+    try {
+      const response = await fetch(`https://api.github.com/repos/${fullRepoPath}/collaborators/${targetUsername}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          permission: repoRole
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to invite user to repository');
+      }
+
+      setInviteResult({
+        success: true,
+        message: `Successfully invited ${targetUsername} to ${fullRepoPath} with ${repoRole} permission`
+      });
+      setStep('result');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to invite user';
+      setInviteResult({
+        success: false,
+        message: errorMessage
+      });
+      setStep('result');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRepositoryUrlChange = (url: string) => {
+    setRepositoryUrl(url);
+    if (url.trim()) {
+      const parsed = parseGitHubRepoUrl(url);
+      setParsedRepo(parsed);
+      if (!parsed.isValid && parsed.error) {
+        setError(parsed.error);
+      } else {
+        setError('');
+      }
+    } else {
+      setParsedRepo(null);
+      setError('');
+    }
+  };
+
   const resetFlow = () => {
     setStep('select-level');
     setError('');
@@ -184,6 +265,8 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
     setTargetUsername('');
     setRepositoryName('');
     setSelectedOrg('');
+    setRepositoryUrl('');
+    setParsedRepo(null);
   };
 
   const roleDescriptions: Record<string, string> = {
@@ -240,7 +323,7 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <button
               onClick={() => handleAccessLevelSelect('organization')}
               disabled={isLoading}
@@ -266,6 +349,20 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
               </h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Select organization and enter repository name manually
+              </p>
+            </button>
+
+            <button
+              onClick={() => handleAccessLevelSelect('repository-url')}
+              disabled={isLoading}
+              className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 transition-colors text-left"
+            >
+              <div className="text-2xl mb-3">🔗</div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Repository URL
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Paste any GitHub repository URL for instant access granting
               </p>
             </button>
           </div>
@@ -481,6 +578,111 @@ export default function GrantAccess({ token, onBack }: GrantAccessProps) {
             <button
               onClick={handleRepoInvite}
               disabled={isLoading || !selectedOrg || !repositoryName || !targetUsername}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? 'Sending Invite...' : 'Send Invitation'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step: Repository URL Flow */}
+      {step === 'repo-url-flow' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              Repository URL Access
+            </h2>
+            <button
+              onClick={resetFlow}
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            >
+              ← Change Access Level
+            </button>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+            <p className="text-green-800 dark:text-green-200 text-sm">
+              🚀 <strong>Quick Access:</strong> Just paste any GitHub repository URL and username! We'll automatically parse the owner and repository name for you.
+            </p>
+            <p className="text-green-700 dark:text-green-300 text-xs mt-2">
+              Example: https://github.com/orgname/repo-name
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                GitHub Repository URL
+              </label>
+              <input
+                type="text"
+                value={repositoryUrl}
+                onChange={(e) => handleRepositoryUrlChange(e.target.value)}
+                placeholder="https://github.com/owner/repo or owner/repo"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Supports full URLs (https://github.com/owner/repo) or short format (owner/repo)
+              </p>
+            </div>
+
+            {/* Display parsed repository info */}
+            {parsedRepo && parsedRepo.isValid && (
+              <div className="md:col-span-2 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-blue-600 dark:text-blue-400">✓</span>
+                  <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Repository Detected</span>
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>Owner:</strong> {parsedRepo.owner}<br />
+                  <strong>Repository:</strong> {parsedRepo.repo}<br />
+                  <strong>Full Path:</strong> {parsedRepo.owner}/{parsedRepo.repo}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                GitHub Username or Email
+              </label>
+              <input
+                type="text"
+                value={targetUsername}
+                onChange={(e) => setTargetUsername(e.target.value)}
+                placeholder="Enter GitHub username or email"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Repository Permission
+              </label>
+              <select
+                value={repoRole}
+                onChange={(e) => setRepoRole(e.target.value as RepoRole)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="pull">Pull - Read and clone</option>
+                <option value="triage">Triage - Read, clone, and manage issues</option>
+                <option value="write">Write - Read, clone, and push</option>
+                <option value="maintain">Maintain - Write + manage settings</option>
+                <option value="admin">Admin - Full administrative access</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={resetFlow}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRepoUrlInvite}
+              disabled={isLoading || !parsedRepo?.isValid || !targetUsername}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? 'Sending Invite...' : 'Send Invitation'}
