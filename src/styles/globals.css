@@ -151,6 +151,30 @@
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Apply anti-blur to all elements with transforms */
+  [style*="transform"],
+  .transition-transform,
+  .group:hover .group-hover\\:scale-110,
+  .group:hover .group-hover\\:scale-105,
+  button:hover,
+  .group:hover,
+  .group:hover * {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transform-style: preserve-3d;
+  }
+
+  /* Force text to stay crisp during animations */
+  * {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Enhanced container hover effects */

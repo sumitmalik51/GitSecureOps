@@ -56,6 +56,17 @@ export default function DashboardPage() {
     navigate('/');
   };
 
+  // Validate token before making API calls
+  const validateToken = (): boolean => {
+    if (!token || token.trim().length === 0) {
+      showError('Authentication Required', 'Please sign in to access your GitHub data.')
+      logout()
+      navigate('/login')
+      return false
+    }
+    return true
+  }
+
   // Check for notifications (you can extend this to check real notifications)
   const checkForNotifications = async () => {
     try {
@@ -111,12 +122,19 @@ export default function DashboardPage() {
   
   // Load GitHub data on component mount
   useEffect(() => {
-    if (token) {
+    if (token && user) {
       loadGitHubData()
+    } else if (!token && !isLoading) {
+      // If no token is available, redirect to login
+      navigate('/login')
     }
-  }, [token])
+  }, [token, user, navigate])
 
   const loadGitHubData = async () => {
+    if (!validateToken()) {
+      return
+    }
+
     try {
       setIsLoading(true)
       githubService.setToken(token!)
@@ -143,7 +161,26 @@ export default function DashboardPage() {
       
     } catch (error) {
       console.error('Failed to load GitHub data:', error)
-      showError('Failed to load GitHub data', 'Please check your token permissions.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('token is invalid or expired')) {
+        showError('Token Expired', 'Your GitHub token has expired. Please sign in again.')
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          logout()
+          navigate('/login')
+        }, 3000)
+      } else if (errorMessage.includes('token not set')) {
+        showError('Authentication Required', 'Please sign in to access your GitHub data.')
+        logout()
+        navigate('/login')
+      } else if (errorMessage.includes('access forbidden')) {
+        showError('Permission Denied', 'Your token lacks the required permissions. Please check your token scopes.')
+      } else if (errorMessage.includes('rate limit exceeded')) {
+        warning('Rate Limited', 'GitHub API rate limit exceeded. Please try again later.')
+      } else {
+        showError('Connection Failed', 'Unable to connect to GitHub. Please check your internet connection.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -151,6 +188,10 @@ export default function DashboardPage() {
 
   // Repository management functions
   const fetchAndShowRepositories = async (type: 'public' | 'private') => {
+    if (!validateToken()) {
+      return
+    }
+
     try {
       setIsFetchingRepos(true)
       githubService.setToken(token!)
@@ -171,7 +212,19 @@ export default function DashboardPage() {
       
     } catch (error) {
       console.error('Failed to fetch repositories:', error)
-      showError('Failed to fetch repositories', 'Please check your permissions.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('token is invalid or expired')) {
+        showError('Token Expired', 'Your GitHub token has expired. Please sign in again.')
+        setTimeout(() => {
+          logout()
+          navigate('/login')
+        }, 3000)
+      } else if (errorMessage.includes('access forbidden')) {
+        showError('Permission Denied', 'Your token lacks the required permissions to access repositories.')
+      } else {
+        showError('Failed to fetch repositories', 'Unable to load repository data. Please try again.')
+      }
     } finally {
       setIsFetchingRepos(false)
     }
@@ -452,19 +505,35 @@ export default function DashboardPage() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.12,
+        delayChildren: 0.1
       }
     }
   }
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 25, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
       transition: {
         type: "spring",
-        stiffness: 100
+        stiffness: 120,
+        damping: 20,
+        duration: 0.6
+      }
+    }
+  }
+
+  const sidebarItemVariants = {
+    hidden: { x: -20, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 150,
+        damping: 15
       }
     }
   }
@@ -488,42 +557,50 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-dark-bg flex">
       {/* Sidebar */}
       <motion.aside 
-        className="w-64 bg-dark-surface border-r border-dark-border flex flex-col"
+        className="w-60 bg-dark-surface border-r border-dark-border flex flex-col"
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-dark-border">
+        <div className="p-5 border-b border-dark-border">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gradient-primary">GitSecureOps</h2>
+              <h2 className="text-base font-bold text-gradient-primary">GitSecureOps</h2>
               <p className="text-xs text-dark-text-muted">Team Dashboard</p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {sidebarItems.map((item) => (
-            <motion.button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                activeSection === item.id
-                  ? 'bg-brand-primary text-white'
-                  : 'text-dark-text-muted hover:text-dark-text hover:bg-dark-card'
-              }`}
-              whileHover={{ scale: 1.02, x: 4 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
-            </motion.button>
-          ))}
+        <nav className="flex-1 p-4">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-1"
+          >
+            {sidebarItems.map((item) => (
+              <motion.button
+                key={item.id}
+                variants={sidebarItemVariants}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-medium transition-all duration-300 ease-in-out ${
+                  activeSection === item.id
+                    ? 'bg-brand-primary text-white'
+                    : 'text-dark-text-muted hover:text-dark-text hover:bg-dark-card'
+                }`}
+                whileHover={{ scale: 1.02, x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <item.icon className="w-4 h-4" />
+                <span className="text-sm">{item.label}</span>
+              </motion.button>
+            ))}
+          </motion.div>
         </nav>
 
         {/* User profile */}
@@ -554,13 +631,13 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
         <motion.header 
-          className="bg-dark-surface border-b border-dark-border px-6 py-4 flex items-center justify-between"
+          className="bg-dark-surface border-b border-dark-border px-5 py-3.5 flex items-center justify-between"
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
         >
           <div>
-            <h1 className="text-2xl font-bold text-dark-text">
+            <h1 className="text-xl font-bold text-dark-text">
               {activeSection === 'overview' ? 'Dashboard Overview' : 
                activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
             </h1>
@@ -599,7 +676,7 @@ export default function DashboardPage() {
         </motion.header>
 
         {/* Dashboard Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-5">
           {activeSection === 'overview' && (
             <motion.div
               variants={containerVariants}
@@ -607,14 +684,14 @@ export default function DashboardPage() {
               animate="visible"
             >
               {/* Stats Cards */}
-              <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" variants={itemVariants}>
+              <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-7" variants={itemVariants}>
                 {getStatsCards().map((stat, index) => (
                   <Card key={index} className="stats-card">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-dark-text-muted text-sm font-medium">{stat.label}</p>
-                        <p className="text-3xl font-bold text-dark-text mt-2">{stat.value}</p>
-                        <div className="flex items-center mt-2">
+                        <p className="text-2xl font-bold text-dark-text mt-1.5">{stat.value}</p>
+                        <div className="flex items-center mt-1.5">
                           <span className={`text-sm font-medium ${
                             stat.trend === 'up' ? 'text-brand-secondary' : 
                             stat.trend === 'down' ? 'text-red-400' : 'text-dark-text-muted'
@@ -623,11 +700,11 @@ export default function DashboardPage() {
                           </span>
                         </div>
                       </div>
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                         stat.trend === 'up' ? 'bg-brand-secondary/20 text-brand-secondary' : 
                         stat.trend === 'down' ? 'bg-red-400/20 text-red-400' : 'bg-gray-500/20 text-gray-400'
                       }`}>
-                        <stat.icon className="w-6 h-6" />
+                        <stat.icon className="w-5 h-5" />
                       </div>
                     </div>
                   </Card>
@@ -636,7 +713,7 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid lg:grid-cols-3 gap-5">
             {/* Main Features */}
             <div className="lg:col-span-2">
               <motion.div
@@ -645,7 +722,7 @@ export default function DashboardPage() {
                 animate="visible"
               >
                 <motion.h2 
-                  className="text-xl font-bold text-dark-text mb-6" 
+                  className="text-lg font-bold text-dark-text mb-5" 
                   variants={itemVariants}
                 >
                   {activeSection === 'overview' ? 'Quick Actions' : 
@@ -779,22 +856,22 @@ export default function DashboardPage() {
 
                 {/* Regular Features Grid */}
                 {activeSection !== 'repositories' && (
-                <div className="grid gap-6">
+                <div className="grid gap-5">
                   {renderFeatures().map((feature, index) => (
                     <motion.div key={index} variants={itemVariants}>
                       <Card 
-                        className="p-6 group cursor-pointer"
+                        className="p-5 group cursor-pointer"
                         onClick={() => handleFeatureAction(feature.title)}
                       >
-                        <div className="flex items-start space-x-4 container-content">
-                          <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center group-hover:scale-110 transition-transform duration-300 no-blur-hover">
-                            <feature.icon className="w-6 h-6 text-white" />
+                        <div className="flex items-start space-x-3 container-content">
+                          <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center group-hover:scale-110 transition-transform duration-300 no-blur-hover">
+                            <feature.icon className="w-5 h-5 text-white" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-dark-text mb-2 group-hover:text-gradient-primary transition-colors duration-300 card-text">
+                            <h3 className="text-base font-semibold text-dark-text mb-2 group-hover:text-gradient-primary transition-colors duration-300 card-text">
                               {feature.title}
                             </h3>
-                            <p className="text-dark-text-muted mb-4 leading-relaxed card-text">
+                            <p className="text-dark-text-muted mb-3 leading-relaxed card-text text-sm">
                               {feature.description}
                             </p>
                             <Button 
@@ -822,24 +899,24 @@ export default function DashboardPage() {
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
+                transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
               >
-                <h2 className="text-xl font-bold text-dark-text mb-6">Recent Activity</h2>
+                <h2 className="text-lg font-bold text-dark-text mb-5">Recent Activity</h2>
                 
-                <Card className="p-6">
-                  <div className="space-y-4">
+                <Card className="p-5">
+                  <div className="space-y-3">
                     {recentActivity.map((activity, index) => (
                       <motion.div
                         key={index}
-                        className="flex items-start space-x-3 p-3 rounded-lg hover:bg-dark-card/50 transition-colors cursor-pointer"
+                        className="flex items-start space-x-3 p-2.5 rounded-lg hover:bg-dark-card/50 transition-colors cursor-pointer"
                         whileHover={{ scale: 1.02 }}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
                           activity.type === 'pr' ? 'bg-brand-primary/20 text-brand-primary' :
                           activity.type === 'commit' ? 'bg-brand-secondary/20 text-brand-secondary' :
                           'bg-yellow-500/20 text-yellow-500'
                         }`}>
-                          <activity.icon className="w-4 h-4" />
+                          <activity.icon className="w-3.5 h-3.5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-dark-text text-sm font-medium truncate">
@@ -857,7 +934,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                   
-                  <div className="mt-6 pt-4 border-t border-dark-border">
+                  <div className="mt-5 pt-4 border-t border-dark-border">
                     <Button variant="ghost" size="sm" className="w-full">
                       View All Activity
                     </Button>

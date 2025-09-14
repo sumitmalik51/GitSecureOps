@@ -21,6 +21,8 @@ export default function LoginPage() {
   const [isPATLoading, setIsPATLoading] = useState(false)
   const [showPAT, setShowPAT] = useState(false)
   const [patToken, setPATToken] = useState('')
+  const [patError, setPATError] = useState('')
+  const [oauthError, setOAuthError] = useState('')
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -29,8 +31,10 @@ export default function LoginPage() {
   }
 
   const handleGitHubLogin = () => {
+    setOAuthError('') // Clear previous errors
+    
     if (!oauthService.isConfigured()) {
-      alert('GitHub OAuth is not configured. Please check your environment variables.')
+      setOAuthError('GitHub OAuth is not configured. Please contact your administrator.')
       return
     }
     
@@ -39,15 +43,17 @@ export default function LoginPage() {
       oauthService.initiateOAuthFlow()
     } catch (error) {
       console.error('Failed to initiate OAuth flow:', error)
-      alert('Failed to start GitHub authentication. Please try again.')
+      setOAuthError('Unable to start GitHub authentication. Please try again.')
       setIsGitHubLoading(false)
     }
   }
 
   const handlePATLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setPATError('') // Clear previous errors
+    
     if (!patToken.trim()) {
-      alert('Please enter a valid Personal Access Token.')
+      setPATError('Please enter a valid Personal Access Token.')
       return
     }
 
@@ -63,7 +69,16 @@ export default function LoginPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Invalid Personal Access Token')
+        // Provide specific error messages based on response status
+        if (response.status === 401) {
+          throw new Error('The Personal Access Token you entered is invalid or has expired. Please check your token and try again.')
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden. Your token may lack the required permissions or rate limits have been exceeded.')
+        } else if (response.status === 404) {
+          throw new Error('GitHub API endpoint not found. Please check your network connection.')
+        } else {
+          throw new Error(`Authentication failed with status ${response.status}. Please verify your token and try again.`)
+        }
       }
 
       const userData = await response.json()
@@ -82,7 +97,13 @@ export default function LoginPage() {
       
     } catch (error) {
       console.error('PAT login error:', error)
-      alert('Failed to authenticate with Personal Access Token. Please check your token and try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('fetch')) {
+        setPATError('Unable to connect to GitHub. Please check your internet connection and try again.')
+      } else {
+        setPATError(errorMessage)
+      }
     } finally {
       setIsPATLoading(false)
     }
@@ -181,6 +202,20 @@ export default function LoginPage() {
                 <Github className="w-4 h-4 mr-2" />
                 Continue with GitHub
               </Button>
+
+              {/* OAuth Error Display */}
+              {oauthError && (
+                <motion.div 
+                  className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <p className="text-red-400 text-sm font-medium">
+                    {oauthError}
+                  </p>
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Divider */}
@@ -212,7 +247,11 @@ export default function LoginPage() {
                     type={showPAT ? 'text' : 'password'}
                     required
                     value={patToken}
-                    onChange={(e) => setPATToken(e.target.value)}
+                    onChange={(e) => {
+                      setPATToken(e.target.value)
+                      // Clear error when user starts typing
+                      if (patError) setPATError('')
+                    }}
                     className="form-input pl-10 pr-10 text-sm h-11 transition-all duration-300 ease-in-out"
                     placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                   />
@@ -247,6 +286,20 @@ export default function LoginPage() {
               >
                 Sign In with Token
               </Button>
+
+              {/* PAT Error Display */}
+              {patError && (
+                <motion.div 
+                  className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <p className="text-red-400 text-sm font-medium">
+                    {patError}
+                  </p>
+                </motion.div>
+              )}
             </motion.form>
 
             {/* Info about tokens */}

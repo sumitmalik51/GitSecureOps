@@ -320,14 +320,14 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <motion.div key={index} variants={itemVariants}>
-                <Card className="p-6 h-full group relative overflow-hidden transition-all duration-500 ease-in-out">
+                <Card className="p-6 h-full group relative overflow-hidden transition-all duration-500 ease-in-out no-blur-hover">
                   {/* Colored background based on theme */}
                   <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full opacity-10 transition-all duration-500 ${
                     feature.theme === 'purple' ? 'bg-purple-500' : 
                     feature.theme === 'green' ? 'bg-green-500' : 'bg-blue-500'
                   }`} />
                   
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-500 ease-out ${
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-500 ease-out no-blur-hover ${
                     feature.theme === 'purple' ? 'bg-purple-500/20 text-purple-400' : 
                     feature.theme === 'green' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
                   }`}>
@@ -372,13 +372,13 @@ export default function HomePage() {
             <div className="grid md:grid-cols-3 gap-8">
               {steps.map((step, index) => (
                 <motion.div key={index} variants={itemVariants} className="relative">
-                  <Card className="p-6 text-center group relative z-10 transition-all duration-500 ease-in-out">
+                  <Card className="p-6 text-center group relative z-10 transition-all duration-500 ease-in-out no-blur-hover">
                     {/* Step connector */}
                     {index < steps.length - 1 && (
                       <ChevronRight className="absolute -right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-brand-primary hidden md:block z-20 transition-all duration-300" />
                     )}
                     
-                    <div className="w-12 h-12 rounded-full gradient-accent mx-auto mb-4 flex items-center justify-center font-bold text-white group-hover:scale-110 transition-all duration-500 ease-out relative z-10">
+                    <div className="w-12 h-12 rounded-full gradient-accent mx-auto mb-4 flex items-center justify-center font-bold text-white group-hover:scale-110 transition-all duration-500 ease-out relative z-10 no-blur-hover">
                       <step.icon className="w-6 h-6" />
                     </div>
                     <div className="text-xs font-semibold text-brand-secondary mb-2 tracking-wider">
