@@ -39,7 +39,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         className={cn(
           baseClasses, 
           variants[variant], 
-          hover && 'card-hover-lift',
+          hover && 'card-hover-lift container-hover',
           className
         )}
         style={{

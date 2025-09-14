@@ -95,26 +95,26 @@ export default function LoginPage() {
       
       {/* Floating elements */}
       <motion.div
-        className="absolute top-20 left-20 w-20 h-20 rounded-full bg-brand-primary/20 blur-xl"
+        className="absolute top-16 left-16 w-16 h-16 rounded-full bg-brand-primary/15 blur-xl"
         animate={{
-          y: [-20, 20, -20],
+          y: [-15, 15, -15],
           rotate: [0, 180, 360],
         }}
         transition={{
-          duration: 8,
+          duration: 12,
           repeat: Infinity,
           ease: "easeInOut"
         }}
       />
       
       <motion.div
-        className="absolute bottom-20 right-20 w-32 h-32 rounded-full bg-brand-secondary/20 blur-xl"
+        className="absolute bottom-16 right-16 w-24 h-24 rounded-full bg-brand-secondary/15 blur-xl"
         animate={{
-          y: [20, -20, 20],
+          y: [15, -15, 15],
           rotate: [360, 180, 0],
         }}
         transition={{
-          duration: 10,
+          duration: 15,
           repeat: Infinity,
           ease: "easeInOut"
         }}
@@ -123,114 +123,114 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Back to home */}
         <motion.button
-          className="flex items-center text-dark-text-muted hover:text-dark-text mb-8 transition-colors duration-200"
+          className="flex items-center text-dark-text-muted hover:text-dark-text mb-6 transition-colors duration-300 text-sm"
           onClick={() => navigate('/')}
-          whileHover={{ x: -4 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          whileHover={{ x: -3, scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </motion.button>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <Card className="p-8 hover:glow-primary">
+          <Card className="p-6 transition-all duration-500 ease-in-out">
             {/* Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <motion.div 
-                className="flex justify-center mb-4"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                className="flex justify-center mb-3"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
                 transition={{ 
                   type: "spring", 
-                  stiffness: 260, 
-                  damping: 20,
+                  stiffness: 200, 
+                  damping: 15,
                   delay: 0.2 
                 }}
               >
-                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center">
-                  <Shield className="w-8 h-8 text-white" />
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-white" />
                 </div>
               </motion.div>
               
-              <h1 className="text-3xl font-bold text-gradient-primary mb-2">
+              <h1 className="text-2xl font-bold text-gradient-primary mb-2">
                 Welcome Back
               </h1>
-              <p className="text-dark-text-muted">
+              <p className="text-dark-text-muted text-sm">
                 Connect your GitHub account to access GitSecureOps
               </p>
             </div>
 
             {/* GitHub OAuth Button */}
             <motion.div
-              className="mb-6"
+              className="mb-5"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
             >
               <Button
                 variant="primary"
-                size="lg"
-                className="w-full"
+                size="md"
+                className="w-full transition-all duration-300 ease-in-out"
                 onClick={handleGitHubLogin}
                 loading={isGitHubLoading}
               >
-                <Github className="w-5 h-5 mr-3" />
+                <Github className="w-4 h-4 mr-2" />
                 Continue with GitHub
               </Button>
             </motion.div>
 
             {/* Divider */}
-            <div className="relative mb-6">
+            <div className="relative mb-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-dark-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-dark-card text-dark-text-muted">Or use Personal Access Token</span>
+                <span className="px-3 bg-dark-card text-dark-text-muted text-xs">Or use Personal Access Token</span>
               </div>
             </div>
 
             {/* PAT Login Form */}
             <motion.form 
               onSubmit={handlePATLogin} 
-              className="space-y-6"
+              className="space-y-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
             >
               {/* PAT Field */}
               <div>
-                <label className="block text-sm font-medium text-dark-text mb-2">
+                <label className="block text-xs font-medium text-dark-text mb-2">
                   Personal Access Token
                 </label>
                 <div className="relative">
-                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-dark-text-muted" />
+                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-dark-text-muted" />
                   <input
                     type={showPAT ? 'text' : 'password'}
                     required
                     value={patToken}
                     onChange={(e) => setPATToken(e.target.value)}
-                    className="form-input pl-11 pr-11"
+                    className="form-input pl-10 pr-10 text-sm h-11 transition-all duration-300 ease-in-out"
                     placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPAT(!showPAT)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-text-muted hover:text-dark-text transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-text-muted hover:text-dark-text transition-colors duration-300"
                   >
-                    {showPAT ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPAT ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-dark-text-muted">
+                <p className="mt-1 text-xs text-dark-text-muted leading-tight">
                   Need a token? Create one in your{' '}
                   <a 
                     href="https://github.com/settings/tokens" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-brand-primary hover:underline"
+                    className="text-brand-primary hover:underline transition-all duration-300"
                   >
                     GitHub Settings
                   </a>
@@ -241,8 +241,8 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 variant="outline"
-                size="lg"
-                className="w-full"
+                size="md"
+                className="w-full transition-all duration-300 ease-in-out"
                 loading={isPATLoading}
               >
                 Sign In with Token
@@ -251,28 +251,28 @@ export default function LoginPage() {
 
             {/* Info about tokens */}
             <motion.div 
-              className="mt-6 p-4 bg-dark-surface/50 rounded-lg border border-dark-border"
+              className="mt-4 p-3 bg-dark-surface/50 rounded-lg border border-dark-border"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: 0.6, duration: 0.6, ease: "easeOut" }}
             >
-              <p className="text-xs text-dark-text-muted">
+              <p className="text-xs text-dark-text-muted leading-relaxed">
                 <strong>Required scopes:</strong> repo, read:org, user:email
               </p>
             </motion.div>
 
             {/* Terms */}
             <motion.div 
-              className="mt-6 text-center"
+              className="mt-4 text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
+              transition={{ delay: 0.7, duration: 0.6, ease: "easeOut" }}
             >
-              <p className="text-xs text-dark-text-muted">
+              <p className="text-xs text-dark-text-muted leading-tight">
                 By signing in, you agree to our{' '}
-                <button className="text-brand-primary hover:underline">Terms of Service</button>
+                <button className="text-brand-primary hover:underline transition-colors duration-300">Terms of Service</button>
                 {' '}and{' '}
-                <button className="text-brand-primary hover:underline">Privacy Policy</button>
+                <button className="text-brand-primary hover:underline transition-colors duration-300">Privacy Policy</button>
               </p>
             </motion.div>
           </Card>
@@ -280,12 +280,12 @@ export default function LoginPage() {
 
         {/* Branding */}
         <motion.div 
-          className="text-center mt-8"
+          className="text-center mt-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
         >
-          <p className="text-dark-text-muted text-sm">
+          <p className="text-dark-text-muted text-xs">
             © 2025 GitSecureOps. Secure workflows for modern teams.
           </p>
         </motion.div>

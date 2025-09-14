@@ -514,7 +514,7 @@ export default function DashboardPage() {
               onClick={() => setActiveSection(item.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 activeSection === item.id
-                  ? 'bg-brand-primary text-white'
+                  ? 'bg-brand-primary text-white glow-primary'
                   : 'text-dark-text-muted hover:text-dark-text hover:bg-dark-card'
               }`}
               whileHover={{ scale: 1.02, x: 4 }}
@@ -783,7 +783,7 @@ export default function DashboardPage() {
                   {renderFeatures().map((feature, index) => (
                     <motion.div key={index} variants={itemVariants}>
                       <Card 
-                        className="p-6 group cursor-pointer"
+                        className="p-6 hover:glow-primary group cursor-pointer container-hover"
                         onClick={() => handleFeatureAction(feature.title)}
                       >
                         <div className="flex items-start space-x-4 container-content">

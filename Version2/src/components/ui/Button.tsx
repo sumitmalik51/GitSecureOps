@@ -23,8 +23,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = 'no-blur-hover relative inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed'
     
     const variants = {
-      primary: 'bg-brand-primary hover:bg-brand-primary/90 text-white focus:ring-brand-primary/50 hover:shadow-lg disabled:bg-brand-primary/60 disabled:hover:bg-brand-primary/60',
-      secondary: 'bg-brand-secondary hover:bg-brand-secondary/90 text-white focus:ring-brand-secondary/50 hover:shadow-lg disabled:bg-brand-secondary/60 disabled:hover:bg-brand-secondary/60',
+      primary: 'bg-brand-primary hover:bg-brand-primary/90 text-white focus:ring-brand-primary/50 glow-primary hover:glow-primary hover:shadow-lg disabled:bg-brand-primary/60 disabled:hover:bg-brand-primary/60',
+      secondary: 'bg-brand-secondary hover:bg-brand-secondary/90 text-white focus:ring-brand-secondary/50 glow-secondary hover:glow-secondary hover:shadow-lg disabled:bg-brand-secondary/60 disabled:hover:bg-brand-secondary/60',
       ghost: 'bg-transparent hover:bg-white/10 text-dark-text border border-dark-border focus:ring-brand-primary/50 hover:text-dark-text hover:border-brand-primary/50 disabled:text-dark-text/50 disabled:hover:bg-transparent disabled:hover:text-dark-text/50',
       outline: 'bg-transparent hover:bg-brand-primary hover:text-white text-brand-primary border border-brand-primary focus:ring-brand-primary/50 hover:border-brand-primary disabled:text-brand-primary/50 disabled:border-brand-primary/50 disabled:hover:bg-transparent disabled:hover:text-brand-primary/50'
     }
