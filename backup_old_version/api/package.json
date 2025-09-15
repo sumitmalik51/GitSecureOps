@@ -1,0 +1,12 @@
+{
+  "name": "gitsecureops-api",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "azure-functions-core-tools": "^4.0.0"
+  }
+}
