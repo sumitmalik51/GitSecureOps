@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Shield, Users, Activity, Zap, CheckCircle, UserPlus, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Shield, Users, Activity, Zap, CheckCircle, UserPlus, AlertTriangle, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -23,6 +23,8 @@ export default function CopilotPage() {
   const [copilotSeats, setCopilotSeats] = useState<CopilotSeats | null>(null)
   const [newUserEmail, setNewUserEmail] = useState('')
   const [isAssigning, setIsAssigning] = useState(false)
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
+  const [isRemoving, setIsRemoving] = useState(false)
 
   useEffect(() => {
     loadCopilotData()
@@ -72,16 +74,70 @@ export default function CopilotPage() {
   const handleAssignCopilot = async () => {
     if (!selectedOrg || !newUserEmail.trim()) return
 
+    const username = newUserEmail.trim() // Move declaration outside try block
+
     try {
       setIsAssigning(true)
-      await githubService.addCopilotUsers(selectedOrg, [newUserEmail.trim()])
+      
+      // Check membership status first
+      const membershipStatus = await githubService.checkOrgMembership(selectedOrg, username)
+      
+      if (membershipStatus === 'not_member') {
+        // Show info that we're inviting the user first
+        success('Inviting User', `Inviting ${username} to the organization and then assigning Copilot seat...`)
+      }
+
+      await githubService.addCopilotUsers(selectedOrg, [username])
       setNewUserEmail('')
+      
       // Reload seats after assignment
       await loadCopilotSeats(selectedOrg)
-      success('Copilot Seat Assigned', 'Successfully assigned Copilot seat to user!')
-    } catch (error) {
+      
+      if (membershipStatus === 'not_member') {
+        success('Copilot Seat Assigned', `Successfully invited ${username} to the organization and assigned Copilot seat!`)
+      } else {
+        success('Copilot Seat Assigned', 'Successfully assigned Copilot seat to user!')
+      }
+    } catch (error: any) {
       console.error('Failed to assign Copilot seat:', error)
-      showError('Assignment Failed', 'Failed to assign Copilot seat. Please check the username and try again.')
+      
+      let errorTitle = 'Assignment Failed'
+      let errorMessage = error.message || 'Failed to assign Copilot seat.'
+      
+      // Handle the enhanced error messages with emojis
+      if (errorMessage.includes('📧') && errorMessage.includes('Organization invitations sent')) {
+        // Successful invitation - show as success
+        success('Invitations Sent', errorMessage)
+        return; // Don't show error in this case
+      } else if (errorMessage.includes('❌') && errorMessage.includes('not found on GitHub')) {
+        errorTitle = 'User Not Found'
+        errorMessage = 'The username you entered does not exist on GitHub. Please check the spelling and try again.'
+      } else if (errorMessage.includes('⚠️') && errorMessage.includes('Could not invite')) {
+        errorTitle = 'Invitation Failed'
+        errorMessage = 'Could not automatically invite the user to your organization. Please manually invite them first.'
+      } else if (errorMessage.includes('do not exist on GitHub')) {
+        errorTitle = 'User Not Found'
+        errorMessage = 'The username you entered does not exist on GitHub. Please check the spelling and try again.'
+      } else if (errorMessage.includes('need to accept organization invitations')) {
+        errorTitle = 'Invitation Pending'
+        errorMessage = 'An invitation has been sent to the user. They need to accept the organization invitation before a Copilot seat can be assigned.'
+        success('Invitation Sent', `Organization invitation sent to ${username}. Once they accept, you can assign a Copilot seat.`)
+        return; // Don't show error in this case
+      } else if (errorMessage.includes('do not exist in this organization')) {
+        errorTitle = 'Not an Organization Member'
+        errorMessage = 'The user needs to be a member of your organization first. Please invite them to join your organization.'
+      } else if (errorMessage.includes('already has access')) {
+        errorTitle = 'Already Has Access'
+        errorMessage = 'This user already has Copilot access in your organization.'
+      } else if (errorMessage.includes('Forbidden')) {
+        errorTitle = 'Permission Denied'
+        errorMessage = 'You do not have permission to manage Copilot seats or invite users to this organization.'
+      } else if (errorMessage.includes('Not Found')) {
+        errorTitle = 'Organization or API Not Found'
+        errorMessage = 'The organization was not found or the Copilot API is not available for this organization.'
+      }
+      
+      showError(errorTitle, errorMessage)
     } finally {
       setIsAssigning(false)
     }
@@ -102,6 +158,48 @@ export default function CopilotPage() {
     } catch (error) {
       console.error('Failed to remove Copilot seat:', error)
       showError('Removal Failed', 'Failed to remove Copilot seat.')
+    }
+  }
+
+  const handleSelectUser = (username: string) => {
+    const newSelected = new Set(selectedUsers)
+    if (newSelected.has(username)) {
+      newSelected.delete(username)
+    } else {
+      newSelected.add(username)
+    }
+    setSelectedUsers(newSelected)
+  }
+
+  const handleSelectAll = () => {
+    if (selectedUsers.size === currentSeats.length) {
+      setSelectedUsers(new Set())
+    } else {
+      setSelectedUsers(new Set(currentSeats.map(seat => seat.assignee.login)))
+    }
+  }
+
+  const handleBulkRemove = async () => {
+    if (!selectedOrg || selectedUsers.size === 0) return
+
+    const usersToRemove = Array.from(selectedUsers)
+    const confirmMessage = `Are you sure you want to remove Copilot access for ${usersToRemove.length} user${usersToRemove.length > 1 ? 's' : ''}?\n\nUsers: ${usersToRemove.join(', ')}`
+    
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      setIsRemoving(true)
+      await githubService.removeCopilotUsers(selectedOrg, usersToRemove)
+      setSelectedUsers(new Set())
+      await loadCopilotSeats(selectedOrg)
+      success('Copilot Seats Removed', `Successfully removed Copilot access for ${usersToRemove.length} user${usersToRemove.length > 1 ? 's' : ''}!`)
+    } catch (error) {
+      console.error('Failed to remove Copilot seats:', error)
+      showError('Removal Failed', 'Failed to remove some Copilot seats.')
+    } finally {
+      setIsRemoving(false)
     }
   }
 
@@ -249,10 +347,13 @@ export default function CopilotPage() {
             >
               <Card className="p-6">
                 <h2 className="text-xl font-semibold text-dark-text mb-4">Assign Copilot Seat</h2>
+                <p className="text-dark-text-muted text-sm mb-4">
+                  Enter a GitHub username to assign a Copilot seat. If the user isn't in your organization, they'll be automatically invited first.
+                </p>
                 <div className="flex space-x-4">
                   <input
                     type="text"
-                    placeholder="Enter GitHub username"
+                    placeholder="Enter GitHub username or email"
                     value={newUserEmail}
                     onChange={(e) => setNewUserEmail(e.target.value)}
                     className="flex-1 px-3 py-2 bg-dark-card border border-dark-border rounded-lg text-dark-text placeholder-dark-text-muted focus:ring-2 focus:ring-brand-primary focus:border-transparent"
@@ -276,7 +377,34 @@ export default function CopilotPage() {
               transition={{ delay: 0.4 }}
             >
               <Card className="p-6">
-                <h2 className="text-xl font-semibold text-dark-text mb-4">Current Copilot Users</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-dark-text">Current Copilot Users</h2>
+                  {currentSeats.length > 0 && (
+                    <div className="flex items-center space-x-4">
+                      {selectedUsers.size > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBulkRemove}
+                          disabled={isRemoving}
+                          className="flex items-center space-x-2 text-red-500 hover:text-red-400"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>{isRemoving ? 'Removing...' : `Remove ${selectedUsers.size} Selected`}</span>
+                        </Button>
+                      )}
+                      <label className="flex items-center space-x-2 text-sm text-dark-text">
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.size === currentSeats.length && currentSeats.length > 0}
+                          onChange={handleSelectAll}
+                          className="rounded border-dark-border text-brand-primary focus:ring-brand-primary"
+                        />
+                        <span>Select All</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
                 {currentSeats.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-16 h-16 text-dark-text-muted mx-auto mb-4" />
@@ -291,6 +419,12 @@ export default function CopilotPage() {
                         className="flex items-center justify-between p-4 bg-dark-card rounded-lg border border-dark-border"
                       >
                         <div className="flex items-center space-x-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.has(seat.assignee.login)}
+                            onChange={() => handleSelectUser(seat.assignee.login)}
+                            className="rounded border-dark-border text-brand-primary focus:ring-brand-primary"
+                          />
                           <img
                             src={seat.assignee.avatar_url}
                             alt={seat.assignee.login}
@@ -310,9 +444,14 @@ export default function CopilotPage() {
                         </div>
                         <div className="flex items-center space-x-4">
                           {seat.pending_cancellation_date ? (
-                            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm">
-                              Pending Removal
-                            </span>
+                            <div className="text-right">
+                              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm">
+                                Pending Removal
+                              </span>
+                              <p className="text-dark-text-muted text-xs mt-1">
+                                Will be removed on: {new Date(seat.pending_cancellation_date).toLocaleDateString()}
+                              </p>
+                            </div>
                           ) : (
                             <div className="flex items-center space-x-2">
                               <CheckCircle className="w-4 h-4 text-green-500" />
@@ -324,6 +463,7 @@ export default function CopilotPage() {
                             size="sm"
                             onClick={() => handleRemoveCopilot(seat.assignee.login)}
                             className="text-red-500 hover:text-red-400"
+                            disabled={isRemoving}
                           >
                             Remove
                           </Button>

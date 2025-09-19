@@ -392,30 +392,321 @@ class GitHubService {
     return { seats: results, total_seats: totalSeats };
   }
 
-  // Add users to Copilot in an organization
+  // Add users to Copilot in an organization (simplified approach)
   async addCopilotUsers(org: string, usernames: string[]): Promise<{ seats_created: CopilotSeat[] }> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
 
-    const response = await fetch(`${this.baseUrl}/orgs/${org}/copilot/billing/selected_users`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        selected_usernames: usernames
-      })
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/orgs/${org}/copilot/billing/selected_users`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selected_usernames: usernames
+        })
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Failed to add Copilot users: ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 404) {
+          if (errorData.message?.includes('do not exist in this organization')) {
+            // Extract the username from the error if possible
+            const match = errorData.message.match(/One or more users do not exist in this organization: (.+)/);
+            const missingUsers = match ? match[1].split(', ') : usernames;
+            
+            // For each missing user, try to invite them
+            const invitePromises = missingUsers.map(async (username: string) => {
+              try {
+                // First check if user exists on GitHub
+                const userCheck = await fetch(`${this.baseUrl}/users/${username}`, {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                  }
+                });
+
+                if (!userCheck.ok) {
+                  return { username, status: 'user_not_found', error: `User ${username} does not exist on GitHub` };
+                }
+
+                // Try to invite to organization
+                const inviteResponse = await fetch(`${this.baseUrl}/orgs/${org}/invitations`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    invitee_id: username,
+                    role: 'direct_member'
+                  })
+                });
+
+                if (inviteResponse.ok) {
+                  return { username, status: 'invited', error: null };
+                } else {
+                  // Try by email
+                  const emailInviteResponse = await fetch(`${this.baseUrl}/orgs/${org}/invitations`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${this.token}`,
+                      'Accept': 'application/vnd.github.v3+json',
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      email: username,
+                      role: 'direct_member'
+                    })
+                  });
+
+                  if (emailInviteResponse.ok) {
+                    return { username, status: 'invited_by_email', error: null };
+                  } else {
+                    const inviteError = await emailInviteResponse.json().catch(() => ({}));
+                    return { username, status: 'invite_failed', error: inviteError.message || 'Failed to invite user' };
+                  }
+                }
+              } catch (error) {
+                return { username, status: 'error', error: error instanceof Error ? error.message : 'Unknown error' };
+              }
+            });
+
+            const inviteResults = await Promise.all(invitePromises);
+            const successfulInvites = inviteResults.filter(r => r.status === 'invited' || r.status === 'invited_by_email');
+            const userNotFound = inviteResults.filter(r => r.status === 'user_not_found');
+            const failedInvites = inviteResults.filter(r => r.status === 'invite_failed' || r.status === 'error');
+
+            let errorMessage = '';
+            
+            if (userNotFound.length > 0) {
+              errorMessage += `❌ Users not found on GitHub: ${userNotFound.map(r => r.username).join(', ')}\n`;
+            }
+            
+            if (successfulInvites.length > 0) {
+              errorMessage += `📧 Organization invitations sent to: ${successfulInvites.map(r => r.username).join(', ')}\n`;
+              errorMessage += `These users will receive Copilot access once they accept the organization invitation.\n`;
+            }
+            
+            if (failedInvites.length > 0) {
+              errorMessage += `⚠️ Could not invite: ${failedInvites.map(r => r.username).join(', ')}\n`;
+              errorMessage += `Please manually invite these users to the organization first.\n`;
+            }
+
+            throw new Error(errorMessage);
+          }
+          
+          throw new Error(errorData.message || `Resource not found: ${response.status}`);
+        }
+        
+        throw new Error(errorData.message || `Failed to add Copilot users: ${response.status} ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error adding Copilot users:', error);
+      throw error;
+    }
+  }
+
+  // Validate that usernames exist on GitHub
+  async validateGitHubUsers(usernames: string[]): Promise<{
+    valid: string[];
+    invalid: string[];
+  }> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
     }
 
-    return response.json();
+    const results = {
+      valid: [] as string[],
+      invalid: [] as string[]
+    };
+
+    for (const username of usernames) {
+      try {
+        // Check if user exists on GitHub
+        const response = await fetch(`${this.baseUrl}/users/${username}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+          }
+        });
+
+        if (response.ok) {
+          results.valid.push(username);
+        } else {
+          results.invalid.push(username);
+        }
+      } catch (error) {
+        results.invalid.push(username);
+      }
+    }
+
+    return results;
+  }
+
+  // Invite users to organization
+  async inviteUsersToOrg(org: string, usernames: string[]): Promise<{
+    invitedUsers: string[];
+    alreadyMembers: string[];
+    errors: Array<{ username: string; error: string }>;
+  }> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const results = {
+      invitedUsers: [] as string[],
+      alreadyMembers: [] as string[],
+      errors: [] as Array<{ username: string; error: string }>
+    };
+
+    for (const username of usernames) {
+      try {
+        // Check if user is already a member
+        const membershipResponse = await fetch(`${this.baseUrl}/orgs/${org}/members/${username}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+          }
+        });
+
+        if (membershipResponse.status === 204) {
+          // User is already a member
+          results.alreadyMembers.push(username);
+          continue;
+        }
+
+        // User is not a member, try to invite them with username
+        const inviteResponse = await fetch(`${this.baseUrl}/orgs/${org}/invitations`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            invitee_id: username,
+            role: 'direct_member'
+          })
+        });
+
+        if (inviteResponse.ok) {
+          results.invitedUsers.push(username);
+        } else {
+          // If username invitation fails, try by user ID
+          try {
+            const userResponse = await fetch(`${this.baseUrl}/users/${username}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${this.token}`,
+                'Accept': 'application/vnd.github.v3+json',
+              }
+            });
+
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              const userIdInviteResponse = await fetch(`${this.baseUrl}/orgs/${org}/invitations`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${this.token}`,
+                  'Accept': 'application/vnd.github.v3+json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  invitee_id: userData.id,
+                  role: 'direct_member'
+                })
+              });
+
+              if (userIdInviteResponse.ok) {
+                results.invitedUsers.push(username);
+              } else {
+                const errorData = await userIdInviteResponse.json().catch(() => ({}));
+                results.errors.push({
+                  username,
+                  error: errorData.message || `Failed to invite by user ID: ${userIdInviteResponse.status}`
+                });
+              }
+            } else {
+              results.errors.push({
+                username,
+                error: 'User not found on GitHub'
+              });
+            }
+          } catch (error) {
+            results.errors.push({
+              username,
+              error: error instanceof Error ? error.message : 'Unknown error during invitation'
+            });
+          }
+        }
+      } catch (error) {
+        results.errors.push({
+          username,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    return results;
+  }
+
+  // Check organization membership for a user
+  async checkOrgMembership(org: string, username: string): Promise<'member' | 'pending' | 'not_member'> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    try {
+      // Check if user is a member
+      const memberResponse = await fetch(`${this.baseUrl}/orgs/${org}/members/${username}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        }
+      });
+
+      if (memberResponse.status === 204) {
+        return 'member';
+      }
+
+      // Check if user has pending invitation
+      const invitationsResponse = await fetch(`${this.baseUrl}/orgs/${org}/invitations`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        }
+      });
+
+      if (invitationsResponse.ok) {
+        const invitations = await invitationsResponse.json();
+        const hasPendingInvite = invitations.some((inv: any) => 
+          inv.login === username || inv.email === username
+        );
+        
+        if (hasPendingInvite) {
+          return 'pending';
+        }
+      }
+
+      return 'not_member';
+    } catch (error) {
+      console.error('Error checking membership:', error);
+      return 'not_member';
+    }
   }
 
   // Remove users from Copilot in an organization
