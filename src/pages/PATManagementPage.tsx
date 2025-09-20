@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import { 
   ArrowLeft, 
   Key, 
-  Plus, 
   Shield, 
   ExternalLink, 
   CheckCircle2, 
@@ -146,18 +145,6 @@ export default function PATManagementPage() {
     }
   }
 
-  const copyToClipboard = async (text: string, description: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      success('Copied', `${description} copied to clipboard`)
-      announceToScreenReader(`${description} copied to clipboard`)
-    } catch (error) {
-      showError('Copy Failed', 'Failed to copy to clipboard')
-    }
-  }
-
-  // TODO: Future enhancement - copy functionality for token details
-
   const getScopeIcon = (scopeName: string) => {
     if (scopeName.includes('repo')) return <GitBranch className="w-4 h-4" />
     if (scopeName.includes('org')) return <Users className="w-4 h-4" />
@@ -217,7 +204,10 @@ export default function PATManagementPage() {
 
           <div className="flex space-x-3">
             <Button
-              onClick={() => setShowTokenInput(!showTokenInput)}
+              onClick={() => {
+                setShowTokenInput(!showTokenInput)
+                if (!showTokenInput) setShowTokenForm(false) // Close create form when opening validation
+              }}
               variant="outline"
               className="flex items-center space-x-2"
             >
@@ -225,11 +215,14 @@ export default function PATManagementPage() {
               <span>Validate Token</span>
             </Button>
             <Button
-              onClick={() => setShowTokenForm(!showTokenForm)}
+              onClick={() => {
+                setShowTokenForm(!showTokenForm)
+                if (!showTokenForm) setShowTokenInput(false) // Close validation when opening create form
+              }}
               className="flex items-center space-x-2"
             >
-              <Plus className="w-4 h-4" />
-              <span>Create New Token</span>
+              <ExternalLink className="w-4 h-4" />
+              <span>Configure & Create</span>
             </Button>
           </div>
         </motion.div>
@@ -390,11 +383,39 @@ export default function PATManagementPage() {
           >
             <EnhancedCard variant="feature">
               <CardHeader
-                title="Create New Token"
-                subtitle="Configure and create a new personal access token"
-                icon={<Plus className="w-5 h-5 text-green-500" />}
+                title="Create Token on GitHub"
+                subtitle="Configure your token settings and redirect to GitHub's secure creation page"
+                icon={<ExternalLink className="w-5 h-5 text-green-500" />}
               />
               <CardContent>
+                {/* Information Banner */}
+                <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <Info className="w-5 h-5 text-blue-500 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium text-dark-text mb-2">How This Works</h3>
+                      <p className="text-sm text-dark-text-muted mb-3">
+                        Configure your token settings below, then we'll redirect you to GitHub where your 
+                        selections will be automatically pre-filled for secure token creation.
+                      </p>
+                      <div className="flex items-center space-x-4 text-xs text-dark-text-muted">
+                        <span className="flex items-center space-x-1">
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Redirects to GitHub</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Shield className="w-3 h-3" />
+                          <span>Pre-fills your selections</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Key className="w-3 h-3" />
+                          <span>Secure creation</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-6">
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -415,16 +436,29 @@ export default function PATManagementPage() {
                     
                     <div>
                       <label htmlFor="tokenExpires" className="block text-sm font-medium text-dark-text mb-2">
-                        Expiration Date (Optional)
+                        Expiration (Required)
                       </label>
-                      <input
+                      <select
                         id="tokenExpires"
-                        type="date"
                         value={newToken.expires_at}
-                        onChange={(e) => setNewToken(prev => ({ ...prev, expires_at: e.target.value }))}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full px-4 py-3 bg-dark-surface border border-dark-border rounded-lg text-dark-text placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                      />
+                        onChange={(e) => {
+                          const days = parseInt(e.target.value);
+                          const expirationDate = days > 0 ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+                          setNewToken(prev => ({ ...prev, expires_at: expirationDate }));
+                        }}
+                        className="w-full px-4 py-3 bg-dark-surface border border-dark-border rounded-lg text-dark-text focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
+                        required
+                      >
+                        <option value="">Select expiration period</option>
+                        <option value="7">7 days</option>
+                        <option value="30">30 days</option>
+                        <option value="60">60 days</option>
+                        <option value="90">90 days</option>
+                        <option value="0">No expiration (not recommended)</option>
+                      </select>
+                      <p className="text-xs text-dark-text-muted mt-1">
+                        GitHub recommends setting an expiration date for security. Tokens without expiration pose a security risk.
+                      </p>
                     </div>
                   </div>
 
@@ -509,7 +543,7 @@ export default function PATManagementPage() {
                   <div className="flex justify-between items-center pt-4 border-t border-dark-border">
                     <div className="flex items-center space-x-2 text-sm text-dark-text-muted">
                       <ExternalLink className="w-4 h-4" />
-                      <span>You'll be redirected to GitHub for secure token creation</span>
+                      <span>Your selections will be pre-filled when redirected to GitHub</span>
                     </div>
                     
                     <div className="flex space-x-3">
@@ -527,7 +561,7 @@ export default function PATManagementPage() {
                         className="flex items-center space-x-2"
                       >
                         <ExternalLink className="w-4 h-4" />
-                        <span>Create on GitHub</span>
+                        <span>Open GitHub & Create Token</span>
                       </Button>
                     </div>
                   </div>
