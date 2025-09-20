@@ -76,6 +76,40 @@ export interface CopilotBilling {
   public_code_suggestions: 'allow' | 'block' | 'unconfigured';
 }
 
+export interface PersonalAccessToken {
+  id: number;
+  url: string;
+  app: {
+    name: string;
+    url: string;
+    client_id: string;
+  };
+  note: string;
+  note_url?: string;
+  fingerprint: string;
+  token?: string; // Only available during creation
+  hashed_token: string;
+  token_last_eight: string;
+  scopes: string[];
+  created_at: string;
+  updated_at: string;
+  expires_at?: string;
+}
+
+export interface CreatePATRequest {
+  note: string;
+  note_url?: string;
+  scopes: string[];
+  expires_at?: string;
+}
+
+export interface PATScope {
+  name: string;
+  description: string;
+  category: string;
+  required?: boolean;
+}
+
 class GitHubService {
   private baseUrl = 'https://api.github.com';
   private token: string | null = null;
@@ -966,6 +1000,192 @@ class GitHubService {
     }
 
     return response.json();
+  }
+
+  // Personal Access Token Management
+  
+  /**
+   * Get available PAT scopes with descriptions
+   */
+  getPATScopes(): PATScope[] {
+    return [
+      // Repository scopes
+      { name: 'repo', description: 'Full control of private repositories', category: 'Repository' },
+      { name: 'public_repo', description: 'Access public repositories', category: 'Repository' },
+      { name: 'repo:status', description: 'Access commit status', category: 'Repository' },
+      { name: 'repo_deployment', description: 'Access deployment status', category: 'Repository' },
+      
+      // Organization scopes
+      { name: 'read:org', description: 'Read org and team membership, read org projects', category: 'Organization' },
+      { name: 'write:org', description: 'Manage org and team membership, manage org projects', category: 'Organization' },
+      { name: 'admin:org', description: 'Full control of orgs and teams, read and write org projects', category: 'Organization' },
+      
+      // User scopes
+      { name: 'user', description: 'Update ALL user data', category: 'User' },
+      { name: 'read:user', description: 'Read ALL user profile data', category: 'User' },
+      { name: 'user:email', description: 'Access user email addresses (read-only)', category: 'User' },
+      { name: 'user:follow', description: 'Follow and unfollow users', category: 'User' },
+      
+      // GitHub Copilot scopes
+      { name: 'manage_billing:copilot', description: 'Manage Copilot for Business seats and settings', category: 'Copilot' },
+      
+      // Other common scopes
+      { name: 'notifications', description: 'Access notifications', category: 'Other' },
+      { name: 'gist', description: 'Write gists', category: 'Other' },
+      { name: 'delete_repo', description: 'Delete repositories', category: 'Repository' },
+      { name: 'workflow', description: 'Update GitHub Action workflows', category: 'Actions' },
+      { name: 'write:packages', description: 'Upload packages to GitHub Package Registry', category: 'Packages' },
+      { name: 'read:packages', description: 'Download packages from GitHub Package Registry', category: 'Packages' },
+    ];
+  }
+
+  /**
+   * List user's personal access tokens
+   * Note: GitHub API doesn't allow listing tokens for security reasons
+   * This method returns mock data for demonstration
+   */
+  async getPersonalAccessTokens(): Promise<PersonalAccessToken[]> {
+    // GitHub's REST API doesn't provide a way to list existing PATs for security reasons
+    // In a real implementation, you might:
+    // 1. Store token metadata in your own database
+    // 2. Use GitHub Apps instead of PATs
+    // 3. Implement a token registry system
+    
+    throw new Error('GitHub API does not support listing personal access tokens for security reasons. Consider using GitHub Apps for better token management.');
+  }
+
+  /**
+   * Create a new personal access token
+   * Note: This uses the OAuth authorizations API which is deprecated
+   * Modern approach would be to direct users to GitHub's token creation page
+   */
+  async createPersonalAccessToken(request: CreatePATRequest): Promise<{ url: string; message: string }> {
+    // The GitHub OAuth authorizations API was deprecated and removed
+    // We redirect users to GitHub's token creation page instead
+    
+    const scopes = request.scopes.join(',');
+    const githubTokenUrl = `https://github.com/settings/tokens/new?description=${encodeURIComponent(request.note)}&scopes=${encodeURIComponent(scopes)}`;
+    
+    return {
+      url: githubTokenUrl,
+      message: 'Redirecting to GitHub to create your personal access token securely'
+    };
+  }
+
+  /**
+   * Validate a personal access token
+   */
+  async validatePersonalAccessToken(token: string): Promise<{
+    valid: boolean;
+    user?: GitHubUser;
+    scopes?: string[];
+    rateLimit?: {
+      limit: number;
+      remaining: number;
+      reset: number;
+    };
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/user`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (!response.ok) {
+        return { valid: false };
+      }
+
+      const user = await response.json();
+      const scopes = response.headers.get('X-OAuth-Scopes')?.split(', ') || [];
+      
+      // Get rate limit info
+      const rateLimitResponse = await fetch(`${this.baseUrl}/rate_limit`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      let rateLimit = undefined;
+      if (rateLimitResponse.ok) {
+        const rateLimitData = await rateLimitResponse.json();
+        rateLimit = {
+          limit: rateLimitData.rate.limit,
+          remaining: rateLimitData.rate.remaining,
+          reset: rateLimitData.rate.reset
+        };
+      }
+
+      return {
+        valid: true,
+        user,
+        scopes,
+        rateLimit
+      };
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      return { valid: false };
+    }
+  }
+
+  /**
+   * Get token information without storing it
+   */
+  async getTokenInfo(token: string): Promise<{
+    user: GitHubUser;
+    scopes: string[];
+    rateLimit: {
+      limit: number;
+      remaining: number;
+      reset: number;
+      resetDate: string;
+    };
+  }> {
+    const response = await fetch(`${this.baseUrl}/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Invalid token or insufficient permissions');
+    }
+
+    const user = await response.json();
+    const scopes = response.headers.get('X-OAuth-Scopes')?.split(', ') || [];
+    
+    // Get rate limit info
+    const rateLimitResponse = await fetch(`${this.baseUrl}/rate_limit`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!rateLimitResponse.ok) {
+      throw new Error('Failed to get rate limit information');
+    }
+
+    const rateLimitData = await rateLimitResponse.json();
+    const resetDate = new Date(rateLimitData.rate.reset * 1000).toISOString();
+
+    return {
+      user,
+      scopes,
+      rateLimit: {
+        limit: rateLimitData.rate.limit,
+        remaining: rateLimitData.rate.remaining,
+        reset: rateLimitData.rate.reset,
+        resetDate
+      }
+    };
   }
 }
 

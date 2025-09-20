@@ -9,6 +9,7 @@ import RepositoriesPage from './pages/RepositoriesPage'
 import SecurityPage from './pages/SecurityPage'
 import SearchPage from './pages/SearchPage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import PATManagementPage from './pages/PATManagementPage'
 import OAuthCallback from './pages/OAuthCallback'
 import AccessManagementPage from './pages/AccessManagementPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
@@ -108,6 +109,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AnalyticsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/tokens" 
+                element={
+                  <ProtectedRoute>
+                    <PATManagementPage />
                   </ProtectedRoute>
                 } 
               />

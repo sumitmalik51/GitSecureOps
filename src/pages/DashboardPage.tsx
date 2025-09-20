@@ -10,6 +10,7 @@ import {
   Bell,
   Plus,
   Lock,
+  Key,
   UserPlus,
   Download,
   Eye,
@@ -114,6 +115,9 @@ export default function DashboardPage() {
       case 'Delete User Access':
       case 'Export User Data':
         navigate('/access-management')
+        break
+      case 'Personal Access Tokens':
+        navigate('/tokens')
         break
       default:
         console.log(`Action for ${featureTitle} not implemented yet`)
@@ -345,6 +349,12 @@ export default function DashboardPage() {
   ]
 
   const securityFeatures = [
+    {
+      title: 'Personal Access Tokens',
+      description: 'Create and manage GitHub personal access tokens securely.',
+      icon: Key,
+      action: 'Manage Tokens'
+    },
     {
       title: '2FA Enforcement',
       description: 'Ensure all team members have two-factor authentication enabled.',
