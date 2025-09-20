@@ -125,6 +125,31 @@ export const animationVariants = {
     }
   },
 
+  modal: {
+    initial: { 
+      opacity: 0, 
+      scale: 0.9,
+      y: 20
+    },
+    animate: { 
+      opacity: 1, 
+      scale: 1,
+      y: 0,
+      transition: {
+        ...springConfig,
+        duration: 0.3
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.9,
+      y: 20,
+      transition: {
+        duration: 0.2
+      }
+    }
+  },
+
   modalContent: {
     initial: { 
       opacity: 0, 

@@ -4,6 +4,7 @@ import { ArrowLeft, Shield, Users, Activity, Zap, CheckCircle, UserPlus, AlertTr
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
+import ConfirmationModal from '../components/ui/ConfirmationModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import githubService, { GitHubOrg, CopilotSeat } from '../services/githubService'
@@ -25,6 +26,16 @@ export default function CopilotPage() {
   const [isAssigning, setIsAssigning] = useState(false)
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
   const [isRemoving, setIsRemoving] = useState(false)
+  
+  // Confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    users: [] as string[],
+    onConfirm: () => {},
+    type: 'danger' as 'danger' | 'warning' | 'info'
+  })
 
   useEffect(() => {
     loadCopilotData()
@@ -146,19 +157,26 @@ export default function CopilotPage() {
   const handleRemoveCopilot = async (username: string) => {
     if (!selectedOrg) return
 
-    if (!confirm(`Are you sure you want to remove Copilot access for ${username}?`)) {
-      return
-    }
-
-    try {
-      await githubService.removeCopilotUsers(selectedOrg, [username])
-      // Reload seats after removal
-      await loadCopilotSeats(selectedOrg)
-      success('Copilot Seat Removed', 'Successfully removed Copilot seat from user!')
-    } catch (error) {
-      console.error('Failed to remove Copilot seat:', error)
-      showError('Removal Failed', 'Failed to remove Copilot seat.')
-    }
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Remove Copilot Access',
+      message: `Are you sure you want to remove Copilot access for this user? This action cannot be undone.`,
+      users: [username],
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await githubService.removeCopilotUsers(selectedOrg, [username])
+          // Reload seats after removal
+          await loadCopilotSeats(selectedOrg)
+          success('Copilot Seat Removed', 'Successfully removed Copilot seat from user!')
+        } catch (error) {
+          console.error('Failed to remove Copilot seat:', error)
+          showError('Removal Failed', 'Failed to remove Copilot seat.')
+        } finally {
+          setConfirmationModal(prev => ({ ...prev, isOpen: false }))
+        }
+      }
+    })
   }
 
   const handleSelectUser = (username: string) => {
@@ -183,24 +201,29 @@ export default function CopilotPage() {
     if (!selectedOrg || selectedUsers.size === 0) return
 
     const usersToRemove = Array.from(selectedUsers)
-    const confirmMessage = `Are you sure you want to remove Copilot access for ${usersToRemove.length} user${usersToRemove.length > 1 ? 's' : ''}?\n\nUsers: ${usersToRemove.join(', ')}`
     
-    if (!confirm(confirmMessage)) {
-      return
-    }
-
-    try {
-      setIsRemoving(true)
-      await githubService.removeCopilotUsers(selectedOrg, usersToRemove)
-      setSelectedUsers(new Set())
-      await loadCopilotSeats(selectedOrg)
-      success('Copilot Seats Removed', `Successfully removed Copilot access for ${usersToRemove.length} user${usersToRemove.length > 1 ? 's' : ''}!`)
-    } catch (error) {
-      console.error('Failed to remove Copilot seats:', error)
-      showError('Removal Failed', 'Failed to remove some Copilot seats.')
-    } finally {
-      setIsRemoving(false)
-    }
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Remove Copilot Access',
+      message: `Are you sure you want to remove Copilot access for ${usersToRemove.length} user${usersToRemove.length > 1 ? 's' : ''}? This action cannot be undone.`,
+      users: usersToRemove,
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          setIsRemoving(true)
+          await githubService.removeCopilotUsers(selectedOrg, usersToRemove)
+          setSelectedUsers(new Set())
+          await loadCopilotSeats(selectedOrg)
+          success('Copilot Seats Removed', `Successfully removed Copilot access for ${usersToRemove.length} user${usersToRemove.length > 1 ? 's' : ''}!`)
+        } catch (error) {
+          console.error('Failed to remove Copilot seats:', error)
+          showError('Removal Failed', 'Failed to remove some Copilot seats.')
+        } finally {
+          setIsRemoving(false)
+          setConfirmationModal(prev => ({ ...prev, isOpen: false }))
+        }
+      }
+    })
   }
 
   if (isLoading) {
@@ -477,6 +500,19 @@ export default function CopilotPage() {
           </>
         ) : null}
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationModal.onConfirm}
+        title={confirmationModal.title}
+        message={confirmationModal.message}
+        users={confirmationModal.users}
+        type={confirmationModal.type}
+        confirmText="Remove Access"
+        isLoading={isRemoving}
+      />
     </div>
   )
 }
