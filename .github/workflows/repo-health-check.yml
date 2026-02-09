@@ -1,0 +1,166 @@
+name: Repository Health Check
+
+on:
+  schedule:
+    # Run weekly on Sundays at 8 AM UTC
+    - cron: '0 8 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health-check:
+    name: Check Repository Health
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check for outdated dependencies
+      id: outdated
+      continue-on-error: true
+      run: |
+        echo "## Frontend Dependencies" > outdated.txt
+        npm outdated >> outdated.txt 2>&1 || true
+        echo "" >> outdated.txt
+        echo "## API Dependencies" >> outdated.txt
+        cd api
+        npm outdated >> ../outdated.txt 2>&1 || true
+        cd ..
+
+    - name: Check for security vulnerabilities
+      id: audit
+      continue-on-error: true
+      run: |
+        echo "## Frontend Security Audit" > audit.txt
+        npm audit --audit-level=moderate >> audit.txt 2>&1 || true
+        echo "" >> audit.txt
+        echo "## API Security Audit" >> audit.txt
+        cd api
+        npm audit --audit-level=moderate >> ../audit.txt 2>&1 || true
+        cd ..
+
+    - name: Analyze repository metrics
+      id: metrics
+      run: |
+        # Count files by type
+        TOTAL_FILES=$(find . -type f ! -path '*/\.*' ! -path '*/node_modules/*' | wc -l)
+        TS_FILES=$(find . -name "*.ts" -o -name "*.tsx" | wc -l)
+        JS_FILES=$(find . -name "*.js" -o -name "*.jsx" | wc -l)
+        
+        # Count lines of code
+        LOC=$(find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}')
+        
+        # Get recent activity
+        COMMITS_LAST_WEEK=$(git log --since="1 week ago" --oneline | wc -l)
+        COMMITS_LAST_MONTH=$(git log --since="1 month ago" --oneline | wc -l)
+        
+        echo "total_files=$TOTAL_FILES" >> $GITHUB_OUTPUT
+        echo "ts_files=$TS_FILES" >> $GITHUB_OUTPUT
+        echo "js_files=$JS_FILES" >> $GITHUB_OUTPUT
+        echo "loc=$LOC" >> $GITHUB_OUTPUT
+        echo "commits_week=$COMMITS_LAST_WEEK" >> $GITHUB_OUTPUT
+        echo "commits_month=$COMMITS_LAST_MONTH" >> $GITHUB_OUTPUT
+
+    - name: Check documentation
+      id: docs
+      run: |
+        # Check for important documentation files
+        README_EXISTS=$(test -f README.md && echo "✅" || echo "❌")
+        CONTRIBUTING_EXISTS=$(test -f CONTRIBUTING.md && echo "✅" || echo "❌")
+        LICENSE_EXISTS=$(test -f LICENSE && echo "✅" || echo "❌")
+        CHANGELOG_EXISTS=$(test -f CHANGELOG.md && echo "✅" || echo "❌")
+        
+        echo "readme=$README_EXISTS" >> $GITHUB_OUTPUT
+        echo "contributing=$CONTRIBUTING_EXISTS" >> $GITHUB_OUTPUT
+        echo "license=$LICENSE_EXISTS" >> $GITHUB_OUTPUT
+        echo "changelog=$CHANGELOG_EXISTS" >> $GITHUB_OUTPUT
+
+    - name: Generate health report
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          const outdated = fs.existsSync('outdated.txt') 
+            ? fs.readFileSync('outdated.txt', 'utf8') 
+            : 'No outdated dependencies found';
+          
+          const audit = fs.existsSync('audit.txt')
+            ? fs.readFileSync('audit.txt', 'utf8')
+            : 'No security issues found';
+          
+          const report = `# 🏥 Repository Health Check Report
+
+## 📊 Repository Metrics
+
+| Metric | Value |
+|--------|-------|
+| **Total Files** | ${{ steps.metrics.outputs.total_files }} |
+| **TypeScript Files** | ${{ steps.metrics.outputs.ts_files }} |
+| **JavaScript Files** | ${{ steps.metrics.outputs.js_files }} |
+| **Lines of Code** | ${{ steps.metrics.outputs.loc }} |
+| **Commits (Last Week)** | ${{ steps.metrics.outputs.commits_week }} |
+| **Commits (Last Month)** | ${{ steps.metrics.outputs.commits_month }} |
+
+## 📚 Documentation Status
+
+| Document | Status |
+|----------|--------|
+| **README.md** | ${{ steps.docs.outputs.readme }} |
+| **CONTRIBUTING.md** | ${{ steps.docs.outputs.contributing }} |
+| **LICENSE** | ${{ steps.docs.outputs.license }} |
+| **CHANGELOG.md** | ${{ steps.docs.outputs.changelog }} |
+
+## 📦 Dependency Status
+
+<details>
+<summary>Click to view outdated dependencies</summary>
+
+\`\`\`
+${outdated}
+\`\`\`
+
+</details>
+
+## 🔒 Security Audit
+
+<details>
+<summary>Click to view security audit results</summary>
+
+\`\`\`
+${audit}
+\`\`\`
+
+</details>
+
+## 💡 Recommendations
+
+- Keep dependencies up to date to avoid security vulnerabilities
+- Ensure all critical documentation is present and current
+- Regularly review and address security audit findings
+- Consider adding missing documentation (CONTRIBUTING.md, CHANGELOG.md)
+
+---
+*This report is automatically generated weekly. Last updated: ${new Date().toISOString()}*
+`;
+
+          await core.summary
+            .addRaw(report)
+            .write();
+
+          console.log('✅ Health check report generated');
