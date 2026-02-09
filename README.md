@@ -202,7 +202,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 3. Make your changes following our [style guidelines](CONTRIBUTING.md#code-style-guidelines)
 4. Test your changes thoroughly
 5. Commit using [conventional commits](https://www.conventionalcommits.org/)
-6. Submit a pull request using our [PR template](.github/PULL_REQUEST_TEMPLATE/pull_request_template.md)
+6. Submit a pull request (our PR template will be automatically applied)
 
 ## License
 
