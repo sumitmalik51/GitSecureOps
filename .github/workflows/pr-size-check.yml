@@ -1,0 +1,133 @@
+name: PR Size and Complexity Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-size-check:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Calculate PR size
+      id: pr-size
+      run: |
+        # Get the base branch
+        BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+        
+        # Get stats
+        ADDITIONS=$(git diff --shortstat $BASE_SHA..$HEAD_SHA | grep -oP '\d+(?= insertion)')
+        DELETIONS=$(git diff --shortstat $BASE_SHA..$HEAD_SHA | grep -oP '\d+(?= deletion)')
+        FILES_CHANGED=$(git diff --name-only $BASE_SHA..$HEAD_SHA | wc -l)
+        
+        # Handle empty values
+        ADDITIONS=${ADDITIONS:-0}
+        DELETIONS=${DELETIONS:-0}
+        FILES_CHANGED=${FILES_CHANGED:-0}
+        
+        TOTAL_CHANGES=$((ADDITIONS + DELETIONS))
+        
+        echo "additions=$ADDITIONS" >> $GITHUB_OUTPUT
+        echo "deletions=$DELETIONS" >> $GITHUB_OUTPUT
+        echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+        echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
+        
+        # Determine size label
+        if [ $TOTAL_CHANGES -lt 50 ]; then
+          SIZE="XS"
+          COLOR="00ff00"
+        elif [ $TOTAL_CHANGES -lt 200 ]; then
+          SIZE="S"
+          COLOR="99ff00"
+        elif [ $TOTAL_CHANGES -lt 500 ]; then
+          SIZE="M"
+          COLOR="ffff00"
+        elif [ $TOTAL_CHANGES -lt 1000 ]; then
+          SIZE="L"
+          COLOR="ff9900"
+        else
+          SIZE="XL"
+          COLOR="ff0000"
+        fi
+        
+        echo "size=$SIZE" >> $GITHUB_OUTPUT
+        echo "color=$COLOR" >> $GITHUB_OUTPUT
+
+    - name: Comment PR size
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const size = '${{ steps.pr-size.outputs.size }}';
+          const additions = '${{ steps.pr-size.outputs.additions }}';
+          const deletions = '${{ steps.pr-size.outputs.deletions }}';
+          const filesChanged = '${{ steps.pr-size.outputs.files_changed }}';
+          const totalChanges = '${{ steps.pr-size.outputs.total_changes }}';
+          
+          let emoji = '✅';
+          let recommendation = '';
+          
+          if (size === 'XL') {
+            emoji = '⚠️';
+            recommendation = '\n\n**Recommendation:** Consider breaking this PR into smaller, more focused changes for easier review.';
+          } else if (size === 'L') {
+            emoji = '⚠️';
+            recommendation = '\n\n**Note:** This is a large PR. Ensure it has a clear scope and comprehensive description.';
+          }
+          
+          const body = `## ${emoji} PR Size Analysis
+
+| Metric | Value |
+|--------|-------|
+| **Size Label** | \`${size}\` |
+| **Files Changed** | ${filesChanged} |
+| **Lines Added** | +${additions} |
+| **Lines Deleted** | -${deletions} |
+| **Total Changes** | ${totalChanges} |
+
+### Size Guidelines
+- **XS**: < 50 changes
+- **S**: 50-199 changes
+- **M**: 200-499 changes
+- **L**: 500-999 changes
+- **XL**: ≥ 1000 changes${recommendation}`;
+
+          // Find existing comment
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('PR Size Analysis')
+          );
+          
+          if (botComment) {
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: body
+            });
+          } else {
+            // Create new comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }

@@ -4,6 +4,7 @@ A modern, secure GitHub organization management application built with React, Ty
 
 ## Features
 
+### Application Features
 - **Modern UI**: Built with React 18, TypeScript, and Tailwind CSS
 - **Glassmorphism Design**: Dark mode with beautiful glass-like components
 - **GitHub OAuth**: Secure authentication via GitHub
@@ -11,6 +12,18 @@ A modern, secure GitHub organization management application built with React, Ty
 - **Copilot Management**: Control GitHub Copilot access and usage
 - **Real-time Activity**: Track GitHub activity across organizations
 - **Responsive Design**: Works on desktop, tablet, and mobile
+
+### Automation Features
+- **CI/CD Pipeline**: Automated testing, linting, and build verification
+- **Security Scanning**: CodeQL analysis and dependency vulnerability checks
+- **Auto PR Labeling**: Automatic labeling based on changed files
+- **PR Size Analysis**: Automated PR complexity and size reporting
+- **Stale Management**: Auto-management of inactive issues and PRs
+- **Release Automation**: Automated release creation with changelogs
+- **Dependency Updates**: Automated Dependabot configuration for security updates
+- **Health Monitoring**: Weekly repository health and metrics reporting
+
+📚 **[View Full Automation Documentation](.github/AUTOMATION.md)**
 
 ## Quick Start
 
@@ -151,19 +164,45 @@ A modern, secure GitHub organization management application built with React, Ty
 
 ## Security Features
 
+### Application Security
 - **OAuth 2.0**: Secure GitHub authentication
 - **CSRF Protection**: State parameter validation
 - **Token Validation**: Server-side token verification
 - **Secure Headers**: Security headers in API responses
 - **Rate Limiting**: GitHub API rate limit handling
 
+### Automated Security
+- **CodeQL Analysis**: Automated security vulnerability scanning
+- **Dependency Review**: Automated dependency security checks
+- **Dependabot**: Automated security updates for dependencies
+- **License Compliance**: Automated license checking (blocks GPL)
+
+## GitHub Automation
+
+This project includes comprehensive GitHub automation for CI/CD, security, and repository management:
+
+- 🔄 **Continuous Integration**: Automated testing and build verification
+- 🔒 **Security Scanning**: CodeQL and dependency vulnerability checks
+- 🏷️ **Auto-Labeling**: Automatic PR labeling based on changed files
+- 📊 **PR Analytics**: Size and complexity analysis for pull requests
+- 🗂️ **Issue Management**: Automated stale issue and PR management
+- 🚀 **Release Management**: Automated release creation with changelogs
+- 📦 **Dependency Updates**: Weekly automated dependency updates
+- 📈 **Health Monitoring**: Weekly repository health reports
+
+**For complete automation documentation, see [AUTOMATION.md](.github/AUTOMATION.md)**
+
 ## Contributing
 
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+**Quick Start:**
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes following our [style guidelines](CONTRIBUTING.md#code-style-guidelines)
+4. Test your changes thoroughly
+5. Commit using [conventional commits](https://www.conventionalcommits.org/)
+6. Submit a pull request using our [PR template](.github/PULL_REQUEST_TEMPLATE/pull_request_template.md)
 
 ## License
 

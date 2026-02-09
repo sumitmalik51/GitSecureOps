@@ -1,0 +1,55 @@
+name: Deployment Status Notifications
+
+on:
+  workflow_run:
+    workflows: ["Deploy GitSecureOps Application"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Send Deployment Notification
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check deployment status
+      id: status
+      run: |
+        if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+          echo "status=✅ Success" >> $GITHUB_OUTPUT
+          echo "color=28a745" >> $GITHUB_OUTPUT
+        else
+          echo "status=❌ Failed" >> $GITHUB_OUTPUT
+          echo "color=d73a49" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create deployment summary
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const status = '${{ steps.status.outputs.status }}';
+          const conclusion = '${{ github.event.workflow_run.conclusion }}';
+          const runUrl = '${{ github.event.workflow_run.html_url }}';
+          const actor = '${{ github.event.workflow_run.actor.login }}';
+          const branch = '${{ github.event.workflow_run.head_branch }}';
+          
+          const summary = `## ${status} Deployment Status
+
+| Property | Value |
+|----------|-------|
+| **Status** | ${conclusion} |
+| **Branch** | \`${branch}\` |
+| **Triggered by** | @${actor} |
+| **Workflow** | [View Run](${runUrl}) |
+
+${conclusion === 'success' 
+  ? '🎉 The application has been successfully deployed!' 
+  : '⚠️ The deployment encountered issues. Please check the workflow logs for details.'}
+`;
+
+          await core.summary
+            .addRaw(summary)
+            .write();

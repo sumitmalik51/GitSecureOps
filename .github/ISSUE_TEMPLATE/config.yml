@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/sumitmalik51/GitSecureOps/blob/main/README.md
+    about: Read the project documentation
+  - name: 💬 Discussions
+    url: https://github.com/sumitmalik51/GitSecureOps/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🔒 Security Advisory
+    url: https://github.com/sumitmalik51/GitSecureOps/security/advisories/new
+    about: Report a security vulnerability privately

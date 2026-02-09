@@ -1,0 +1,85 @@
+# Auto-label PRs based on file paths changed
+
+# Frontend changes
+'frontend':
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/**/*'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'tailwind.config.js'
+      - 'postcss.config.js'
+
+# Backend/API changes
+'backend':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'api/**/*'
+
+# Infrastructure changes
+'infrastructure':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'infra/**/*'
+      - 'azure.yaml'
+      - '.github/workflows/deploy-*.yml'
+
+# GitHub Actions/Workflows
+'automation':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**/*'
+      - '.github/labeler.yml'
+
+# Documentation
+'documentation':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+
+# Dependencies
+'dependencies':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'api/package.json'
+      - 'api/package-lock.json'
+
+# Configuration
+'configuration':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.json'
+      - '*.yaml'
+      - '*.yml'
+      - '.env*'
+      - 'tsconfig.json'
+
+# Security
+'security':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/auth*'
+      - '**/oauth*'
+      - '**/security*'
+      - '.github/workflows/codeql-analysis.yml'
+      - '.github/workflows/dependency-review.yml'
+
+# Styles/UI
+'ui':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/components/**/*'
+      - 'src/styles/**/*'
+      - '**/*.css'
+
+# Tests
+'tests':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.test.*'
+      - '**/*.spec.*'
+      - '**/tests/**/*'
+      - '**/test/**/*'

@@ -1,0 +1,70 @@
+version: 2
+
+updates:
+  # Frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "sumitmalik51"
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps):"
+    ignore:
+      # Ignore major version updates for React (manual review needed)
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react*"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Backend/API dependencies
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "sumitmalik51"
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(api-deps):"
+    groups:
+      azure-dependencies:
+        patterns:
+          - "@azure/*"
+          - "azure-*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "sumitmalik51"
+    labels:
+      - "dependencies"
+      - "automation"
+    commit-message:
+      prefix: "chore(actions):"
