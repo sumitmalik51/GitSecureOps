@@ -21,6 +21,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/actions-cost':       { title: 'Actions Cost',          subtitle: 'Track GitHub Actions usage and estimated costs' },
   '/onboarding':         { title: 'Onboarding',            subtitle: 'One-click provisioning for new team members' },
   '/team-members':       { title: 'Team Members',           subtitle: 'Manage org members, collaborators & invitations' },
+  '/sso':                { title: 'SSO & SAML',             subtitle: 'SAML SSO identities, SCIM provisioning & compliance' },
 };
 
 export default function AppShell() {

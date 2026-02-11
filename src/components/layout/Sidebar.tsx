@@ -21,6 +21,7 @@ import {
   Zap,
   Package,
   UsersRound,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +59,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: 'Recommendations', to: '/recommendations', icon: Lightbulb },
       { label: 'Access Review', to: '/access-review', icon: ShieldCheck },
       { label: 'Visibility Drift', to: '/visibility-drift', icon: Eye },
+      { label: 'SSO & SAML', to: '/sso', icon: KeyRound },
     ],
   },
   {

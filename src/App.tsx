@@ -28,6 +28,7 @@ const PRReviewPage = lazy(() => import('./pages/PRReviewPage'));
 const ActionsCostPage = lazy(() => import('./pages/ActionsCostPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const TeamMembersPage = lazy(() => import('./pages/TeamMembersPage'));
+const SSOManagementPage = lazy(() => import('./pages/SSOManagementPage'));
 
 function App() {
   return (
@@ -67,6 +68,7 @@ function App() {
               <Route path="/actions-cost" element={<Suspense fallback={<PageSkeleton />}><ActionsCostPage /></Suspense>} />
               <Route path="/onboarding" element={<Suspense fallback={<PageSkeleton />}><OnboardingPage /></Suspense>} />
               <Route path="/team-members" element={<Suspense fallback={<PageSkeleton />}><TeamMembersPage /></Suspense>} />
+              <Route path="/sso" element={<Suspense fallback={<PageSkeleton />}><SSOManagementPage /></Suspense>} />
             </Route>
           </Routes>
         </Router>

@@ -1013,6 +1013,212 @@ class GitHubService {
       throw new Error(`Failed to add team member: ${response.status}`);
     }
   }
+
+  // ── SSO / SAML methods ───────────────────────────────────────
+
+  /** Get org audit log entries filtered by SAML/SSO actions */
+  async getSSO_AuditLog(org: string): Promise<AuditLogEntry[]> {
+    if (!this.token) throw new Error('GitHub token not set');
+    const phrases = [
+      'action:org.saml_enable',
+      'action:org.saml_disable',
+      'action:org.enable_saml',
+      'action:org.disable_saml',
+      'action:org.update_saml_settings',
+      'action:org.sso_response',
+    ];
+
+    const allEntries: AuditLogEntry[] = [];
+    for (const phrase of phrases) {
+      try {
+        const response = await fetch(
+          `${this.baseUrl}/orgs/${org}/audit-log?phrase=${encodeURIComponent(phrase)}&per_page=30`,
+          {
+            headers: {
+              Authorization: `token ${this.token}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
+          }
+        );
+        if (response.ok) {
+          const data: AuditLogEntry[] = await response.json();
+          allEntries.push(...data);
+        }
+      } catch {
+        // Some audit log queries may not be supported on all plans
+      }
+    }
+
+    // Also fetch general SSO-related events
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/orgs/${org}/audit-log?phrase=${encodeURIComponent('action:org.saml')}&per_page=50`,
+        {
+          headers: {
+            Authorization: `token ${this.token}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        }
+      );
+      if (response.ok) {
+        const data: AuditLogEntry[] = await response.json();
+        allEntries.push(...data);
+      }
+    } catch {
+      // May not be available on non-Enterprise plans
+    }
+
+    // Deduplicate by @timestamp + action
+    const seen = new Set<string>();
+    return allEntries
+      .filter((e) => {
+        const key = `${e['@timestamp'] || e.created_at}-${e.action}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => {
+        const ta = a['@timestamp'] || a.created_at || 0;
+        const tb = b['@timestamp'] || b.created_at || 0;
+        return new Date(tb).getTime() - new Date(ta).getTime();
+      });
+  }
+
+  /** Get SAML SSO identities for org members (Enterprise Cloud only) */
+  async getSAMLIdentities(org: string): Promise<SAMLIdentity[]> {
+    if (!this.token) throw new Error('GitHub token not set');
+    // Use GraphQL to fetch SAML identities — this is the only way to get them
+    const query = `
+      query($org: String!, $cursor: String) {
+        organization(login: $org) {
+          samlIdentityProvider {
+            ssoUrl
+            externalIdentities(first: 100, after: $cursor) {
+              totalCount
+              pageInfo { hasNextPage endCursor }
+              edges {
+                node {
+                  guid
+                  samlIdentity { nameId }
+                  scimIdentity { username }
+                  user { login avatarUrl }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const identities: SAMLIdentity[] = [];
+    let cursor: string | null = null;
+    let hasNext = true;
+
+    while (hasNext) {
+      try {
+        const response: Response = await fetch('https://api.github.com/graphql', {
+          method: 'POST',
+          headers: {
+            Authorization: `bearer ${this.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query, variables: { org, cursor } }),
+        });
+
+        if (!response.ok) {
+          // Fallback: org may not have SAML configured or not Enterprise Cloud
+          break;
+        }
+
+        const result: Record<string, unknown> = await response.json();
+        const provider: Record<string, unknown> | undefined = (result?.data as Record<string, unknown>)?.organization
+          ? ((result.data as Record<string, unknown>).organization as Record<string, unknown>)?.samlIdentityProvider as Record<string, unknown> | undefined
+          : undefined;
+        if (!provider) break;
+
+        const extIds = provider.externalIdentities as Record<string, unknown> | undefined;
+        const edges = (extIds?.edges || []) as Array<{ node: Record<string, unknown> }>;
+        for (const edge of edges) {
+          const node = edge.node;
+          const samlId = node.samlIdentity as Record<string, string> | undefined;
+          const scimId = node.scimIdentity as Record<string, string> | undefined;
+          const usr = node.user as Record<string, string> | undefined;
+          identities.push({
+            guid: node.guid as string,
+            samlNameId: samlId?.nameId || null,
+            scimUsername: scimId?.username || null,
+            githubLogin: usr?.login || null,
+            avatarUrl: usr?.avatarUrl || null,
+          });
+        }
+
+        hasNext = !!(extIds?.pageInfo as Record<string, unknown>)?.hasNextPage;
+        cursor = ((extIds?.pageInfo as Record<string, unknown>)?.endCursor as string) || null;
+      } catch {
+        break;
+      }
+    }
+
+    return identities;
+  }
+
+  /** Get org settings including SSO enforcement info (REST) */
+  async getOrgSettings(org: string): Promise<OrgSettings> {
+    if (!this.token) throw new Error('GitHub token not set');
+    const response = await fetch(`${this.baseUrl}/orgs/${org}`, {
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+    if (!response.ok) throw new Error(`Failed to fetch org settings: ${response.status}`);
+    return response.json();
+  }
+
+  /** Get members with 2FA disabled — indicates no SSO-enforced auth */
+  async getMembers2FAStatus(org: string): Promise<{ enabled: GitHubUser[]; disabled: GitHubUser[] }> {
+    const [allMembers, disabled] = await Promise.all([
+      this.getOrgMembers(org),
+      this.getOrgMembers2FADisabled(org).catch(() => [] as GitHubUser[]),
+    ]);
+    const disabledLogins = new Set(disabled.map((u) => u.login));
+    const enabled = allMembers.filter((u) => !disabledLogins.has(u.login));
+    return { enabled, disabled };
+  }
+}
+
+/** Audit log entry from GitHub Enterprise */
+export interface AuditLogEntry {
+  '@timestamp'?: number;
+  created_at?: string;
+  action: string;
+  actor?: string;
+  actor_location?: { country_code?: string };
+  org?: string;
+  user?: string;
+  data?: Record<string, unknown>;
+  business?: string;
+}
+
+/** SAML SSO identity linked to a GitHub user */
+export interface SAMLIdentity {
+  guid: string;
+  samlNameId: string | null;
+  scimUsername: string | null;
+  githubLogin: string | null;
+  avatarUrl: string | null;
+}
+
+/** Org settings (subset relevant to SSO) */
+export interface OrgSettings {
+  login: string;
+  name: string | null;
+  two_factor_requirement_enabled: boolean;
+  members_can_create_repositories: boolean;
+  default_repository_permission: string;
+  plan?: { name: string };
+  // Enterprise Cloud specific
+  web_commit_signoff_required?: boolean;
 }
 
 /** Org invitation shape from GitHub API */

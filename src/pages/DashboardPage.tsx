@@ -16,6 +16,7 @@ import {
   Zap,
   Package,
   UsersRound,
+  KeyRound,
   AlertTriangle,
   CheckCircle,
   Bot,
@@ -61,6 +62,7 @@ const quickActions: QuickAction[] = [
   { title: 'Actions Cost', description: 'Usage & cost tracking', icon: Zap, route: '/actions-cost', color: 'text-yellow-400' },
   { title: 'Onboarding', description: 'Provision new hires', icon: Package, route: '/onboarding', color: 'text-indigo-400' },
   { title: 'Team Members', description: 'Manage org members', icon: UsersRound, route: '/team-members', color: 'text-teal-400' },
+  { title: 'SSO & SAML', description: 'SSO compliance & identities', icon: KeyRound, route: '/sso', color: 'text-violet-400' },
 ];
 
 export default function DashboardPage() {
