@@ -1,0 +1,5 @@
+dist
+archive
+node_modules
+api
+*.min.js

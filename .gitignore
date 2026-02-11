@@ -56,3 +56,6 @@ api/local.settings.json
 *.cert
 *secret*
 *token*
+
+# Archive (old versions)
+archive/

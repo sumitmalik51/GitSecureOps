@@ -23,6 +23,12 @@ export interface GitHubRepo {
   owner: GitHubUser;
   html_url: string;
   description: string | null;
+  language?: string | null;
+  stargazers_count?: number;
+  forks_count?: number;
+  clone_url?: string;
+  created_at?: string;
+  updated_at?: string;
   collaborators?: GitHubUser[];
   permissions?: {
     admin: boolean;
@@ -91,8 +97,8 @@ class GitHubService {
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
       },
     });
 
@@ -100,23 +106,25 @@ class GitHubService {
       if (response.status === 403) {
         const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
         const rateLimitReset = response.headers.get('X-RateLimit-Reset');
-        
+
         if (rateLimitRemaining === '0') {
-          const resetTime = rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString() : 'unknown';
+          const resetTime = rateLimitReset
+            ? new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString()
+            : 'unknown';
           throw new Error(`GitHub API rate limit exceeded. Rate limit resets at ${resetTime}`);
         }
-        
+
         throw new Error(`GitHub API access forbidden. Please check your token permissions.`);
       }
-      
+
       if (response.status === 401) {
         throw new Error('GitHub token is invalid or expired');
       }
-      
+
       if (response.status === 404) {
         throw new Error(`Resource not found: ${endpoint}`);
       }
-      
+
       throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
     }
 
@@ -132,11 +140,11 @@ class GitHubService {
     while (hasNextPage) {
       const separator = endpoint.includes('?') ? '&' : '?';
       const paginatedEndpoint = `${endpoint}${separator}per_page=100&page=${page}`;
-      
+
       const response = await fetch(`${this.baseUrl}${paginatedEndpoint}`, {
         headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
         },
       });
 
@@ -144,23 +152,25 @@ class GitHubService {
         if (response.status === 403) {
           const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
           const rateLimitReset = response.headers.get('X-RateLimit-Reset');
-          
+
           if (rateLimitRemaining === '0') {
-            const resetTime = rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString() : 'unknown';
+            const resetTime = rateLimitReset
+              ? new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString()
+              : 'unknown';
             throw new Error(`GitHub API rate limit exceeded. Rate limit resets at ${resetTime}`);
           }
-          
+
           throw new Error(`GitHub API access forbidden. Please check your token permissions.`);
         }
-        
+
         if (response.status === 401) {
           throw new Error('GitHub token is invalid or expired');
         }
-        
+
         if (response.status === 404) {
           throw new Error(`Resource not found: ${endpoint}`);
         }
-        
+
         throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
       }
 
@@ -190,13 +200,15 @@ class GitHubService {
       if (err.message?.includes('403') || err.message?.includes('forbidden')) {
         console.warn('Organization access limited, trying alternative endpoint...');
         try {
-          return await this.getAllPaginatedResults<GitHubOrg>('/user/memberships/orgs?state=active');
+          return await this.getAllPaginatedResults<GitHubOrg>(
+            '/user/memberships/orgs?state=active'
+          );
         } catch {
           console.warn('Alternative endpoint also failed, returning empty array');
           return [];
         }
       }
-      
+
       // For other errors, still return empty array instead of crashing
       console.error('Failed to fetch organizations:', error);
       return [];
@@ -219,20 +231,27 @@ class GitHubService {
   }
 
   // Get user's permission level for a specific repository
-  async getUserPermissionForRepo(owner: string, repo: string, username: string): Promise<RepoAccess> {
+  async getUserPermissionForRepo(
+    owner: string,
+    repo: string,
+    username: string
+  ): Promise<RepoAccess> {
     try {
       // First check if user is a collaborator
-      const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}/permission`, {
-        headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      });
+      const response = await fetch(
+        `${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}/permission`,
+        {
+          headers: {
+            Authorization: `token ${this.token}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
         const permission = data.permission;
-        
+
         let permissionLevel: 'admin' | 'write' | 'read' | 'public' | 'unknown';
         let icon: string;
         let color: string;
@@ -266,15 +285,15 @@ class GitHubService {
           hasAccess: true,
           permission: permissionLevel,
           permissionIcon: icon,
-          permissionColor: color
+          permissionColor: color,
         };
       }
 
       // If not a collaborator, check if repo is public
       const repoResponse = await fetch(`${this.baseUrl}/repos/${owner}/${repo}`, {
         headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
         },
       });
 
@@ -286,7 +305,7 @@ class GitHubService {
             hasAccess: false,
             permission: 'public',
             permissionIcon: '🌍',
-            permissionColor: 'text-green-600 bg-green-50 border-green-200'
+            permissionColor: 'text-green-600 bg-green-50 border-green-200',
           };
         }
       }
@@ -296,16 +315,15 @@ class GitHubService {
         hasAccess: false,
         permission: 'unknown',
         permissionIcon: '❓',
-        permissionColor: 'text-gray-600 bg-gray-50 border-gray-200'
+        permissionColor: 'text-gray-600 bg-gray-50 border-gray-200',
       };
-
     } catch {
       return {
         repo: `${owner}/${repo}`,
         hasAccess: false,
         permission: 'unknown',
         permissionIcon: '❓',
-        permissionColor: 'text-gray-600 bg-gray-50 border-gray-200'
+        permissionColor: 'text-gray-600 bg-gray-50 border-gray-200',
       };
     }
   }
@@ -316,17 +334,20 @@ class GitHubService {
       throw new Error('GitHub token not set');
     }
 
-    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    });
+    const response = await fetch(
+      `${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      }
+    );
 
     if (!response.ok) {
       let errorMessage = `Failed to remove collaborator: ${response.status} ${response.statusText}`;
-      
+
       try {
         const errorData = await response.json();
         if (errorData.message) {
@@ -338,7 +359,7 @@ class GitHubService {
       } catch {
         // If we can't parse the error response, use the basic error message
       }
-      
+
       throw new Error(errorMessage);
     }
   }
@@ -355,7 +376,9 @@ class GitHubService {
   }
 
   // Specialized pagination for Copilot seats API that returns { seats: [], total_seats: number }
-  private async getAllPaginatedCopilotSeats(endpoint: string): Promise<{ seats: CopilotSeat[]; total_seats: number }> {
+  private async getAllPaginatedCopilotSeats(
+    endpoint: string
+  ): Promise<{ seats: CopilotSeat[]; total_seats: number }> {
     const results: CopilotSeat[] = [];
     let totalSeats = 0;
     let page = 1;
@@ -364,11 +387,11 @@ class GitHubService {
     while (hasNextPage) {
       const separator = endpoint.includes('?') ? '&' : '?';
       const paginatedEndpoint = `${endpoint}${separator}per_page=100&page=${page}`;
-      
+
       const response = await fetch(`${this.baseUrl}${paginatedEndpoint}`, {
         headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
         },
       });
 
@@ -378,7 +401,7 @@ class GitHubService {
 
       const data: { seats: CopilotSeat[]; total_seats: number } = await response.json();
       results.push(...data.seats);
-      
+
       // Keep track of total_seats from the first response
       if (page === 1) {
         totalSeats = data.total_seats;
@@ -393,7 +416,10 @@ class GitHubService {
   }
 
   // Add users to Copilot in an organization
-  async addCopilotUsers(org: string, usernames: string[]): Promise<{ seats_created: CopilotSeat[] }> {
+  async addCopilotUsers(
+    org: string,
+    usernames: string[]
+  ): Promise<{ seats_created: CopilotSeat[] }> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
@@ -401,25 +427,31 @@ class GitHubService {
     const response = await fetch(`${this.baseUrl}/orgs/${org}/copilot/billing/selected_users`, {
       method: 'POST',
       headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        selected_usernames: usernames
-      })
+        selected_usernames: usernames,
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || `Failed to add Copilot users: ${response.status} ${response.statusText}`);
+      throw new Error(
+        errorData.message ||
+          `Failed to add Copilot users: ${response.status} ${response.statusText}`
+      );
     }
 
     return response.json();
   }
 
   // Remove users from Copilot in an organization
-  async removeCopilotUsers(org: string, usernames: string[]): Promise<{ seats_cancelled: CopilotSeat[] }> {
+  async removeCopilotUsers(
+    org: string,
+    usernames: string[]
+  ): Promise<{ seats_cancelled: CopilotSeat[] }> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
@@ -427,25 +459,28 @@ class GitHubService {
     const response = await fetch(`${this.baseUrl}/orgs/${org}/copilot/billing/selected_users`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        selected_usernames: usernames
-      })
+        selected_usernames: usernames,
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || `Failed to remove Copilot users: ${response.status} ${response.statusText}`);
+      throw new Error(
+        errorData.message ||
+          `Failed to remove Copilot users: ${response.status} ${response.statusText}`
+      );
     }
 
     return response.json();
   }
 
   // Get user's recent activity events
-  async getUserEvents(): Promise<any[]> {
+  async getUserEvents(): Promise<Record<string, unknown>[]> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
@@ -455,8 +490,8 @@ class GitHubService {
       const response = await fetch(`${this.baseUrl}/user/events`, {
         method: 'GET',
         headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
         },
       });
 
@@ -470,8 +505,8 @@ class GitHubService {
         const receivedResponse = await fetch(`${this.baseUrl}/user/received_events`, {
           method: 'GET',
           headers: {
-            'Authorization': `token ${this.token}`,
-            'Accept': 'application/vnd.github.v3+json',
+            Authorization: `token ${this.token}`,
+            Accept: 'application/vnd.github.v3+json',
           },
         });
 
@@ -485,8 +520,8 @@ class GitHubService {
       const publicResponse = await fetch(`${this.baseUrl}/users/${user.login}/events/public`, {
         method: 'GET',
         headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
         },
       });
 
@@ -497,7 +532,6 @@ class GitHubService {
       // If all fail, return empty array instead of throwing
       console.warn('Could not fetch any user events, returning empty array');
       return [];
-
     } catch (error) {
       console.warn('Error fetching user events:', error);
       return [];
@@ -513,13 +547,15 @@ class GitHubService {
     const response = await fetch(`${this.baseUrl}/orgs/${org}/members`, {
       method: 'GET',
       headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch organization members: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch organization members: ${response.status} ${response.statusText}`
+      );
     }
 
     return response.json();
@@ -534,33 +570,43 @@ class GitHubService {
     const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators`, {
       method: 'GET',
       headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch repository collaborators: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch repository collaborators: ${response.status} ${response.statusText}`
+      );
     }
 
     return response.json();
   }
 
   // Add collaborator to repository
-  async addRepoCollaborator(owner: string, repo: string, username: string, permission: 'pull' | 'push' | 'admin' = 'push'): Promise<void> {
+  async addRepoCollaborator(
+    owner: string,
+    repo: string,
+    username: string,
+    permission: 'pull' | 'push' | 'admin' = 'push'
+  ): Promise<void> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
 
-    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ permission }),
-    });
+    const response = await fetch(
+      `${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ permission }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to add collaborator: ${response.status} ${response.statusText}`);
@@ -573,13 +619,16 @@ class GitHubService {
       throw new Error('GitHub token not set');
     }
 
-    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    });
+    const response = await fetch(
+      `${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to remove collaborator: ${response.status} ${response.statusText}`);
@@ -587,7 +636,11 @@ class GitHubService {
   }
 
   // Add user to organization
-  async addOrgMember(org: string, username: string, role: 'member' | 'admin' = 'member'): Promise<void> {
+  async addOrgMember(
+    org: string,
+    username: string,
+    role: 'member' | 'admin' = 'member'
+  ): Promise<void> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
@@ -595,17 +648,19 @@ class GitHubService {
     const response = await fetch(`${this.baseUrl}/orgs/${org}/memberships/${username}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        role: role
+        role: role,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to add organization member: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to add organization member: ${response.status} ${response.statusText}`
+      );
     }
   }
 
@@ -618,13 +673,15 @@ class GitHubService {
     const response = await fetch(`${this.baseUrl}/orgs/${org}/members/${username}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to remove organization member: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to remove organization member: ${response.status} ${response.statusText}`
+      );
     }
   }
 
@@ -637,14 +694,13 @@ class GitHubService {
     try {
       // Get all organization repositories
       const repos = await this.getOrgRepositories(org);
-      
+
       // Remove user from each repository
-      const removePromises = repos.map(repo => 
-        this.removeCollaborator(repo.owner.login, repo.name, username)
-          .catch(error => {
-            // Log error but don't fail the entire operation
-            console.warn(`Failed to remove ${username} from ${repo.name}:`, error.message);
-          })
+      const removePromises = repos.map((repo) =>
+        this.removeCollaborator(repo.owner.login, repo.name, username).catch((error) => {
+          // Log error but don't fail the entire operation
+          console.warn(`Failed to remove ${username} from ${repo.name}:`, error.message);
+        })
       );
 
       await Promise.all(removePromises);
@@ -654,18 +710,25 @@ class GitHubService {
   }
 
   // Get user's repository permissions
-  async getUserRepoPermission(owner: string, repo: string, username: string): Promise<any> {
+  async getUserRepoPermission(
+    owner: string,
+    repo: string,
+    username: string
+  ): Promise<Record<string, unknown>> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
 
-    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}/permission`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    });
+    const response = await fetch(
+      `${this.baseUrl}/repos/${owner}/${repo}/collaborators/${username}/permission`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      }
+    );
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -675,6 +738,64 @@ class GitHubService {
     }
 
     return response.json();
+  }
+
+  // ==============================================
+  // Convenience aliases & additional methods
+  // ==============================================
+
+  /** Alias for getUserOrganizations */
+  async getOrganizations(): Promise<GitHubOrg[]> {
+    return this.getUserOrganizations();
+  }
+
+  /** Alias for getUserRepositories */
+  async getUserRepos(): Promise<GitHubRepo[]> {
+    return this.getUserRepositories();
+  }
+
+  /** Alias for getOrgRepositories */
+  async getOrgRepos(org: string): Promise<GitHubRepo[]> {
+    return this.getOrgRepositories(org);
+  }
+
+  /** Get org members that have 2FA disabled (requires org admin) */
+  async getOrgMembers2FADisabled(org: string): Promise<GitHubUser[]> {
+    if (!this.token) {
+      throw new Error('GitHub token not set');
+    }
+
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/members?filter=2fa_disabled`, {
+      method: 'GET',
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      // 403 = not an org admin, return empty instead of crashing
+      if (response.status === 403) {
+        console.warn(`Cannot check 2FA status for ${org} — requires org admin`);
+        return [];
+      }
+      throw new Error(`Failed to fetch 2FA disabled members: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  /** Alias for addCopilotUsers (single user convenience) */
+  async addCopilotSeat(org: string, username: string): Promise<{ seats_created: CopilotSeat[] }> {
+    return this.addCopilotUsers(org, [username]);
+  }
+
+  /** Alias for removeCopilotUsers (single user convenience) */
+  async removeCopilotSeat(
+    org: string,
+    username: string
+  ): Promise<{ seats_cancelled: CopilotSeat[] }> {
+    return this.removeCopilotUsers(org, [username]);
   }
 }
 

@@ -8,7 +8,7 @@
   * {
     @apply border-gray-700;
   }
-  
+
   body {
     @apply bg-dark-bg text-dark-text antialiased;
   }
@@ -19,45 +19,34 @@
   /* Glassmorphism card effect */
   .glass-card {
     @apply backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-xl;
-    background: linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.08) 0%,
-      rgba(255, 255, 255, 0.04) 50%,
-      rgba(255, 255, 255, 0.02) 100%
-    );
-    backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .glass-card:hover {
-    background: linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.12) 0%,
-      rgba(255, 255, 255, 0.08) 30%,
-      rgba(255, 255, 255, 0.06) 70%,
-      rgba(255, 255, 255, 0.04) 100%
-    );
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(25px) saturate(200%);
-  }
-  
   .glass-card-light {
     @apply backdrop-blur-md bg-black/5 border border-black/10 rounded-2xl shadow-xl;
   }
 
   /* Gradient backgrounds */
   .gradient-primary {
-    background: linear-gradient(135deg, theme('colors.brand.primary'), theme('colors.brand.secondary'));
+    background: linear-gradient(
+      135deg,
+      theme('colors.brand.primary'),
+      theme('colors.brand.secondary')
+    );
   }
-  
+
   .gradient-accent {
-    background: linear-gradient(135deg, theme('colors.brand.secondary'), theme('colors.brand.accent'));
+    background: linear-gradient(
+      135deg,
+      theme('colors.brand.secondary'),
+      theme('colors.brand.accent')
+    );
   }
 
   /* Modern button styles */
   .btn-primary {
     @apply bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
   }
-  
+
   .btn-secondary {
     @apply bg-brand-secondary hover:bg-brand-secondary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
   }
@@ -70,22 +59,20 @@
   .glow-primary {
     @apply shadow-[0_0_20px_rgba(99,102,241,0.3)];
   }
-  
+
   .glow-secondary {
     @apply shadow-[0_0_20px_rgba(16,185,129,0.3)];
   }
 
   /* Enhanced hover glow effects */
   .hover\:glow-primary:hover {
-    @apply shadow-[0_0_35px_rgba(255,255,255,0.2),0_0_70px_rgba(255,255,255,0.1)] transition-shadow duration-300;
+    @apply shadow-[0_0_40px_rgba(99,102,241,0.6)] transition-shadow duration-300;
     transform: translateY(-2px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .hover\:glow-secondary:hover {
-    @apply shadow-[0_0_35px_rgba(255,255,255,0.2),0_0_70px_rgba(255,255,255,0.1)] transition-shadow duration-300;
+    @apply shadow-[0_0_40px_rgba(16,185,129,0.6)] transition-shadow duration-300;
     transform: translateY(-2px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   /* Navigation styles */
@@ -127,13 +114,11 @@
   }
 
   .card-hover-lift:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 
-      0 20px 40px -12px rgba(0, 0, 0, 0.3),
-      0 0 25px rgba(255, 255, 255, 0.1),
-      0 0 50px rgba(255, 255, 255, 0.08),
+    transform: translateY(-4px) scale(1.02);
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.25),
+      0 0 30px rgba(99, 102, 241, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .card-hover-lift:hover .card-text {
@@ -151,30 +136,6 @@
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     transform: translateZ(0);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Apply anti-blur to all elements with transforms */
-  [style*="transform"],
-  .transition-transform,
-  .group:hover .group-hover\\:scale-110,
-  .group:hover .group-hover\\:scale-105,
-  button:hover,
-  .group:hover,
-  .group:hover * {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    transform-style: preserve-3d;
-  }
-
-  /* Force text to stay crisp during animations */
-  * {
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Enhanced container hover effects */
@@ -187,57 +148,33 @@
   .container-hover::before {
     content: '';
     position: absolute;
-    top: -1px;
-    left: -1px;
-    right: -1px;
-    bottom: -1px;
-    background: linear-gradient(135deg, 
-      transparent 0%, 
-      rgba(255, 255, 255, 0.12) 25%, 
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.12) 75%, 
-      transparent 100%);
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(99, 102, 241, 0.3),
+      transparent,
+      rgba(16, 185, 129, 0.3),
+      transparent
+    );
     border-radius: inherit;
     opacity: 0;
     z-index: -1;
-    transition: all 0.4s ease;
-    filter: blur(0.5px);
-  }
-
-  .container-hover::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.05) 0%,
-      transparent 50%,
-      rgba(255, 255, 255, 0.03) 100%);
-    border-radius: inherit;
-    opacity: 0;
-    z-index: 1;
     transition: opacity 0.3s ease;
-    pointer-events: none;
   }
 
   .container-hover:hover::before {
-    opacity: 1;
-    filter: blur(0.8px);
-  }
-
-  .container-hover:hover::after {
     opacity: 1;
   }
 
   .container-hover:hover {
     transform: translateY(-6px);
-    box-shadow: 
-      0 20px 40px -12px rgba(0, 0, 0, 0.3),
-      0 0 20px rgba(255, 255, 255, 0.1),
-      0 0 40px rgba(255, 255, 255, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 32px 64px -12px rgba(0, 0, 0, 0.35),
+      0 0 40px rgba(99, 102, 241, 0.25);
   }
 
   .container-hover:hover .container-content {
@@ -285,7 +222,8 @@
 
   /* Holographic button improvements */
   .holographic-btn-improved {
-    background: linear-gradient(135deg,
+    background: linear-gradient(
+      135deg,
       #667eea 0%,
       #764ba2 25%,
       #f093fb 50%,
@@ -307,12 +245,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     animation: data-stream 3s infinite;
   }
 
@@ -322,24 +255,25 @@
   }
 
   @keyframes data-stream {
-    0% { 
+    0% {
       transform: translateX(-100%);
       opacity: 0;
     }
-    50% { 
+    50% {
       opacity: 1;
     }
-    100% { 
+    100% {
       transform: translateX(100%);
       opacity: 0;
     }
   }
 
   @keyframes holographic-shift {
-    0%, 100% { 
+    0%,
+    100% {
       background-position: 0% 50%;
     }
-    50% { 
+    50% {
       background-position: 100% 50%;
     }
   }

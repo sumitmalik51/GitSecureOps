@@ -1,24 +1,42 @@
 {
-  "name": "gitsecureops-v2",
+  "name": "gitsecureops",
   "private": true,
   "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.21",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^11.11.17",
+    "lucide-react": "^0.460.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
-    "framer-motion": "^11.11.17",
-    "lucide-react": "^0.460.0",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.4"
+    "recharts": "^3.7.0",
+    "tailwind-merge": "^2.5.4",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@tanstack/react-query-devtools": "^5.91.3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.2.3",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
@@ -28,9 +46,25 @@
     "eslint": "^9.15.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.0.0",
+    "husky": "^9.0.0",
+    "jsdom": "^28.0.0",
+    "lint-staged": "^15.0.0",
     "postcss": "^8.4.49",
+    "prettier": "^3.4.0",
     "tailwindcss": "^3.4.15",
     "typescript": "~5.6.2",
-    "vite": "^5.4.10"
+    "typescript-eslint": "^8.15.0",
+    "vite": "^5.4.10",
+    "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "src/**/*.css": [
+      "prettier --write"
+    ]
   }
 }
