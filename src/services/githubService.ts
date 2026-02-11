@@ -540,10 +540,7 @@ class GitHubService {
    * Smart revoke: handles both directly-assigned and team-assigned Copilot seats.
    * For team-assigned users, removes the user from the assigning team instead.
    */
-  async revokeCopilotAccess(
-    org: string,
-    seat: CopilotSeat
-  ): Promise<void> {
+  async revokeCopilotAccess(org: string, seat: CopilotSeat): Promise<void> {
     const username = seat.assignee.login;
 
     if (seat.assigning_team) {
@@ -910,16 +907,21 @@ class GitHubService {
 
   /** Get org membership details for a user (includes role) */
   async getOrgMembership(org: string, username: string): Promise<{ role: string; state: string }> {
-    return this.makeRequest<{ role: string; state: string }>(`/orgs/${org}/memberships/${username}`);
+    return this.makeRequest<{ role: string; state: string }>(
+      `/orgs/${org}/memberships/${username}`
+    );
   }
 
   /** Remove a user from a team */
   async removeTeamMember(org: string, teamSlug: string, username: string): Promise<void> {
     if (!this.token) throw new Error('GitHub token not set');
-    const response = await fetch(`${this.baseUrl}/orgs/${org}/teams/${teamSlug}/memberships/${username}`, {
-      method: 'DELETE',
-      headers: { Authorization: `token ${this.token}`, Accept: 'application/vnd.github.v3+json' },
-    });
+    const response = await fetch(
+      `${this.baseUrl}/orgs/${org}/teams/${teamSlug}/memberships/${username}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `token ${this.token}`, Accept: 'application/vnd.github.v3+json' },
+      }
+    );
     if (!response.ok) throw new Error(`Failed to remove team member: ${response.status}`);
   }
 
@@ -968,22 +970,41 @@ class GitHubService {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(
-        (err as Record<string, string>).message || `Failed to update repo visibility: ${response.status}`
+        (err as Record<string, string>).message ||
+          `Failed to update repo visibility: ${response.status}`
       );
     }
   }
 
   // ── Pull Request methods ─────────────────────────────────────
-  async getRepoPullRequests(owner: string, repo: string, state: 'open' | 'closed' | 'all' = 'open'): Promise<PullRequest[]> {
-    return this.makeRequest<PullRequest[]>(`/repos/${owner}/${repo}/pulls?state=${state}&per_page=100`);
+  async getRepoPullRequests(
+    owner: string,
+    repo: string,
+    state: 'open' | 'closed' | 'all' = 'open'
+  ): Promise<PullRequest[]> {
+    return this.makeRequest<PullRequest[]>(
+      `/repos/${owner}/${repo}/pulls?state=${state}&per_page=100`
+    );
   }
 
-  async getPullRequestReviews(owner: string, repo: string, prNumber: number): Promise<PullRequestReview[]> {
-    return this.makeRequest<PullRequestReview[]>(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`);
+  async getPullRequestReviews(
+    owner: string,
+    repo: string,
+    prNumber: number
+  ): Promise<PullRequestReview[]> {
+    return this.makeRequest<PullRequestReview[]>(
+      `/repos/${owner}/${repo}/pulls/${prNumber}/reviews`
+    );
   }
 
-  async getPullRequestRequestedReviewers(owner: string, repo: string, prNumber: number): Promise<{ users: GitHubUser[] }> {
-    return this.makeRequest<{ users: GitHubUser[] }>(`/repos/${owner}/${repo}/pulls/${prNumber}/requested_reviewers`);
+  async getPullRequestRequestedReviewers(
+    owner: string,
+    repo: string,
+    prNumber: number
+  ): Promise<{ users: GitHubUser[] }> {
+    return this.makeRequest<{ users: GitHubUser[] }>(
+      `/repos/${owner}/${repo}/pulls/${prNumber}/requested_reviewers`
+    );
   }
 
   // ── Actions / Billing methods ────────────────────────────────
@@ -992,7 +1013,9 @@ class GitHubService {
   }
 
   async getWorkflowRuns(owner: string, repo: string): Promise<{ workflow_runs: WorkflowRun[] }> {
-    return this.makeRequest<{ workflow_runs: WorkflowRun[] }>(`/repos/${owner}/${repo}/actions/runs?per_page=100`);
+    return this.makeRequest<{ workflow_runs: WorkflowRun[] }>(
+      `/repos/${owner}/${repo}/actions/runs?per_page=100`
+    );
   }
 
   // ── Team methods ─────────────────────────────────────────────
@@ -1002,13 +1025,16 @@ class GitHubService {
 
   async addTeamMember(org: string, teamSlug: string, username: string): Promise<void> {
     if (!this.token) throw new Error('GitHub token not set');
-    const response = await fetch(`${this.baseUrl}/orgs/${org}/teams/${teamSlug}/memberships/${username}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `token ${this.token}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    });
+    const response = await fetch(
+      `${this.baseUrl}/orgs/${org}/teams/${teamSlug}/memberships/${username}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      }
+    );
     if (!response.ok) {
       throw new Error(`Failed to add team member: ${response.status}`);
     }
@@ -1131,8 +1157,11 @@ class GitHubService {
         }
 
         const result: Record<string, unknown> = await response.json();
-        const provider: Record<string, unknown> | undefined = (result?.data as Record<string, unknown>)?.organization
-          ? ((result.data as Record<string, unknown>).organization as Record<string, unknown>)?.samlIdentityProvider as Record<string, unknown> | undefined
+        const provider: Record<string, unknown> | undefined = (
+          result?.data as Record<string, unknown>
+        )?.organization
+          ? (((result.data as Record<string, unknown>).organization as Record<string, unknown>)
+              ?.samlIdentityProvider as Record<string, unknown> | undefined)
           : undefined;
         if (!provider) break;
 
@@ -1176,7 +1205,9 @@ class GitHubService {
   }
 
   /** Get members with 2FA disabled — indicates no SSO-enforced auth */
-  async getMembers2FAStatus(org: string): Promise<{ enabled: GitHubUser[]; disabled: GitHubUser[] }> {
+  async getMembers2FAStatus(
+    org: string
+  ): Promise<{ enabled: GitHubUser[]; disabled: GitHubUser[] }> {
     const [allMembers, disabled] = await Promise.all([
       this.getOrgMembers(org),
       this.getOrgMembers2FADisabled(org).catch(() => [] as GitHubUser[]),
@@ -1184,6 +1215,74 @@ class GitHubService {
     const disabledLogins = new Set(disabled.map((u) => u.login));
     const enabled = allMembers.filter((u) => !disabledLogins.has(u.login));
     return { enabled, disabled };
+  }
+
+  /** List all SSO credential authorizations for an org (Enterprise Cloud, org admin) */
+  async getCredentialAuthorizations(org: string): Promise<CredentialAuthorization[]> {
+    if (!this.token) throw new Error('GitHub token not set');
+
+    const results: CredentialAuthorization[] = [];
+    let page = 1;
+
+    while (true) {
+      const response = await fetch(
+        `${this.baseUrl}/orgs/${org}/credential-authorizations?per_page=100&page=${page}`,
+        {
+          headers: {
+            Authorization: `token ${this.token}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        }
+      );
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 403) {
+          // Org doesn't have SSO or user isn't admin
+          return [];
+        }
+        throw new Error(`Failed to fetch credential authorizations: ${response.status}`);
+      }
+      const data: CredentialAuthorization[] = await response.json();
+      results.push(...data);
+      if (data.length < 100) break;
+      page++;
+    }
+    return results;
+  }
+
+  /** Check if the current token is SSO-authorized for a specific org by testing an org-scoped endpoint */
+  async checkTokenSSOAuthorization(
+    org: string
+  ): Promise<{ authorized: boolean; ssoRequired: boolean }> {
+    if (!this.token) throw new Error('GitHub token not set');
+
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/members?per_page=1`, {
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (response.ok) {
+      return { authorized: true, ssoRequired: false };
+    }
+
+    // Check for SSO-specific 403 — GitHub returns a special error when SSO authorization is needed
+    if (response.status === 403) {
+      const body = await response.json().catch(() => ({}));
+      const message = (body as Record<string, string>).message || '';
+      if (
+        message.includes('SSO') ||
+        message.includes('SAML') ||
+        message.includes('single sign-on') ||
+        message.includes('credential authorized')
+      ) {
+        return { authorized: false, ssoRequired: true };
+      }
+      // Non-SSO 403 (e.g., rate limiting) — assume authorized but forbidden
+      return { authorized: true, ssoRequired: false };
+    }
+
+    return { authorized: true, ssoRequired: false };
   }
 }
 
@@ -1230,6 +1329,22 @@ export interface OrgInvitation {
   created_at: string;
   inviter: { login: string; avatar_url: string };
   team_count: number;
+}
+
+/** SSO credential authorization for a PAT, SSH key, etc. */
+export interface CredentialAuthorization {
+  login: string;
+  credential_id: number;
+  credential_type: string; // 'personal access token' | 'SSH key' | 'SSH certificate' | 'GitHub App'
+  token_last_eight?: string;
+  credential_authorized_at: string;
+  credential_accessed_at: string | null;
+  authorized_credential_id: number | null;
+  authorized_credential_title?: string;
+  authorized_credential_note?: string;
+  fingerprint?: string;
+  authorized_credential_expires_at?: string | null;
+  scopes?: string[];
 }
 
 export default new GitHubService();
