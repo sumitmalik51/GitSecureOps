@@ -22,6 +22,7 @@ import {
   Package,
   UsersRound,
   KeyRound,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,7 +74,10 @@ const navSections: { title: string; items: NavItem[] }[] = [
   },
   {
     title: 'Tools',
-    items: [{ label: 'Code Search', to: '/search', icon: Search }],
+    items: [
+      { label: 'Code Search', to: '/search', icon: Search },
+      { label: 'Settings', to: '/settings', icon: Settings },
+    ],
   },
 ];
 

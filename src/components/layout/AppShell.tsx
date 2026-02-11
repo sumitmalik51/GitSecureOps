@@ -44,6 +44,10 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'Cost Manager',
     subtitle: 'Enterprise billing, Copilot PAYG & Actions cost analysis',
   },
+  '/settings': {
+    title: 'Settings',
+    subtitle: 'Account, organization access & authentication management',
+  },
 };
 
 export default function AppShell() {

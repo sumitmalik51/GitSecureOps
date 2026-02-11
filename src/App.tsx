@@ -30,6 +30,7 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const TeamMembersPage = lazy(() => import('./pages/TeamMembersPage'));
 const SSOManagementPage = lazy(() => import('./pages/SSOManagementPage'));
 const CostManagerPage = lazy(() => import('./pages/CostManagerPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 function App() {
   return (
@@ -201,6 +202,14 @@ function App() {
                 element={
                   <Suspense fallback={<PageSkeleton />}>
                     <CostManagerPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <SettingsPage />
                   </Suspense>
                 }
               />
