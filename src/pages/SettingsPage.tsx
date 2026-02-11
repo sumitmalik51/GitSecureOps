@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Building2,
@@ -21,7 +22,6 @@ import Badge from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
 import githubService, { type GitHubOrg } from '@/services/githubService';
-import { oauthService } from '@/services/oauthService';
 import { config } from '@/config';
 
 const stagger = {
@@ -34,8 +34,9 @@ const fadeUp = {
 };
 
 export default function SettingsPage() {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Org access state
   const [orgs, setOrgs] = useState<GitHubOrg[]>([]);
@@ -77,13 +78,15 @@ export default function SettingsPage() {
   };
 
   const handleReauthorize = () => {
-    if (!oauthService.isConfigured()) {
-      toast.error('OAuth not configured', 'Please contact your administrator');
-      return;
-    }
-    // Re-initiate OAuth flow — GitHub will show the authorize page
-    // where the user can grant access to additional orgs
-    oauthService.initiateOAuthFlow();
+    // Sign out first, then redirect to login page
+    // so the user can do a fresh OAuth login with updated org grants
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  const handleSignOut = () => {
+    logout();
+    navigate('/', { replace: true });
   };
 
   const handleManageOnGitHub = () => {
@@ -315,7 +318,7 @@ export default function SettingsPage() {
                       Re-authenticate with GitHub
                     </p>
                     <p className="text-xs text-dark-text-muted">
-                      Sign in again to update org permissions — you'll be redirected
+                      Sign out and log in again to pick up newly granted org permissions
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-dark-text-muted group-hover:text-emerald-400 transition-colors" />
@@ -370,7 +373,8 @@ export default function SettingsPage() {
                   <li>
                     Come back here and click{' '}
                     <span className="text-brand-400 font-medium">"Refresh"</span> to see the updated
-                    list
+                    list, or <span className="text-emerald-400 font-medium">"Re-authenticate"</span>{' '}
+                    to get a fresh token
                   </li>
                 </ol>
               </div>
@@ -464,10 +468,7 @@ export default function SettingsPage() {
                 variant="danger"
                 size="sm"
                 icon={<LogOut className="w-3.5 h-3.5" />}
-                onClick={() => {
-                  localStorage.clear();
-                  window.location.href = '/';
-                }}
+                onClick={handleSignOut}
               >
                 Sign Out
               </Button>
