@@ -68,13 +68,12 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: 'PR Review', to: '/pr-review', icon: GitPullRequest },
       { label: 'Actions Cost', to: '/actions-cost', icon: Zap },
       { label: 'Onboarding', to: '/onboarding', icon: Package },
+      { label: 'Cost Manager', to: '/cost-manager', icon: DollarSign },
     ],
   },
   {
     title: 'Tools',
-    items: [
-      { label: 'Code Search', to: '/search', icon: Search },
-    ],
+    items: [{ label: 'Code Search', to: '/search', icon: Search }],
   },
 ];
 

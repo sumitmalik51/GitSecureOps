@@ -29,6 +29,7 @@ const ActionsCostPage = lazy(() => import('./pages/ActionsCostPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const TeamMembersPage = lazy(() => import('./pages/TeamMembersPage'));
 const SSOManagementPage = lazy(() => import('./pages/SSOManagementPage'));
+const CostManagerPage = lazy(() => import('./pages/CostManagerPage'));
 
 function App() {
   return (
@@ -51,24 +52,158 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/dashboard" element={<Suspense fallback={<PageSkeleton />}><DashboardPage /></Suspense>} />
-              <Route path="/copilot" element={<Suspense fallback={<PageSkeleton />}><CopilotPage /></Suspense>} />
-              <Route path="/access" element={<Suspense fallback={<PageSkeleton />}><AccessPage /></Suspense>} />
-              <Route path="/access-management" element={<Suspense fallback={<PageSkeleton />}><AccessManagementPage /></Suspense>} />
-              <Route path="/repositories" element={<Suspense fallback={<PageSkeleton />}><RepositoriesPage /></Suspense>} />
-              <Route path="/security" element={<Suspense fallback={<PageSkeleton />}><SecurityPage /></Suspense>} />
-              <Route path="/audit" element={<Suspense fallback={<PageSkeleton />}><AuditLogsPage /></Suspense>} />
-              <Route path="/search" element={<Suspense fallback={<PageSkeleton />}><SearchPage /></Suspense>} />
-              <Route path="/recommendations" element={<Suspense fallback={<PageSkeleton />}><RecommendationsPage /></Suspense>} />
-              <Route path="/analytics" element={<Suspense fallback={<PageSkeleton />}><AnalyticsPage /></Suspense>} />
-              <Route path="/copilot-roi" element={<Suspense fallback={<PageSkeleton />}><CopilotROIPage /></Suspense>} />
-              <Route path="/access-review" element={<Suspense fallback={<PageSkeleton />}><AccessReviewPage /></Suspense>} />
-              <Route path="/visibility-drift" element={<Suspense fallback={<PageSkeleton />}><VisibilityDriftPage /></Suspense>} />
-              <Route path="/pr-review" element={<Suspense fallback={<PageSkeleton />}><PRReviewPage /></Suspense>} />
-              <Route path="/actions-cost" element={<Suspense fallback={<PageSkeleton />}><ActionsCostPage /></Suspense>} />
-              <Route path="/onboarding" element={<Suspense fallback={<PageSkeleton />}><OnboardingPage /></Suspense>} />
-              <Route path="/team-members" element={<Suspense fallback={<PageSkeleton />}><TeamMembersPage /></Suspense>} />
-              <Route path="/sso" element={<Suspense fallback={<PageSkeleton />}><SSOManagementPage /></Suspense>} />
+              <Route
+                path="/dashboard"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <DashboardPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/copilot"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <CopilotPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/access"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <AccessPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/access-management"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <AccessManagementPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/repositories"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <RepositoriesPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/security"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <SecurityPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/audit"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <AuditLogsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/search"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <SearchPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/recommendations"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <RecommendationsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <AnalyticsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/copilot-roi"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <CopilotROIPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/access-review"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <AccessReviewPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/visibility-drift"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <VisibilityDriftPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/pr-review"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <PRReviewPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/actions-cost"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <ActionsCostPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/onboarding"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <OnboardingPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/team-members"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <TeamMembersPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/sso"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <SSOManagementPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/cost-manager"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <CostManagerPage />
+                  </Suspense>
+                }
+              />
             </Route>
           </Routes>
         </Router>

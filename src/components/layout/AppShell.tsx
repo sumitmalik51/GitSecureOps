@@ -4,24 +4,46 @@ import TopBar from './TopBar';
 
 // Map routes to page titles
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
-  '/dashboard':          { title: 'Dashboard',          subtitle: 'Overview of your GitHub security posture' },
-  '/analytics':          { title: 'Analytics',           subtitle: 'Performance metrics and trends' },
-  '/repositories':       { title: 'Repositories',        subtitle: 'Manage repository access and settings' },
-  '/access':             { title: 'Access Control',      subtitle: 'Grant and manage user permissions' },
-  '/access-management':  { title: 'Access Management',   subtitle: 'Delete access and export user data' },
-  '/copilot':            { title: 'Copilot',             subtitle: 'Manage GitHub Copilot settings' },
-  '/security':           { title: 'Security',            subtitle: '2FA enforcement and vulnerability scanning' },
-  '/audit':              { title: 'Audit Logs',          subtitle: 'Track all security-related events' },
-  '/recommendations':    { title: 'Recommendations',     subtitle: 'AI-powered security suggestions' },
-  '/search':             { title: 'Code Search',         subtitle: 'Search across repositories' },
-  '/copilot-roi':        { title: 'Copilot ROI',          subtitle: 'Seat utilization, cost savings & reclamation' },
-  '/access-review':      { title: 'Access Review',        subtitle: 'Periodic access certification for compliance' },
-  '/visibility-drift':   { title: 'Visibility Drift',     subtitle: 'Detect and fix unintended public repositories' },
-  '/pr-review':          { title: 'PR Review',             subtitle: 'Identify stuck PRs and overloaded reviewers' },
-  '/actions-cost':       { title: 'Actions Cost',          subtitle: 'Track GitHub Actions usage and estimated costs' },
-  '/onboarding':         { title: 'Onboarding',            subtitle: 'One-click provisioning for new team members' },
-  '/team-members':       { title: 'Team Members',           subtitle: 'Manage org members, collaborators & invitations' },
-  '/sso':                { title: 'SSO & SAML',             subtitle: 'SAML SSO identities, SCIM provisioning & compliance' },
+  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your GitHub security posture' },
+  '/analytics': { title: 'Analytics', subtitle: 'Performance metrics and trends' },
+  '/repositories': { title: 'Repositories', subtitle: 'Manage repository access and settings' },
+  '/access': { title: 'Access Control', subtitle: 'Grant and manage user permissions' },
+  '/access-management': {
+    title: 'Access Management',
+    subtitle: 'Delete access and export user data',
+  },
+  '/copilot': { title: 'Copilot', subtitle: 'Manage GitHub Copilot settings' },
+  '/security': { title: 'Security', subtitle: '2FA enforcement and vulnerability scanning' },
+  '/audit': { title: 'Audit Logs', subtitle: 'Track all security-related events' },
+  '/recommendations': { title: 'Recommendations', subtitle: 'AI-powered security suggestions' },
+  '/search': { title: 'Code Search', subtitle: 'Search across repositories' },
+  '/copilot-roi': {
+    title: 'Copilot ROI',
+    subtitle: 'Seat utilization, cost savings & reclamation',
+  },
+  '/access-review': {
+    title: 'Access Review',
+    subtitle: 'Periodic access certification for compliance',
+  },
+  '/visibility-drift': {
+    title: 'Visibility Drift',
+    subtitle: 'Detect and fix unintended public repositories',
+  },
+  '/pr-review': { title: 'PR Review', subtitle: 'Identify stuck PRs and overloaded reviewers' },
+  '/actions-cost': {
+    title: 'Actions Cost',
+    subtitle: 'Track GitHub Actions usage and estimated costs',
+  },
+  '/onboarding': { title: 'Onboarding', subtitle: 'One-click provisioning for new team members' },
+  '/team-members': {
+    title: 'Team Members',
+    subtitle: 'Manage org members, collaborators & invitations',
+  },
+  '/sso': { title: 'SSO & SAML', subtitle: 'SAML SSO identities, SCIM provisioning & compliance' },
+  '/cost-manager': {
+    title: 'Cost Manager',
+    subtitle: 'Enterprise billing, Copilot PAYG & Actions cost analysis',
+  },
 };
 
 export default function AppShell() {

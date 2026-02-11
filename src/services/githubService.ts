@@ -1284,6 +1284,108 @@ class GitHubService {
 
     return { authorized: true, ssoRequired: false };
   }
+
+  // ── Cost Manager / Billing methods ───────────────────────────
+  /** Get Copilot usage metrics for an organization (last 28 days by default) */
+  async getCopilotUsageMetrics(
+    org: string,
+    since?: string,
+    until?: string
+  ): Promise<CopilotUsageDay[]> {
+    let endpoint = `/orgs/${org}/copilot/metrics?per_page=100`;
+    if (since) endpoint += `&since=${since}`;
+    if (until) endpoint += `&until=${until}`;
+    return this.makeRequest<CopilotUsageDay[]>(endpoint);
+  }
+
+  /** Get shared storage billing for an organization */
+  async getStorageBilling(org: string): Promise<StorageBilling> {
+    return this.makeRequest<StorageBilling>(`/orgs/${org}/settings/billing/shared-storage`);
+  }
+
+  /** Get GitHub Packages billing for an organization */
+  async getPackagesBilling(org: string): Promise<PackagesBilling> {
+    return this.makeRequest<PackagesBilling>(`/orgs/${org}/settings/billing/packages`);
+  }
+}
+
+/** Copilot usage metrics per day from /orgs/{org}/copilot/metrics */
+export interface CopilotUsageDay {
+  date: string;
+  total_active_users: number;
+  total_engaged_users: number;
+  copilot_ide_code_completions?: {
+    total_engaged_users: number;
+    languages?: { name: string; total_engaged_users: number }[];
+    editors?: {
+      name: string;
+      total_engaged_users: number;
+      models?: {
+        name: string;
+        is_custom_model: boolean;
+        total_engaged_users: number;
+        languages?: {
+          name: string;
+          total_engaged_users: number;
+          total_code_suggestions: number;
+          total_code_acceptances: number;
+          total_code_lines_suggested: number;
+          total_code_lines_accepted: number;
+        }[];
+      }[];
+    }[];
+  };
+  copilot_ide_chat?: {
+    total_engaged_users: number;
+    editors?: {
+      name: string;
+      total_engaged_users: number;
+      models?: {
+        name: string;
+        is_custom_model: boolean;
+        total_engaged_users: number;
+        total_chats: number;
+        total_chat_insertion_events: number;
+        total_chat_copy_events: number;
+      }[];
+    }[];
+  };
+  copilot_dotcom_chat?: {
+    total_engaged_users: number;
+    models?: {
+      name: string;
+      is_custom_model: boolean;
+      total_engaged_users: number;
+      total_chats: number;
+    }[];
+  };
+  copilot_dotcom_pull_requests?: {
+    total_engaged_users: number;
+    repositories?: {
+      name: string;
+      total_engaged_users: number;
+      models?: {
+        name: string;
+        is_custom_model: boolean;
+        total_pr_summaries_created: number;
+        total_engaged_users: number;
+      }[];
+    }[];
+  };
+}
+
+/** Shared storage billing from /orgs/{org}/settings/billing/shared-storage */
+export interface StorageBilling {
+  days_left_in_billing_cycle: number;
+  estimated_paid_storage_for_month: number;
+  estimated_storage_for_month: number;
+}
+
+/** Packages billing from /orgs/{org}/settings/billing/packages */
+export interface PackagesBilling {
+  total_gigabytes_bandwidth_used: number;
+  total_paid_gigabytes_bandwidth_used: number;
+  included_gigabytes_bandwidth: number;
 }
 
 /** Audit log entry from GitHub Enterprise */
