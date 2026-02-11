@@ -23,25 +23,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored authentication on app load
+    // Check for stored authentication on app load and validate against GitHub API
     const storedToken = localStorage.getItem('github_token');
-    const storedUser = localStorage.getItem('github_user');
 
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser) as GitHubUser;
-        setToken(storedToken);
-        setUser(parsedUser);
-        githubService.setToken(storedToken);
-      } catch (error) {
-        console.error('Failed to restore user session:', error);
-        // Clear corrupted data
-        localStorage.removeItem('github_token');
-        localStorage.removeItem('github_user');
-      }
+    if (storedToken) {
+      githubService.setToken(storedToken);
+      // Always fetch the real user from GitHub to ensure token matches displayed identity
+      fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `token ${storedToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('Token invalid');
+          return res.json();
+        })
+        .then((apiUser) => {
+          const freshUser: GitHubUser = {
+            id: apiUser.id,
+            login: apiUser.login,
+            name: apiUser.name || apiUser.login,
+            email: apiUser.email || '',
+            avatar_url: apiUser.avatar_url || '',
+          };
+          setToken(storedToken);
+          setUser(freshUser);
+          // Update stored user to match actual token owner
+          localStorage.setItem('github_user', JSON.stringify(freshUser));
+          setIsLoading(false);
+        })
+        .catch(() => {
+          // Token expired or invalid — clear everything
+          localStorage.removeItem('github_token');
+          localStorage.removeItem('github_user');
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
 
   const login = (newToken: string, newUser: GitHubUser) => {
