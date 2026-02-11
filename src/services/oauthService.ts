@@ -1,5 +1,6 @@
 // GitHub OAuth Service
 import environmentService from './environmentService';
+import { config } from '../config';
 
 interface GitHubUser {
   id: number;
@@ -12,13 +13,13 @@ interface GitHubUser {
 export class GitHubOAuthService {
   private clientId: string;
   private redirectUri: string;
-  private scopes: string[];
+  private scopes: readonly string[];
 
   constructor() {
-    // Use environment service for configuration
+    // Use centralized config for OAuth settings
     this.clientId = environmentService.getGitHubClientId();
     this.redirectUri = environmentService.getGitHubRedirectUri();
-    this.scopes = ['repo', 'read:org', 'user:email'];
+    this.scopes = config.github.scopes;
   }
 
   /**
@@ -41,7 +42,7 @@ export class GitHubOAuthService {
       redirect_uri: this.redirectUri,
       scope: this.scopes.join(' '),
       state: state,
-      response_type: 'code'
+      response_type: 'code',
     });
 
     return `https://github.com/login/oauth/authorize?${params.toString()}`;
@@ -55,15 +56,15 @@ export class GitHubOAuthService {
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       const array = new Uint8Array(32);
       crypto.getRandomValues(array);
-      return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+      return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
     }
-    
+
     // Fallback for environments without crypto.getRandomValues
     const timestamp = Date.now().toString(36);
     const random1 = Math.random().toString(36).substring(2, 15);
     const random2 = Math.random().toString(36).substring(2, 15);
     const random3 = Math.random().toString(36).substring(2, 15);
-    
+
     return `${timestamp}-${random1}-${random2}-${random3}`;
   }
 
@@ -75,12 +76,12 @@ export class GitHubOAuthService {
     try {
       // Decode session token from Azure Function (browser-compatible)
       const sessionData = JSON.parse(atob(sessionToken));
-      
+
       // Validate session data structure
       if (!sessionData || typeof sessionData !== 'object') {
         throw new Error('Invalid session data format');
       }
-      
+
       // Validate required fields
       if (!sessionData.token || !sessionData.username) {
         throw new Error('Invalid session data - missing required fields');
@@ -89,7 +90,7 @@ export class GitHubOAuthService {
       // SECURITY: Check if session is not too old
       const sessionAge = Date.now() - (sessionData.timestamp || 0);
       const maxAge = 10 * 60 * 1000; // 10 minutes maximum session age
-      
+
       if (sessionAge > maxAge) {
         throw new Error('Session expired - please authenticate again');
       }
@@ -103,13 +104,13 @@ export class GitHubOAuthService {
         id: sessionData.id || 0,
         login: sessionData.username,
         name: sessionData.name || sessionData.username,
-        email: sessionData.email || '', 
-        avatar_url: sessionData.avatar || ''
+        email: sessionData.email || '',
+        avatar_url: sessionData.avatar || '',
       };
 
       return {
         token: sessionData.token,
-        user: user
+        user: user,
       };
     } catch (error) {
       console.error('OAuth session processing error:', error);
@@ -124,18 +125,18 @@ export class GitHubOAuthService {
     if (!token || typeof token !== 'string') {
       return false;
     }
-    
+
     // GitHub tokens are typically 40+ characters for PATs
     // OAuth tokens can vary but should be reasonable length
     if (token.length < 20 || token.length > 200) {
       return false;
     }
-    
+
     // Should not contain suspicious characters
     if (!/^[a-zA-Z0-9_-]+$/.test(token)) {
       return false;
     }
-    
+
     return true;
   }
 
