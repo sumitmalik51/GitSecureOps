@@ -20,6 +20,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/pr-review':          { title: 'PR Review',             subtitle: 'Identify stuck PRs and overloaded reviewers' },
   '/actions-cost':       { title: 'Actions Cost',          subtitle: 'Track GitHub Actions usage and estimated costs' },
   '/onboarding':         { title: 'Onboarding',            subtitle: 'One-click provisioning for new team members' },
+  '/team-members':       { title: 'Team Members',           subtitle: 'Manage org members, collaborators & invitations' },
 };
 
 export default function AppShell() {

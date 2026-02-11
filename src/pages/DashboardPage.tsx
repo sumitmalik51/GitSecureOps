@@ -15,6 +15,7 @@ import {
   GitPullRequest,
   Zap,
   Package,
+  UsersRound,
   AlertTriangle,
   CheckCircle,
   Bot,
@@ -59,6 +60,7 @@ const quickActions: QuickAction[] = [
   { title: 'PR Review', description: 'Stuck PRs & bottlenecks', icon: GitPullRequest, route: '/pr-review', color: 'text-orange-400' },
   { title: 'Actions Cost', description: 'Usage & cost tracking', icon: Zap, route: '/actions-cost', color: 'text-yellow-400' },
   { title: 'Onboarding', description: 'Provision new hires', icon: Package, route: '/onboarding', color: 'text-indigo-400' },
+  { title: 'Team Members', description: 'Manage org members', icon: UsersRound, route: '/team-members', color: 'text-teal-400' },
 ];
 
 export default function DashboardPage() {

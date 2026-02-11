@@ -869,6 +869,46 @@ class GitHubService {
     }
   }
 
+  /** Remove an outside collaborator from the org */
+  async removeOutsideCollaborator(org: string, username: string): Promise<void> {
+    if (!this.token) throw new Error('GitHub token not set');
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/outside_collaborators/${username}`, {
+      method: 'DELETE',
+      headers: { Authorization: `token ${this.token}`, Accept: 'application/vnd.github.v3+json' },
+    });
+    if (!response.ok) throw new Error(`Failed to remove outside collaborator: ${response.status}`);
+  }
+
+  /** Cancel a pending org invitation */
+  async cancelOrgInvitation(org: string, invitationId: number): Promise<void> {
+    if (!this.token) throw new Error('GitHub token not set');
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/invitations/${invitationId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `token ${this.token}`, Accept: 'application/vnd.github.v3+json' },
+    });
+    if (!response.ok) throw new Error(`Failed to cancel invitation: ${response.status}`);
+  }
+
+  /** Get org membership details for a user (includes role) */
+  async getOrgMembership(org: string, username: string): Promise<{ role: string; state: string }> {
+    return this.makeRequest<{ role: string; state: string }>(`/orgs/${org}/memberships/${username}`);
+  }
+
+  /** Remove a user from a team */
+  async removeTeamMember(org: string, teamSlug: string, username: string): Promise<void> {
+    if (!this.token) throw new Error('GitHub token not set');
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/teams/${teamSlug}/memberships/${username}`, {
+      method: 'DELETE',
+      headers: { Authorization: `token ${this.token}`, Accept: 'application/vnd.github.v3+json' },
+    });
+    if (!response.ok) throw new Error(`Failed to remove team member: ${response.status}`);
+  }
+
+  /** Get members of a specific team */
+  async getTeamMembers(org: string, teamSlug: string): Promise<GitHubUser[]> {
+    return this.getAllPaginatedResults<GitHubUser>(`/orgs/${org}/teams/${teamSlug}/members`);
+  }
+
   // ==============================================
   // Pending Invitations
   // ==============================================

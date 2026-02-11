@@ -20,6 +20,7 @@ import {
   GitPullRequest,
   Zap,
   Package,
+  UsersRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +45,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: 'Repositories', to: '/repositories', icon: GitBranch },
       { label: 'Access Control', to: '/access', icon: Users },
       { label: 'Access Mgmt', to: '/access-management', icon: UserCog },
+      { label: 'Team Members', to: '/team-members', icon: UsersRound },
       { label: 'Copilot', to: '/copilot', icon: Bot },
       { label: 'Copilot ROI', to: '/copilot-roi', icon: DollarSign },
     ],

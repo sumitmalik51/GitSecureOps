@@ -27,6 +27,7 @@ const VisibilityDriftPage = lazy(() => import('./pages/VisibilityDriftPage'));
 const PRReviewPage = lazy(() => import('./pages/PRReviewPage'));
 const ActionsCostPage = lazy(() => import('./pages/ActionsCostPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const TeamMembersPage = lazy(() => import('./pages/TeamMembersPage'));
 
 function App() {
   return (
@@ -65,6 +66,7 @@ function App() {
               <Route path="/pr-review" element={<Suspense fallback={<PageSkeleton />}><PRReviewPage /></Suspense>} />
               <Route path="/actions-cost" element={<Suspense fallback={<PageSkeleton />}><ActionsCostPage /></Suspense>} />
               <Route path="/onboarding" element={<Suspense fallback={<PageSkeleton />}><OnboardingPage /></Suspense>} />
+              <Route path="/team-members" element={<Suspense fallback={<PageSkeleton />}><TeamMembersPage /></Suspense>} />
             </Route>
           </Routes>
         </Router>
