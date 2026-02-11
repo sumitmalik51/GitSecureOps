@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Github, Key, ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -17,10 +17,11 @@ export default function LoginPage() {
   const [patError, setPATError] = useState('')
   const [oauthError, setOAuthError] = useState('')
 
-  if (isAuthenticated) {
-    navigate('/dashboard', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   const handleGitHubLogin = () => {
     setOAuthError('')
@@ -65,7 +66,7 @@ export default function LoginPage() {
         email: userData.email || '',
         avatar_url: userData.avatar_url || '',
       })
-      navigate('/dashboard')
+      // useEffect handles redirect once isAuthenticated becomes true
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error'
       setPATError(msg.includes('fetch') ? 'Unable to connect to GitHub.' : msg)

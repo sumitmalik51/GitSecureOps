@@ -17,6 +17,9 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/copilot-roi':        { title: 'Copilot ROI',          subtitle: 'Seat utilization, cost savings & reclamation' },
   '/access-review':      { title: 'Access Review',        subtitle: 'Periodic access certification for compliance' },
   '/visibility-drift':   { title: 'Visibility Drift',     subtitle: 'Detect and fix unintended public repositories' },
+  '/pr-review':          { title: 'PR Review',             subtitle: 'Identify stuck PRs and overloaded reviewers' },
+  '/actions-cost':       { title: 'Actions Cost',          subtitle: 'Track GitHub Actions usage and estimated costs' },
+  '/onboarding':         { title: 'Onboarding',            subtitle: 'One-click provisioning for new team members' },
 };
 
 export default function AppShell() {

@@ -17,6 +17,9 @@ import {
   DollarSign,
   ShieldCheck,
   Eye,
+  GitPullRequest,
+  Zap,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +56,14 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: 'Recommendations', to: '/recommendations', icon: Lightbulb },
       { label: 'Access Review', to: '/access-review', icon: ShieldCheck },
       { label: 'Visibility Drift', to: '/visibility-drift', icon: Eye },
+    ],
+  },
+  {
+    title: 'Productivity',
+    items: [
+      { label: 'PR Review', to: '/pr-review', icon: GitPullRequest },
+      { label: 'Actions Cost', to: '/actions-cost', icon: Zap },
+      { label: 'Onboarding', to: '/onboarding', icon: Package },
     ],
   },
   {

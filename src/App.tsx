@@ -24,6 +24,9 @@ const AccessManagementPage = lazy(() => import('./pages/AccessManagementPage'));
 const CopilotROIPage = lazy(() => import('./pages/CopilotROIPage'));
 const AccessReviewPage = lazy(() => import('./pages/AccessReviewPage'));
 const VisibilityDriftPage = lazy(() => import('./pages/VisibilityDriftPage'));
+const PRReviewPage = lazy(() => import('./pages/PRReviewPage'));
+const ActionsCostPage = lazy(() => import('./pages/ActionsCostPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 
 function App() {
   return (
@@ -59,6 +62,9 @@ function App() {
               <Route path="/copilot-roi" element={<Suspense fallback={<PageSkeleton />}><CopilotROIPage /></Suspense>} />
               <Route path="/access-review" element={<Suspense fallback={<PageSkeleton />}><AccessReviewPage /></Suspense>} />
               <Route path="/visibility-drift" element={<Suspense fallback={<PageSkeleton />}><VisibilityDriftPage /></Suspense>} />
+              <Route path="/pr-review" element={<Suspense fallback={<PageSkeleton />}><PRReviewPage /></Suspense>} />
+              <Route path="/actions-cost" element={<Suspense fallback={<PageSkeleton />}><ActionsCostPage /></Suspense>} />
+              <Route path="/onboarding" element={<Suspense fallback={<PageSkeleton />}><OnboardingPage /></Suspense>} />
             </Route>
           </Routes>
         </Router>

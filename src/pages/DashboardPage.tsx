@@ -12,6 +12,9 @@ import {
   Bookmark,
   Code2,
   TrendingUp,
+  GitPullRequest,
+  Zap,
+  Package,
   AlertTriangle,
   CheckCircle,
   Bot,
@@ -53,6 +56,9 @@ const quickActions: QuickAction[] = [
   { title: 'Code Search', description: 'Search across repos', icon: Code2, route: '/search', color: 'text-cyan-400' },
   { title: 'Recommendations', description: 'Security insights', icon: TrendingUp, route: '/recommendations', color: 'text-emerald-400' },
   { title: 'Analytics', description: 'Performance metrics', icon: Bookmark, route: '/analytics', color: 'text-pink-400' },
+  { title: 'PR Review', description: 'Stuck PRs & bottlenecks', icon: GitPullRequest, route: '/pr-review', color: 'text-orange-400' },
+  { title: 'Actions Cost', description: 'Usage & cost tracking', icon: Zap, route: '/actions-cost', color: 'text-yellow-400' },
+  { title: 'Onboarding', description: 'Provision new hires', icon: Package, route: '/onboarding', color: 'text-indigo-400' },
 ];
 
 export default function DashboardPage() {

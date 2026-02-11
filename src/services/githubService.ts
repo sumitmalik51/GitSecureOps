@@ -82,6 +82,63 @@ export interface CopilotBilling {
   public_code_suggestions: 'allow' | 'block' | 'unconfigured';
 }
 
+export interface PullRequest {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  html_url: string;
+  created_at: string;
+  updated_at: string;
+  user: GitHubUser;
+  requested_reviewers: GitHubUser[];
+  draft: boolean;
+  head: { ref: string };
+  base: { ref: string };
+}
+
+export interface PullRequestReview {
+  id: number;
+  user: GitHubUser;
+  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING';
+  submitted_at: string;
+}
+
+export interface ActionsBilling {
+  total_minutes_used: number;
+  total_paid_minutes_used: number;
+  included_minutes: number;
+  minutes_used_breakdown: {
+    UBUNTU: number;
+    MACOS: number;
+    WINDOWS: number;
+  };
+}
+
+export interface WorkflowRun {
+  id: number;
+  name: string;
+  head_branch: string;
+  run_number: number;
+  status: string;
+  conclusion: string | null;
+  html_url: string;
+  created_at: string;
+  updated_at: string;
+  run_started_at: string;
+  repository?: { name: string; full_name: string };
+}
+
+export interface GitHubTeam {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  permission: string;
+  members_count?: number;
+  repos_count?: number;
+}
+
 class GitHubService {
   private baseUrl = 'https://api.github.com';
   private token: string | null = null;
@@ -854,6 +911,47 @@ class GitHubService {
       throw new Error(
         (err as Record<string, string>).message || `Failed to update repo visibility: ${response.status}`
       );
+    }
+  }
+
+  // ── Pull Request methods ─────────────────────────────────────
+  async getRepoPullRequests(owner: string, repo: string, state: 'open' | 'closed' | 'all' = 'open'): Promise<PullRequest[]> {
+    return this.makeRequest<PullRequest[]>(`/repos/${owner}/${repo}/pulls?state=${state}&per_page=100`);
+  }
+
+  async getPullRequestReviews(owner: string, repo: string, prNumber: number): Promise<PullRequestReview[]> {
+    return this.makeRequest<PullRequestReview[]>(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`);
+  }
+
+  async getPullRequestRequestedReviewers(owner: string, repo: string, prNumber: number): Promise<{ users: GitHubUser[] }> {
+    return this.makeRequest<{ users: GitHubUser[] }>(`/repos/${owner}/${repo}/pulls/${prNumber}/requested_reviewers`);
+  }
+
+  // ── Actions / Billing methods ────────────────────────────────
+  async getActionsBilling(org: string): Promise<ActionsBilling> {
+    return this.makeRequest<ActionsBilling>(`/orgs/${org}/settings/billing/actions`);
+  }
+
+  async getWorkflowRuns(owner: string, repo: string): Promise<{ workflow_runs: WorkflowRun[] }> {
+    return this.makeRequest<{ workflow_runs: WorkflowRun[] }>(`/repos/${owner}/${repo}/actions/runs?per_page=100`);
+  }
+
+  // ── Team methods ─────────────────────────────────────────────
+  async getOrgTeams(org: string): Promise<GitHubTeam[]> {
+    return this.makeRequest<GitHubTeam[]>(`/orgs/${org}/teams?per_page=100`);
+  }
+
+  async addTeamMember(org: string, teamSlug: string, username: string): Promise<void> {
+    if (!this.token) throw new Error('GitHub token not set');
+    const response = await fetch(`${this.baseUrl}/orgs/${org}/teams/${teamSlug}/memberships/${username}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to add team member: ${response.status}`);
     }
   }
 }
