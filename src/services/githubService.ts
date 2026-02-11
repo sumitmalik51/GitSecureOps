@@ -797,6 +797,76 @@ class GitHubService {
   ): Promise<{ seats_cancelled: CopilotSeat[] }> {
     return this.removeCopilotUsers(org, [username]);
   }
+
+  // ==============================================
+  // Outside Collaborators
+  // ==============================================
+
+  /** Get outside collaborators for an org (non-members with repo access) */
+  async getOutsideCollaborators(org: string): Promise<GitHubUser[]> {
+    try {
+      return await this.getAllPaginatedResults<GitHubUser>(`/orgs/${org}/outside_collaborators`);
+    } catch {
+      console.warn(`Cannot fetch outside collaborators for ${org}`);
+      return [];
+    }
+  }
+
+  // ==============================================
+  // Pending Invitations
+  // ==============================================
+
+  /** Get pending org invitations */
+  async getOrgInvitations(org: string): Promise<OrgInvitation[]> {
+    try {
+      return await this.getAllPaginatedResults<OrgInvitation>(`/orgs/${org}/invitations`);
+    } catch {
+      console.warn(`Cannot fetch invitations for ${org}`);
+      return [];
+    }
+  }
+
+  // ==============================================
+  // Repo Visibility
+  // ==============================================
+
+  /** Get all org repos with visibility info (for drift detection) */
+  async getOrgReposWithVisibility(org: string): Promise<GitHubRepo[]> {
+    return this.getAllPaginatedResults<GitHubRepo>(`/orgs/${org}/repos?type=all&sort=updated`);
+  }
+
+  /** Update repo visibility */
+  async updateRepoVisibility(owner: string, repo: string, isPrivate: boolean): Promise<void> {
+    if (!this.token) throw new Error('GitHub token not set');
+
+    const response = await fetch(`${this.baseUrl}/repos/${owner}/${repo}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ private: isPrivate }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(
+        (err as Record<string, string>).message || `Failed to update repo visibility: ${response.status}`
+      );
+    }
+  }
+}
+
+/** Org invitation shape from GitHub API */
+export interface OrgInvitation {
+  id: number;
+  login: string | null;
+  email: string | null;
+  role: string;
+  created_at: string;
+  inviter: { login: string; avatar_url: string };
+  team_count: number;
 }
 
 export default new GitHubService();

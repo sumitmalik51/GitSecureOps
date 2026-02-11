@@ -1,0 +1,37 @@
+import { Outlet, useLocation } from 'react-router-dom';
+import AppSidebar from './Sidebar';
+import TopBar from './TopBar';
+
+// Map routes to page titles
+const pageTitles: Record<string, { title: string; subtitle: string }> = {
+  '/dashboard':          { title: 'Dashboard',          subtitle: 'Overview of your GitHub security posture' },
+  '/analytics':          { title: 'Analytics',           subtitle: 'Performance metrics and trends' },
+  '/repositories':       { title: 'Repositories',        subtitle: 'Manage repository access and settings' },
+  '/access':             { title: 'Access Control',      subtitle: 'Grant and manage user permissions' },
+  '/access-management':  { title: 'Access Management',   subtitle: 'Delete access and export user data' },
+  '/copilot':            { title: 'Copilot',             subtitle: 'Manage GitHub Copilot settings' },
+  '/security':           { title: 'Security',            subtitle: '2FA enforcement and vulnerability scanning' },
+  '/audit':              { title: 'Audit Logs',          subtitle: 'Track all security-related events' },
+  '/recommendations':    { title: 'Recommendations',     subtitle: 'AI-powered security suggestions' },
+  '/search':             { title: 'Code Search',         subtitle: 'Search across repositories' },
+  '/copilot-roi':        { title: 'Copilot ROI',          subtitle: 'Seat utilization, cost savings & reclamation' },
+  '/access-review':      { title: 'Access Review',        subtitle: 'Periodic access certification for compliance' },
+  '/visibility-drift':   { title: 'Visibility Drift',     subtitle: 'Detect and fix unintended public repositories' },
+};
+
+export default function AppShell() {
+  const location = useLocation();
+  const pageInfo = pageTitles[location.pathname] || { title: '', subtitle: '' };
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-dark-bg">
+      <AppSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopBar title={pageInfo.title} subtitle={pageInfo.subtitle} />
+        <main className="flex-1 overflow-y-auto px-6 py-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}

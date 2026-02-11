@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft,
   Shield,
   AlertTriangle,
   TrendingUp,
@@ -148,42 +147,19 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text">Security Analytics</h1>
-              <p className="text-dark-text-muted">
-                Organization health scores, compliance trends & security alerts
-              </p>
-            </div>
-          </div>
+    <div className="space-y-6 max-w-7xl">
+        {/* Actions bar */}
+        <div className="flex items-center justify-end">
           <Button
             variant="ghost"
             size="sm"
             onClick={loadAnalytics}
             disabled={loading}
-            className="flex items-center space-x-2"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            Refresh
           </Button>
-        </motion.div>
+        </div>
 
         {/* Loading */}
         {loading && (
@@ -493,7 +469,6 @@ export default function AnalyticsPage() {
             )}
           </motion.div>
         )}
-      </div>
     </div>
   );
 }

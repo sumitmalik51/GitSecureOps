@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, GitBranch, Lock, Unlock, Eye, Star, GitFork, Search, Filter, ExternalLink } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { GitBranch, Lock, Unlock, Eye, Star, GitFork, Search, Filter, ExternalLink } from 'lucide-react'
+
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import { useAuth } from '../contexts/AuthContext'
 import githubService, { GitHubRepo } from '../services/githubService'
 
 export default function RepositoriesPage() {
-  const navigate = useNavigate()
   const { token } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [repositories, setRepositories] = useState<GitHubRepo[]>([])
@@ -59,30 +58,7 @@ export default function RepositoriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text">Repository Overview</h1>
-              <p className="text-dark-text-muted">Manage and monitor your GitHub repositories</p>
-            </div>
-          </div>
-        </motion.div>
+    <div className="space-y-6 max-w-7xl">
 
         {/* Stats */}
         <motion.div
@@ -258,7 +234,6 @@ export default function RepositoriesPage() {
             )}
           </Card>
         </motion.div>
-      </div>
     </div>
   )
 }

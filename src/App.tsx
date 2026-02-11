@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import OAuthCallback from './pages/OAuthCallback';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CommandPalette from './components/CommandPalette';
+import AppShell from './components/layout/AppShell';
 import { PageSkeleton } from './components/ui/Skeleton';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -21,6 +21,9 @@ const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
 const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
 const AccessManagementPage = lazy(() => import('./pages/AccessManagementPage'));
+const CopilotROIPage = lazy(() => import('./pages/CopilotROIPage'));
+const AccessReviewPage = lazy(() => import('./pages/AccessReviewPage'));
+const VisibilityDriftPage = lazy(() => import('./pages/VisibilityDriftPage'));
 
 function App() {
   return (
@@ -28,120 +31,36 @@ function App() {
       <ToastProvider>
         <Router>
           <CommandPalette />
-          <div className="min-h-screen bg-dark-bg">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/oauth-callback" element={<OAuthCallback />} />
+            <Route path="/oauth-success" element={<OAuthCallback />} />
+
+            {/* Protected routes — wrapped in AppShell layout */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppShell />
+                </ProtectedRoute>
+              }
             >
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/oauth-callback" element={<OAuthCallback />} />
-                <Route path="/oauth-success" element={<OAuthCallback />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <DashboardPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/copilot"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <CopilotPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/access"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <AccessPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/access-management"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <AccessManagementPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/repositories"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <RepositoriesPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/security"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <SecurityPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/audit"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <AuditLogsPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/search"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <SearchPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/recommendations"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <RecommendationsPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/analytics"
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageSkeleton />}>
-                        <AnalyticsPage />
-                      </Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </motion.div>
-          </div>
+              <Route path="/dashboard" element={<Suspense fallback={<PageSkeleton />}><DashboardPage /></Suspense>} />
+              <Route path="/copilot" element={<Suspense fallback={<PageSkeleton />}><CopilotPage /></Suspense>} />
+              <Route path="/access" element={<Suspense fallback={<PageSkeleton />}><AccessPage /></Suspense>} />
+              <Route path="/access-management" element={<Suspense fallback={<PageSkeleton />}><AccessManagementPage /></Suspense>} />
+              <Route path="/repositories" element={<Suspense fallback={<PageSkeleton />}><RepositoriesPage /></Suspense>} />
+              <Route path="/security" element={<Suspense fallback={<PageSkeleton />}><SecurityPage /></Suspense>} />
+              <Route path="/audit" element={<Suspense fallback={<PageSkeleton />}><AuditLogsPage /></Suspense>} />
+              <Route path="/search" element={<Suspense fallback={<PageSkeleton />}><SearchPage /></Suspense>} />
+              <Route path="/recommendations" element={<Suspense fallback={<PageSkeleton />}><RecommendationsPage /></Suspense>} />
+              <Route path="/analytics" element={<Suspense fallback={<PageSkeleton />}><AnalyticsPage /></Suspense>} />
+              <Route path="/copilot-roi" element={<Suspense fallback={<PageSkeleton />}><CopilotROIPage /></Suspense>} />
+              <Route path="/access-review" element={<Suspense fallback={<PageSkeleton />}><AccessReviewPage /></Suspense>} />
+              <Route path="/visibility-drift" element={<Suspense fallback={<PageSkeleton />}><VisibilityDriftPage /></Suspense>} />
+            </Route>
+          </Routes>
         </Router>
       </ToastProvider>
     </AuthProvider>

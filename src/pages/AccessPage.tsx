@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, UserPlus, UserMinus, Shield, Users, Search, Filter, Link } from 'lucide-react'
+import { UserPlus, UserMinus, Shield, Users, Search, Filter, Link } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -200,7 +200,7 @@ export default function AccessPage() {
     
     try {
       // Parse GitHub repository URL
-      const repoMatch = repoUrl.match(/github\.com\/([^\/]+)\/([^\/\?#]+)/)
+      const repoMatch = repoUrl.match(/github\.com\/([^/]+)\/([^/?#]+)/)
       if (!repoMatch) {
         throw new Error('Invalid GitHub repository URL')
       }
@@ -296,33 +296,21 @@ export default function AccessPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-dark-bg via-dark-bg to-dark-bg/95">
-        <div className="container mx-auto px-6 py-8">
+      <div className="space-y-6">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-bg via-dark-bg to-dark-bg/95">
-      <div className="container mx-auto px-6 py-8">
+    <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/dashboard')}
-              className="p-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text">User Access Control</h1>
-              <p className="text-dark-text/70">Manage team members and repository access</p>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-dark-text">User Access Control</h1>
+            <p className="text-dark-text/70">Manage team members and repository access</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -737,7 +725,6 @@ export default function AccessPage() {
           </div>
         </div>
         )}
-      </div>
     </div>
   )
 }

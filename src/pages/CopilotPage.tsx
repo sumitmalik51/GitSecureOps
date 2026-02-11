@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Shield, Users, Activity, Zap, CheckCircle, UserPlus, AlertTriangle } from 'lucide-react'
+import { Shield, Users, Activity, Zap, CheckCircle, UserPlus, AlertTriangle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -121,30 +121,7 @@ export default function CopilotPage() {
   const usedSeats = currentSeats.length
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text">GitHub Copilot Management</h1>
-              <p className="text-dark-text-muted">Monitor and control Copilot usage across your organizations</p>
-            </div>
-          </div>
-        </motion.div>
+    <div className="space-y-6 max-w-7xl">
 
         {/* Organization Selector */}
         {organizations.length > 0 && (
@@ -336,7 +313,6 @@ export default function CopilotPage() {
             </motion.div>
           </>
         ) : null}
-      </div>
     </div>
   )
 }

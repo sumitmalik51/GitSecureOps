@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, Shield } from 'lucide-react'
+import { Shield } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import TwoFactorChecker from '../components/TwoFactorChecker'
@@ -11,31 +11,7 @@ export default function SecurityPage() {
   const { token } = useAuth()
 
   return (
-    <div className="min-h-screen bg-dark-bg">
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text">Security Management</h1>
-              <p className="text-dark-text-muted">Two-Factor Authentication enforcement and compliance monitoring</p>
-            </div>
-          </div>
-        </motion.div>
+    <div className="space-y-6 max-w-7xl">
 
         {/* 2FA Checker Component */}
         <motion.div
@@ -61,7 +37,6 @@ export default function SecurityPage() {
             </Card>
           )}
         </motion.div>
-      </div>
     </div>
   )
 }

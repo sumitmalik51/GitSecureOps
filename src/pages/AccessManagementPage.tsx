@@ -4,7 +4,6 @@ import {
   Shield, 
   UserX, 
   Download, 
-  ArrowLeft, 
   Users,
   FileDown
 } from 'lucide-react';
@@ -86,34 +85,7 @@ export default function AccessManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-accent">
-      <div className="p-8 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="text-center mb-8 relative"
-        >
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/dashboard')}
-              className="absolute left-0 top-0 flex items-center gap-2 text-gray-400 hover:text-white"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
-            </Button>
-            
-            <Shield className="w-10 h-10 text-brand-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
-              Access Management
-            </h1>
-          </div>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Advanced tools for managing user access and data across your GitHub repositories and organizations
-          </p>
-        </motion.div>
-
+    <div className="space-y-8">
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -207,7 +179,6 @@ export default function AccessManagementPage() {
             </div>
           </Card>
         </motion.div>
-      </div>
     </div>
   );
 }

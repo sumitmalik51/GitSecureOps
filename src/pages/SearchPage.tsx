@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -8,30 +8,7 @@ export default function SearchPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text">Code Search</h1>
-              <p className="text-dark-text-muted">Advanced code search across repositories</p>
-            </div>
-          </div>
-        </motion.div>
+    <div className="space-y-6 max-w-7xl">
 
         {/* Coming Soon */}
         <motion.div
@@ -51,7 +28,6 @@ export default function SearchPage() {
             </Button>
           </Card>
         </motion.div>
-      </div>
     </div>
   )
 }

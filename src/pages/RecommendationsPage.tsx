@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Lightbulb,
   Zap,
   Shield,
   Users,
   Bot,
   CheckCircle,
-  ArrowLeft,
   RefreshCw,
   ChevronDown,
   ChevronUp,
   ExternalLink,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -52,7 +50,6 @@ const itemVariants = {
 };
 
 export default function RecommendationsPage() {
-  const navigate = useNavigate();
   const { token } = useAuth();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,34 +109,14 @@ export default function RecommendationsPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text flex items-center gap-3">
-                <Lightbulb className="text-yellow-400" />
-                Smart Recommendations
-              </h1>
-              <p className="text-dark-text-muted">
-                Actionable suggestions to improve security, access control & cost efficiency
-              </p>
-            </div>
-          </div>
+    <div className="space-y-6 max-w-7xl">
+        {/* Actions Bar */}
+        <div className="flex items-center justify-end">
           <Button variant="ghost" size="sm" onClick={loadRecommendations} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-        </motion.div>
+        </div>
 
         {/* Loading */}
         {loading && (
@@ -321,7 +298,6 @@ export default function RecommendationsPage() {
             </motion.div>
           </>
         )}
-      </div>
     </div>
   );
 }

@@ -1,61 +1,67 @@
 import React from 'react';
-import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-interface CardProps extends HTMLMotionProps<'div'> {
-  variant?: 'glass' | 'solid' | 'elevated';
+type CardVariant = 'default' | 'glass' | 'elevated' | 'interactive';
+
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: CardVariant;
   children: React.ReactNode;
-  hover?: boolean;
+  noPadding?: boolean;
 }
 
+const variantClasses: Record<CardVariant, string> = {
+  default: 'bg-dark-card border border-dark-border',
+  glass: 'bg-dark-card/60 backdrop-blur-xl border border-white/[0.06] shadow-elevated',
+  elevated: 'bg-dark-card border border-dark-border shadow-elevated',
+  interactive:
+    'bg-dark-card border border-dark-border hover:border-dark-border-light hover:bg-dark-hover cursor-pointer transition-all duration-200',
+};
+
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant = 'glass', hover = true, children, ...props }, ref) => {
-    const baseClasses = 'rounded-2xl overflow-hidden no-blur-hover';
-
-    const variants = {
-      glass: 'glass-card',
-      solid: 'bg-dark-card border border-dark-border shadow-lg',
-      elevated: 'bg-dark-card border border-dark-border shadow-2xl',
-    };
-
-    const motionProps = hover
-      ? {
-          whileHover: {
-            scale: 1.02,
-            y: -4,
-            rotateY: 1,
-            rotateX: 0.5,
-          },
-          transition: {
-            type: 'spring',
-            stiffness: 300,
-            damping: 20,
-            duration: 0.3,
-          },
-        }
-      : {};
-
+  ({ className, variant = 'default', noPadding = false, children, ...props }, ref) => {
     return (
-      <motion.div
+      <div
         ref={ref}
         className={cn(
-          baseClasses,
-          variants[variant],
-          hover && 'card-hover-lift container-hover',
+          'rounded-xl overflow-hidden',
+          variantClasses[variant],
+          !noPadding && 'p-5',
           className
         )}
-        style={{
-          transformStyle: 'preserve-3d',
-        }}
-        {...motionProps}
         {...props}
       >
-        <div className="container-content card-text">{children}</div>
-      </motion.div>
+        {children}
+      </div>
     );
   }
 );
 
 Card.displayName = 'Card';
 
+/* Sub-components for structured cards */
+function CardHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('flex items-center justify-between mb-4', className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3 className={cn('text-sm font-semibold text-dark-text', className)} {...props}>
+      {children}
+    </h3>
+  );
+}
+
+function CardContent({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn(className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+export { Card, CardHeader, CardTitle, CardContent };
 export default Card;

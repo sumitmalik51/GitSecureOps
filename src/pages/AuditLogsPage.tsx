@@ -6,7 +6,6 @@ import {
   Filter,
   Trash2,
   Clock,
-  ArrowLeft,
   Search,
   Shield,
   UserMinus,
@@ -18,7 +17,7 @@ import {
   ScanLine,
   RefreshCw,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import auditLogService from '../services/auditLogService';
@@ -63,7 +62,6 @@ const itemVariants = {
 };
 
 export default function AuditLogsPage() {
-  const navigate = useNavigate();
   const [entries, setEntries] = useState<AuditLogEntry[]>(auditLogService.getAll());
   const [actionFilter, setActionFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,27 +111,9 @@ export default function AuditLogsPage() {
   const failureCount = entries.filter((e) => e.status === 'failure').length;
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-dark-text flex items-center gap-3">
-                <FileText className="text-indigo-400" />
-                Audit Logs
-              </h1>
-              <p className="text-dark-text-muted">Track all actions performed in GitSecureOps</p>
-            </div>
-          </div>
+    <div className="space-y-6 max-w-7xl">
+        {/* Actions Bar */}
+        <div className="flex items-center justify-end">
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={refresh}>
               <RefreshCw className="w-4 h-4 mr-1" /> Refresh
@@ -156,7 +136,7 @@ export default function AuditLogsPage() {
               <Trash2 className="w-4 h-4 mr-1" /> Clear
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats */}
         <motion.div
@@ -318,7 +298,6 @@ export default function AuditLogsPage() {
             Showing {filtered.length} of {entries.length} entries
           </p>
         )}
-      </div>
     </div>
   );
 }
