@@ -94,32 +94,56 @@ export default function CopilotROIPage() {
   const yearlyWaste = monthlyWaste * 12;
   const utilization = seats.length > 0 ? Math.round((activeSeats.length / seats.length) * 100) : 0;
 
-  const handleReclaim = async (username: string) => {
+  const handleReclaim = async (seat: CopilotSeat) => {
+    const username = seat.assignee.login;
+    const viaTeam = seat.assigning_team;
+    const confirmMsg = viaTeam
+      ? `Remove ${username} from team "${viaTeam.name}" to revoke their Copilot seat?`
+      : `Revoke Copilot seat from ${username}?`;
+    if (!confirm(confirmMsg)) return;
+
     setReclaimLoading((prev) => [...prev, username]);
     try {
       githubService.setToken(token!);
-      await githubService.removeCopilotUsers(selectedOrg, [username]);
+      await githubService.revokeCopilotAccess(selectedOrg, seat);
       setSeats((prev) => prev.filter((s) => s.assignee.login !== username));
-      toast.success(`Revoked Copilot seat from ${username}`);
+      toast.success(
+        viaTeam
+          ? `Removed ${username} from team "${viaTeam.name}"`
+          : `Revoked Copilot seat from ${username}`
+      );
     } catch {
-      toast.error(`Failed to revoke seat from ${username}`);
+      toast.error(
+        `Failed to revoke seat from ${username}`,
+        viaTeam ? 'Check team admin permissions' : undefined
+      );
     } finally {
       setReclaimLoading((prev) => prev.filter((u) => u !== username));
     }
   };
 
   const handleBulkReclaim = async () => {
-    const usernames = wasteSeats.map((s) => s.seat.assignee.login);
-    if (!confirm(`Revoke Copilot from ${usernames.length} idle users? This will save ~$${monthlyWaste}/month.`)) return;
+    const targets = wasteSeats;
+    const directUsers = targets.filter((s) => !s.seat.assigning_team);
+    const teamUsers = targets.filter((s) => s.seat.assigning_team);
 
+    const parts: string[] = [];
+    if (directUsers.length) parts.push(`${directUsers.length} directly assigned`);
+    if (teamUsers.length) parts.push(`${teamUsers.length} team-assigned (will be removed from teams)`);
+    if (!confirm(`Revoke Copilot from ${targets.length} idle users (${parts.join(', ')})? This will save ~$${monthlyWaste}/month.`)) return;
+
+    const usernames = targets.map((s) => s.seat.assignee.login);
     setReclaimLoading(usernames);
     try {
       githubService.setToken(token!);
-      await githubService.removeCopilotUsers(selectedOrg, usernames);
+      // Handle each seat appropriately
+      await Promise.all(
+        targets.map((s) => githubService.revokeCopilotAccess(selectedOrg, s.seat))
+      );
       setSeats((prev) => prev.filter((s) => !usernames.includes(s.assignee.login)));
-      toast.success(`Revoked ${usernames.length} idle Copilot seats`);
+      toast.success(`Revoked ${targets.length} idle Copilot seats`);
     } catch {
-      toast.error('Bulk reclaim failed');
+      toast.error('Bulk reclaim partially failed', 'Some seats may require manual action');
     } finally {
       setReclaimLoading([]);
     }
@@ -328,6 +352,9 @@ export default function CopilotROIPage() {
                           ? `Last active ${item.idleDays} days ago`
                           : `Active ${item.idleDays === 0 ? 'today' : `${item.idleDays}d ago`}`}
                         {item.seat.last_activity_editor && ` · ${item.seat.last_activity_editor}`}
+                        {item.seat.assigning_team && (
+                          <span className="ml-1 text-brand-400">· via {item.seat.assigning_team.name}</span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -346,12 +373,12 @@ export default function CopilotROIPage() {
                       <Button
                         variant="ghost"
                         size="xs"
-                        onClick={() => handleReclaim(item.seat.assignee.login)}
+                        onClick={() => handleReclaim(item.seat)}
                         disabled={reclaimLoading.includes(item.seat.assignee.login)}
                         className="text-red-400 hover:text-red-300"
                       >
                         <UserX className="w-3.5 h-3.5 mr-1" />
-                        Revoke
+                        {item.seat.assigning_team ? 'Remove from Team' : 'Revoke'}
                       </Button>
                     )}
                   </div>

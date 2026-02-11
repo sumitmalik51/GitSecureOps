@@ -536,6 +536,25 @@ class GitHubService {
     return response.json();
   }
 
+  /**
+   * Smart revoke: handles both directly-assigned and team-assigned Copilot seats.
+   * For team-assigned users, removes the user from the assigning team instead.
+   */
+  async revokeCopilotAccess(
+    org: string,
+    seat: CopilotSeat
+  ): Promise<void> {
+    const username = seat.assignee.login;
+
+    if (seat.assigning_team) {
+      // User was assigned via a team — remove them from the team
+      await this.removeTeamMember(org, seat.assigning_team.slug, username);
+    } else {
+      // Directly assigned — use the billing API
+      await this.removeCopilotUsers(org, [username]);
+    }
+  }
+
   // Get user's recent activity events
   async getUserEvents(): Promise<Record<string, unknown>[]> {
     if (!this.token) {
