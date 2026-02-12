@@ -168,7 +168,7 @@ function analyzeSecurity(
   }
 
   // Check forked repos
-  const forkedRepos = repos.filter((r) => (r as Record<string, unknown>).fork);
+  const forkedRepos = repos.filter((r) => (r as unknown as Record<string, unknown>).fork);
   if (forkedRepos.length > 5) {
     findings.push({
       id: `t-${id++}`,

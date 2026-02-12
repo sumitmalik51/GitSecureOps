@@ -10,7 +10,6 @@ import {
   BarChart3,
   Timer,
   CheckCircle,
-  XCircle,
   MessageSquare,
   ArrowRight,
 } from 'lucide-react';
@@ -19,11 +18,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import StatCard from '@/components/ui/StatCard';
 import { useAuth } from '@/contexts/AuthContext';
-import githubService, {
-  type GitHubRepo,
-  type PullRequest,
-  type PullRequestReview,
-} from '@/services/githubService';
+import githubService, { type PullRequest } from '@/services/githubService';
 
 const stagger = {
   hidden: {},

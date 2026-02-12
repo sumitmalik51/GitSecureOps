@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from './Sidebar';
 import TopBar from './TopBar';
+import AICopilot from '../AICopilot';
 
 // Map routes to page titles
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -79,6 +80,7 @@ export default function AppShell() {
           <Outlet />
         </main>
       </div>
+      <AICopilot />
     </div>
   );
 }
