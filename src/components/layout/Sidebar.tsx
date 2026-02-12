@@ -23,6 +23,10 @@ import {
   UsersRound,
   KeyRound,
   Settings,
+  Activity,
+  Radar,
+  Heart,
+  Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,12 +43,14 @@ const navSections: { title: string; items: NavItem[] }[] = [
     items: [
       { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
       { label: 'Analytics', to: '/analytics', icon: BarChart3 },
+      { label: 'Org Pulse', to: '/org-pulse', icon: Activity, badge: 'Live' },
     ],
   },
   {
     title: 'Management',
     items: [
       { label: 'Repositories', to: '/repositories', icon: GitBranch },
+      { label: 'Repo Health', to: '/repo-health', icon: Heart },
       { label: 'Access Control', to: '/access', icon: Users },
       { label: 'Access Mgmt', to: '/access-management', icon: UserCog },
       { label: 'Team Members', to: '/team-members', icon: UsersRound },
@@ -56,6 +62,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
     title: 'Security',
     items: [
       { label: 'Security', to: '/security', icon: Shield },
+      { label: 'Security Radar', to: '/security-radar', icon: Radar, badge: 'New' },
       { label: 'Audit Logs', to: '/audit', icon: FileText },
       { label: 'Recommendations', to: '/recommendations', icon: Lightbulb },
       { label: 'Access Review', to: '/access-review', icon: ShieldCheck },
@@ -67,6 +74,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
     title: 'Productivity',
     items: [
       { label: 'PR Review', to: '/pr-review', icon: GitPullRequest },
+      { label: 'Dev Velocity', to: '/dev-velocity', icon: Rocket, badge: 'New' },
       { label: 'Actions Cost', to: '/actions-cost', icon: Zap },
       { label: 'Onboarding', to: '/onboarding', icon: Package },
       { label: 'Cost Manager', to: '/cost-manager', icon: DollarSign },

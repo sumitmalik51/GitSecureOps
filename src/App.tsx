@@ -31,6 +31,10 @@ const TeamMembersPage = lazy(() => import('./pages/TeamMembersPage'));
 const SSOManagementPage = lazy(() => import('./pages/SSOManagementPage'));
 const CostManagerPage = lazy(() => import('./pages/CostManagerPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const OrgPulsePage = lazy(() => import('./pages/OrgPulsePage'));
+const SecurityRadarPage = lazy(() => import('./pages/SecurityRadarPage'));
+const RepoHealthPage = lazy(() => import('./pages/RepoHealthPage'));
+const DevVelocityPage = lazy(() => import('./pages/DevVelocityPage'));
 
 function App() {
   return (
@@ -210,6 +214,38 @@ function App() {
                 element={
                   <Suspense fallback={<PageSkeleton />}>
                     <SettingsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/org-pulse"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <OrgPulsePage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/security-radar"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <SecurityRadarPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/repo-health"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <RepoHealthPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dev-velocity"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <DevVelocityPage />
                   </Suspense>
                 }
               />

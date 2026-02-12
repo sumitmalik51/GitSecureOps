@@ -48,6 +48,22 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'Settings',
     subtitle: 'Account, organization access & authentication management',
   },
+  '/org-pulse': {
+    title: 'Organization Pulse',
+    subtitle: 'Live mission control — real-time activity feed & heartbeat',
+  },
+  '/security-radar': {
+    title: 'Security Threat Radar',
+    subtitle: 'Animated radar sweep — detect and classify security threats',
+  },
+  '/repo-health': {
+    title: 'Repository Health',
+    subtitle: 'A-F grading for every repo — README, CI/CD, protection & more',
+  },
+  '/dev-velocity': {
+    title: 'Developer Velocity',
+    subtitle: 'PR cycle time, review speed & engineering throughput metrics',
+  },
 };
 
 export default function AppShell() {
