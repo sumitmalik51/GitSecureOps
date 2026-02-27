@@ -13,14 +13,18 @@
  * compliance percentages, and actionable remediation steps.
  */
 
-import { config } from '@/config';
-
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+}
+
+interface GitHubOrg {
+  login: string;
+  avatar_url: string;
+  description: string | null;
 }
 
 interface OrgSecurityContext {
@@ -38,29 +42,192 @@ interface OrgSecurityContext {
   topics: string[];
 }
 
+interface PRInfo {
+  title: string;
+  number: number;
+  repo: string;
+  user: string;
+  state: string;
+  created_at: string;
+  updated_at: string;
+  html_url: string;
+  draft: boolean;
+  labels: string[];
+}
+
+interface RepoInfo {
+  name: string;
+  full_name: string;
+  description: string | null;
+  language: string | null;
+  stargazers_count: number;
+  open_issues_count: number;
+  updated_at: string;
+  html_url: string;
+  private: boolean;
+  topics: string[];
+}
+
 /* ------------------------------------------------------------------ */
-/*  GitHub data fetcher                                                */
+/*  GitHub data fetchers                                               */
 /* ------------------------------------------------------------------ */
-async function fetchOrgContext(token: string): Promise<OrgSecurityContext | null> {
+
+/** Fetch all orgs the user belongs to */
+async function fetchUserOrgs(token: string): Promise<GitHubOrg[]> {
+  try {
+    const res = await fetch('https://api.github.com/user/orgs?per_page=100', {
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+/** Fetch recent PRs across the org's repos (all states: open, closed, merged) */
+async function fetchRecentPRs(
+  token: string,
+  orgName: string,
+  hoursBack: number = 24
+): Promise<PRInfo[]> {
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+  };
+
+  try {
+    // Use ISO date for the search query (GitHub search uses YYYY-MM-DDTHH:MM:SS format)
+    const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
+    // Fetch ALL PRs (open + closed/merged) created since the cutoff
+    const query = `org:${orgName} is:pr created:>=${since}`;
+    const res = await fetch(
+      `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&sort=created&order=desc&per_page=50`,
+      { headers }
+    );
+    if (!res.ok) {
+      console.warn('PR search failed:', res.status, await res.text().catch(() => ''));
+      return [];
+    }
+    const data = await res.json();
+
+    const cutoff = Date.now() - hoursBack * 60 * 60 * 1000;
+    return (data.items || [])
+      .filter((pr: { created_at: string }) => new Date(pr.created_at).getTime() >= cutoff)
+      .map(
+        (pr: {
+          title: string;
+          number: number;
+          repository_url: string;
+          user: { login: string };
+          state: string;
+          created_at: string;
+          updated_at: string;
+          html_url: string;
+          draft: boolean;
+          pull_request?: { merged_at: string | null };
+          labels: { name: string }[];
+        }) => ({
+          title: pr.title,
+          number: pr.number,
+          repo: pr.repository_url.split('/').slice(-1)[0],
+          user: pr.user?.login || 'unknown',
+          state: pr.pull_request?.merged_at ? 'merged' : pr.state,
+          created_at: pr.created_at,
+          updated_at: pr.updated_at,
+          html_url: pr.html_url,
+          draft: pr.draft || false,
+          labels: (pr.labels || []).map((l: { name: string }) => l.name),
+        })
+      );
+  } catch (err) {
+    console.warn('fetchRecentPRs error:', err);
+    return [];
+  }
+}
+
+/** Search repos in org by keyword */
+async function searchOrgRepos(
+  token: string,
+  orgName: string,
+  keyword: string
+): Promise<RepoInfo[]> {
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+  };
+
+  try {
+    const query = `org:${orgName} ${keyword} in:name,description,topics`;
+    const res = await fetch(
+      `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=updated&per_page=10`,
+      { headers }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items || []).map(
+      (r: {
+        name: string;
+        full_name: string;
+        description: string | null;
+        language: string | null;
+        stargazers_count: number;
+        open_issues_count: number;
+        updated_at: string;
+        html_url: string;
+        private: boolean;
+        topics: string[];
+      }) => ({
+        name: r.name,
+        full_name: r.full_name,
+        description: r.description,
+        language: r.language,
+        stargazers_count: r.stargazers_count,
+        open_issues_count: r.open_issues_count,
+        updated_at: r.updated_at,
+        html_url: r.html_url,
+        private: r.private,
+        topics: r.topics || [],
+      })
+    );
+  } catch {
+    return [];
+  }
+}
+
+async function fetchOrgContext(
+  token: string,
+  orgName?: string
+): Promise<OrgSecurityContext | null> {
   try {
     const headers = {
       Authorization: `token ${token}`,
       Accept: 'application/vnd.github.v3+json',
     };
 
-    // Get user's first org
-    const orgsRes = await fetch('https://api.github.com/user/orgs?per_page=1', { headers });
-    if (!orgsRes.ok) return null;
-    const orgs = await orgsRes.json();
-    if (!orgs.length) return null;
+    // Use provided org or fall back to first org
+    let resolvedOrgName: string | undefined = orgName;
+    if (!resolvedOrgName) {
+      const orgsRes = await fetch('https://api.github.com/user/orgs?per_page=1', { headers });
+      if (!orgsRes.ok) return null;
+      const orgs = await orgsRes.json();
+      if (!orgs.length) return null;
+      resolvedOrgName = orgs[0].login as string;
+    }
 
-    const orgName = orgs[0].login;
+    if (!resolvedOrgName) return null;
+    const finalOrgName: string = resolvedOrgName;
 
     // Parallel fetch: repos, members, events
     const [reposRes, membersRes, eventsRes] = await Promise.all([
-      fetch(`https://api.github.com/orgs/${orgName}/repos?per_page=100&sort=updated`, { headers }),
-      fetch(`https://api.github.com/orgs/${orgName}/members?per_page=100`, { headers }),
-      fetch(`https://api.github.com/orgs/${orgName}/events?per_page=30`, { headers }),
+      fetch(`https://api.github.com/orgs/${finalOrgName}/repos?per_page=100&sort=updated`, {
+        headers,
+      }),
+      fetch(`https://api.github.com/orgs/${finalOrgName}/members?per_page=100`, { headers }),
+      fetch(`https://api.github.com/orgs/${finalOrgName}/events?per_page=30`, { headers }),
     ]);
 
     const repos = reposRes.ok ? await reposRes.json() : [];
@@ -71,7 +238,7 @@ async function fetchOrgContext(token: string): Promise<OrgSecurityContext | null
     let members2FA = 0;
     try {
       const twoFaRes = await fetch(
-        `https://api.github.com/orgs/${orgName}/members?filter=2fa_disabled&per_page=100`,
+        `https://api.github.com/orgs/${finalOrgName}/members?filter=2fa_disabled&per_page=100`,
         { headers }
       );
       if (twoFaRes.ok) {
@@ -86,7 +253,7 @@ async function fetchOrgContext(token: string): Promise<OrgSecurityContext | null
     let outsideCollabs = 0;
     try {
       const collabRes = await fetch(
-        `https://api.github.com/orgs/${orgName}/outside_collaborators?per_page=100`,
+        `https://api.github.com/orgs/${finalOrgName}/outside_collaborators?per_page=100`,
         { headers }
       );
       if (collabRes.ok) {
@@ -112,7 +279,7 @@ async function fetchOrgContext(token: string): Promise<OrgSecurityContext | null
     let hasSecurityPolicy = false;
     try {
       const secRes = await fetch(
-        `https://api.github.com/repos/${orgName}/.github/contents/SECURITY.md`,
+        `https://api.github.com/repos/${finalOrgName}/.github/contents/SECURITY.md`,
         { headers }
       );
       hasSecurityPolicy = secRes.ok;
@@ -121,7 +288,7 @@ async function fetchOrgContext(token: string): Promise<OrgSecurityContext | null
     }
 
     return {
-      orgName,
+      orgName: finalOrgName,
       totalRepos: repos.length,
       publicRepos,
       privateRepos: repos.length - publicRepos,
@@ -145,11 +312,18 @@ async function fetchOrgContext(token: string): Promise<OrgSecurityContext | null
 class BuiltInAIEngine {
   private context: OrgSecurityContext | null = null;
   private contextFetchPromise: Promise<OrgSecurityContext | null> | null = null;
+  private currentOrg: string | null = null;
 
-  async ensureContext(token: string): Promise<OrgSecurityContext | null> {
+  async ensureContext(token: string, orgName?: string): Promise<OrgSecurityContext | null> {
+    // Refetch if org changed
+    if (orgName && orgName !== this.currentOrg) {
+      this.context = null;
+      this.contextFetchPromise = null;
+      this.currentOrg = orgName;
+    }
     if (this.context) return this.context;
     if (!this.contextFetchPromise) {
-      this.contextFetchPromise = fetchOrgContext(token);
+      this.contextFetchPromise = fetchOrgContext(token, orgName);
     }
     this.context = await this.contextFetchPromise;
     return this.context;
@@ -158,10 +332,15 @@ class BuiltInAIEngine {
   clearContext() {
     this.context = null;
     this.contextFetchPromise = null;
+    this.currentOrg = null;
   }
 
-  async generateResponse(messages: ChatMessage[], token: string): Promise<string> {
-    const ctx = await this.ensureContext(token);
+  async generateResponse(
+    messages: ChatMessage[],
+    token: string,
+    orgName?: string
+  ): Promise<string> {
+    const ctx = await this.ensureContext(token, orgName);
     const lastMsg = messages[messages.length - 1]?.content?.toLowerCase() || '';
 
     // Add a small delay to feel more natural
@@ -228,6 +407,32 @@ class BuiltInAIEngine {
     if (this.matches(lastMsg, ['public repo', 'visibility', 'exposed', 'open source', 'public'])) {
       return this.publicRepoAnalysis(ctx);
     }
+    // PR queries — extract hours if mentioned
+    if (this.matches(lastMsg, ['pr', 'pull request', 'open pr', 'recent pr', 'merge request'])) {
+      const hoursMatch = lastMsg.match(/(\d+)\s*(?:hr|hour|hrs|hours|h)/);
+      const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 24;
+      return this.recentPRsAnalysis(ctx, token, hours);
+    }
+    // Repo search — "which repo", "find repo", "repo related to", "repo for"
+    if (
+      this.matches(lastMsg, [
+        'which repo',
+        'find repo',
+        'repo related',
+        'repo for',
+        'search repo',
+        'repo about',
+        'repo named',
+      ])
+    ) {
+      const rawMsg = messages[messages.length - 1]?.content || '';
+      return this.repoSearchAnalysis(ctx, token, rawMsg);
+    }
+    if (
+      this.matches(lastMsg, ['owner', 'admin', 'org owner', 'add owner', 'who owns', 'org admin'])
+    ) {
+      return this.ownerAnalysis(ctx);
+    }
     if (this.matches(lastMsg, ['member', 'team', 'people', 'user', 'who', 'headcount'])) {
       return this.memberAnalysis(ctx);
     }
@@ -256,36 +461,7 @@ class BuiltInAIEngine {
   }
 
   private riskScore(ctx: OrgSecurityContext): { score: number; grade: string; color: string } {
-    let score = 100;
-    // Deductions
-    if (ctx.publicRepos > 0) score -= Math.min(15, ctx.publicRepos * 3);
-    if (ctx.members2FADisabled > 0) score -= Math.min(25, ctx.members2FADisabled * 5);
-    if (ctx.outsideCollaborators > 5) score -= Math.min(10, (ctx.outsideCollaborators - 5) * 2);
-    if (!ctx.hasSecurityPolicy) score -= 10;
-    if (ctx.forkedRepos > ctx.totalRepos * 0.3) score -= 5;
-    if (ctx.archivedRepos > ctx.totalRepos * 0.5) score -= 3;
-
-    score = Math.max(0, Math.min(100, score));
-
-    let grade: string, color: string;
-    if (score >= 90) {
-      grade = 'A';
-      color = '🟢';
-    } else if (score >= 80) {
-      grade = 'B';
-      color = '🔵';
-    } else if (score >= 70) {
-      grade = 'C';
-      color = '🟡';
-    } else if (score >= 60) {
-      grade = 'D';
-      color = '🟠';
-    } else {
-      grade = 'F';
-      color = '🔴';
-    }
-
-    return { score, grade, color };
+    return computeRiskScore(ctx);
   }
 
   private securityPosture(ctx: OrgSecurityContext): string {
@@ -540,6 +716,39 @@ All ${ctx.totalRepos} repositories are private. This is the most secure configur
 }`;
   }
 
+  private ownerAnalysis(ctx: OrgSecurityContext): string {
+    return `## 👑 Organization Owners — ${ctx.orgName}
+
+### Overview
+- **Total Members:** ${ctx.totalMembers}
+- **Outside Collaborators:** ${ctx.outsideCollaborators}
+- **2FA Compliance:** ${ctx.totalMembers > 0 ? Math.round(((ctx.totalMembers - ctx.members2FADisabled) / ctx.totalMembers) * 100) : 100}%
+
+### Managing Org Owners
+Use the **Org Owners** page in the sidebar (Management → Org Owners) to:
+
+1. **View current owners** — See all users with admin role
+2. **Add new owners** — Single or bulk add by GitHub username
+3. **Demote owners** — Change an owner to a regular member
+4. **Remove owners** — Remove a user from the org entirely
+5. **Manage invitations** — View and cancel pending owner invites
+
+### Security Best Practices for Owners
+- 🔴 **Minimize owners** — Only 2-3 trusted admins should have owner access
+- 🔴 **Require 2FA** — All owners must have 2FA enabled (hardware keys preferred)
+- 🟡 **Review quarterly** — Audit who has owner access every quarter
+- 🟡 **Use SSO/SAML** — Centralize identity management through your IdP
+- 🟢 **Enable audit log** — Monitor all admin-level actions
+
+### EMU Organizations
+If using Enterprise Managed Users:
+- Owners should be provisioned via **SCIM groups** in your IdP
+- Map an IdP group (e.g., "GitHub Org Admins") to the owner role
+- Deprovisioning in IdP automatically removes owner access
+
+Navigate to **Org Owners** in the sidebar to manage owners directly.`;
+  }
+
   private memberAnalysis(ctx: OrgSecurityContext): string {
     return `## 👤 Member Analysis — ${ctx.orgName}
 
@@ -649,11 +858,16 @@ I can analyze your GitHub organization **${ctx.orgName}** in real-time. Try aski
 - **"Check 2FA compliance"** — Authentication security audit
 - **"Find risky repositories"** — Identify vulnerable repos
 - **"Give me quick security wins"** — Actionable improvements
+- **"Show PRs opened in last 12 hours"** — Recent pull request activity
+- **"Which repo is related to auth?"** — Search repos by keyword
+- **"Who are the org owners?"** — View and manage org owners
 - **"Review outside collaborators"** — External access analysis
 - **"Check public repo exposure"** — Visibility risk assessment
 - **"Analyze team members"** — Member security overview
 - **"Show recent activity"** — Activity monitoring insights
 - **"Review security policy"** — Governance analysis
+
+💡 **Tip:** Use the org selector in the header to switch between organizations.
 
 I analyze live data from your GitHub organization to provide contextual, actionable security intelligence.`;
   }
@@ -711,30 +925,371 @@ I'll fetch your org data in real-time and provide actionable insights.`;
 
 Once connected, I can provide real-time security analysis, 2FA compliance reports, repository risk assessments, and actionable recommendations.`;
   }
+
+  /* ---- Recent PRs ---- */
+  private async recentPRsAnalysis(
+    ctx: OrgSecurityContext,
+    token: string,
+    hours: number
+  ): Promise<string> {
+    const prs = await fetchRecentPRs(token, ctx.orgName, hours);
+
+    if (prs.length === 0) {
+      return `## 📭 No Open PRs — ${ctx.orgName}
+
+No new pull requests were opened in the last **${hours} hours**.
+
+This could mean:
+- The team is focused on reviews/merges rather than new work
+- It's outside working hours
+- PRs are being opened in personal forks
+
+Try expanding the window: *"Show PRs from last 48 hours"*`;
+    }
+
+    const byRepo: Record<string, PRInfo[]> = {};
+    prs.forEach((pr) => {
+      if (!byRepo[pr.repo]) byRepo[pr.repo] = [];
+      byRepo[pr.repo].push(pr);
+    });
+
+    const draftCount = prs.filter((p) => p.draft).length;
+    const timeAgo = (dateStr: string) => {
+      const mins = Math.round((Date.now() - new Date(dateStr).getTime()) / 60000);
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.round(mins / 60);
+      return `${hrs}h ago`;
+    };
+
+    let md = `## 🔄 Open PRs in Last ${hours}h — ${ctx.orgName}\n\n`;
+    md += `**${prs.length} PR(s)** opened across **${Object.keys(byRepo).length} repo(s)**`;
+    if (draftCount > 0) md += ` (${draftCount} draft)`;
+    md += '\n\n';
+
+    Object.entries(byRepo).forEach(([repo, repoPrs]) => {
+      md += `### 📦 ${repo} (${repoPrs.length})\n`;
+      repoPrs.forEach((pr) => {
+        const labels = pr.labels.length ? ` [${pr.labels.join(', ')}]` : '';
+        const draft = pr.draft ? ' 📝 *draft*' : '';
+        md += `- **#${pr.number}** ${pr.title}${draft}${labels}\n`;
+        md += `  ↳ by **${pr.user}** · ${timeAgo(pr.created_at)} · [View PR](${pr.html_url})\n`;
+      });
+      md += '\n';
+    });
+
+    md += `### Summary\n`;
+    md += `- Most active repo: **${Object.entries(byRepo).sort((a, b) => b[1].length - a[1].length)[0][0]}**\n`;
+    md += `- Top contributors: ${[...new Set(prs.map((p) => p.user))]
+      .slice(0, 5)
+      .map((u) => `**${u}**`)
+      .join(', ')}\n`;
+
+    return md;
+  }
+
+  /* ---- Repo Search ---- */
+  private async repoSearchAnalysis(
+    ctx: OrgSecurityContext,
+    token: string,
+    rawQuery: string
+  ): Promise<string> {
+    // Extract keyword from user message
+    const cleanPatterns = [
+      /(?:which|find|search|show)\s+repo(?:s|sitory|sitories)?\s+(?:related\s+to|for|about|named|with)\s+['"]?(.+?)['"]?$/i,
+      /repo(?:s|sitory)?\s+(?:related|for|about)\s+['"]?(.+?)['"]?$/i,
+      /(?:which|find|search)\s+repo\s+(.+)/i,
+    ];
+    let keyword = '';
+    for (const pat of cleanPatterns) {
+      const m = rawQuery.match(pat);
+      if (m) {
+        keyword = m[1].trim().replace(/[?!.]+$/, '');
+        break;
+      }
+    }
+    if (!keyword) {
+      // Fallback: use last meaningful word
+      const words = rawQuery
+        .split(/\s+/)
+        .filter(
+          (w) =>
+            w.length > 2 &&
+            !['which', 'repo', 'find', 'search', 'related', 'the', 'for', 'about', 'that'].includes(
+              w.toLowerCase()
+            )
+        );
+      keyword = words[words.length - 1] || '';
+    }
+
+    if (!keyword) {
+      return `Please specify what you're looking for. For example:\n- *"Which repo is related to authentication?"*\n- *"Find repo for billing"*\n- *"Search repo named api"*`;
+    }
+
+    const repos = await searchOrgRepos(token, ctx.orgName, keyword);
+
+    if (repos.length === 0) {
+      return `## 🔍 No Results — "${keyword}" in ${ctx.orgName}\n\nNo repositories matching **"${keyword}"** were found in the **${ctx.orgName}** organization.\n\nTry:\n- Different keywords or shorter search terms\n- Checking the repo name directly on GitHub\n- Asking *"show all repos"* for the full list`;
+    }
+
+    let md = `## 🔍 Repos Matching "${keyword}" — ${ctx.orgName}\n\n`;
+    md += `Found **${repos.length}** matching repositor${repos.length === 1 ? 'y' : 'ies'}:\n\n`;
+
+    repos.forEach((r, i) => {
+      const vis = r.private ? '🔒 Private' : '🌐 Public';
+      const lang = r.language ? `· ${r.language}` : '';
+      const stars = r.stargazers_count > 0 ? `⭐ ${r.stargazers_count}` : '';
+      const issues = r.open_issues_count > 0 ? `· 🐛 ${r.open_issues_count} open issues` : '';
+      const desc = r.description ? `\n  ${r.description}` : '';
+      const topics = r.topics.length
+        ? `\n  Topics: ${r.topics.map((t) => `\`${t}\``).join(', ')}`
+        : '';
+
+      md += `${i + 1}. **${r.full_name}** ${vis} ${lang} ${stars} ${issues}${desc}${topics}\n`;
+      md += `   [Open on GitHub](${r.html_url})\n\n`;
+    });
+
+    return md;
+  }
 }
 
 /* ------------------------------------------------------------------ */
-/*  Azure OpenAI backend (when configured)                             */
+/*  Azure OpenAI — hybrid mode (real data + LLM intelligence)          */
 /* ------------------------------------------------------------------ */
-async function callAzureFunction(messages: ChatMessage[], token?: string): Promise<string> {
-  const url = `${config.api.functionAppUrl}/api/ai-chat`;
+const SYSTEM_PROMPT = `You are the GitSecureOps Security Copilot — an expert AI assistant specializing in GitHub organization security, access management, compliance, and DevSecOps best practices.
+
+You are integrated into a GitHub security management dashboard. The user is an organization administrator.
+
+CRITICAL: You have FULL ACCESS to live GitHub data. The dashboard fetches real-time data from the GitHub API on your behalf and injects it into this conversation. You CAN and SHOULD:
+- Analyze live PR data, repo lists, security metrics, member info
+- Provide specific, data-driven answers using the real data provided
+- Reference actual repo names, PR numbers, user handles, and statistics
+- Never say you "cannot fetch data" — the data is already fetched for you
+
+When live data is provided in CONTEXT blocks, use it to give precise, actionable answers.
+
+Formatting guidelines:
+- Use markdown with headers (##, ###), bold (**text**), and bullet points
+- Include risk indicators: 🔴 Critical, 🟠 High, 🟡 Medium, 🟢 Low
+- Provide numbered action steps with specific GitHub settings references
+- Be concise but thorough — aim for actionable advice
+- When analyzing data, include percentages and comparisons
+- Always end with concrete next steps
+
+Respond only to security, GitHub, DevOps, and software engineering topics.`;
+
+/**
+ * Gather live GitHub data relevant to the user's question.
+ * This feeds real data into the Azure OpenAI prompt so the LLM can
+ * intelligently analyze it instead of saying "I can't fetch data".
+ */
+async function gatherLiveContext(
+  userMessage: string,
+  token: string,
+  orgCtx: OrgSecurityContext | null
+): Promise<string> {
+  const lowerMsg = userMessage.toLowerCase();
+  const parts: string[] = [];
+
+  if (!orgCtx) return '';
+
+  // Always include org snapshot
+  const riskScore = computeRiskScore(orgCtx);
+  parts.push(`ORGANIZATION SNAPSHOT (live data):
+- Organization: ${orgCtx.orgName}
+- Security Score: ${riskScore.score}/100 (Grade ${riskScore.grade})
+- Total repos: ${orgCtx.totalRepos} (${orgCtx.publicRepos} public, ${orgCtx.privateRepos} private)
+- Team members: ${orgCtx.totalMembers}
+- Members without 2FA: ${orgCtx.members2FADisabled}
+- Outside collaborators: ${orgCtx.outsideCollaborators}
+- Forked repos: ${orgCtx.forkedRepos}
+- Archived repos: ${orgCtx.archivedRepos}
+- Has security policy: ${orgCtx.hasSecurityPolicy ? 'Yes' : 'No'}
+- Recent push events: ${orgCtx.recentPushEvents}
+- Topics: ${orgCtx.topics.join(', ') || 'none'}`);
+
+  // Always fetch recent PRs (last 24h by default) — the LLM can reason about them
+  // If the user specifies a time window, use that instead
+  try {
+    const hoursMatch = lowerMsg.match(/(\d+)\s*(?:hr|hour|hrs|hours|h|day|days)/);
+    let hours = 24; // default
+    if (hoursMatch) {
+      hours = parseInt(hoursMatch[1], 10);
+      if (lowerMsg.includes('day')) hours *= 24;
+    }
+    const prs = await fetchRecentPRs(token, orgCtx.orgName, hours);
+    if (prs.length > 0) {
+      const openCount = prs.filter((p) => p.state === 'open').length;
+      const mergedCount = prs.filter((p) => p.state === 'merged').length;
+      const closedCount = prs.filter((p) => p.state === 'closed').length;
+      parts.push(
+        `\nLIVE PR DATA (last ${hours}h):\nTotal: ${prs.length} PRs (${openCount} open, ${mergedCount} merged, ${closedCount} closed)\n${JSON.stringify(prs, null, 2)}`
+      );
+    } else {
+      parts.push(`\nLIVE PR DATA: No PRs created in the last ${hours} hours.`);
+    }
+  } catch (err) {
+    console.warn('Failed to fetch PRs for context:', err);
+  }
+
+  // Fetch repos if the question is about repos
+  const repoKeywords = [
+    'which repo',
+    'find repo',
+    'repo related',
+    'repo for',
+    'search repo',
+    'repo about',
+    'repo named',
+    'repository',
+  ];
+  if (repoKeywords.some((k) => lowerMsg.includes(k))) {
+    try {
+      const cleanPatterns = [
+        /(?:which|find|search|show)\s+repo(?:s|sitory|sitories)?\s+(?:related\s+to|for|about|named|with)\s+['"]?(.+?)['"]?$/i,
+        /repo(?:s|sitory)?\s+(?:related|for|about)\s+['"]?(.+?)['"]?$/i,
+        /(?:which|find|search)\s+repo\s+(.+)/i,
+      ];
+      let keyword = '';
+      for (const pat of cleanPatterns) {
+        const m = userMessage.match(pat);
+        if (m) {
+          keyword = m[1].trim().replace(/[?!.]+$/, '');
+          break;
+        }
+      }
+      if (!keyword) {
+        const words = userMessage
+          .split(/\s+/)
+          .filter(
+            (w) =>
+              w.length > 2 &&
+              ![
+                'which',
+                'repo',
+                'find',
+                'search',
+                'related',
+                'the',
+                'for',
+                'about',
+                'that',
+                'repository',
+              ].includes(w.toLowerCase())
+          );
+        keyword = words[words.length - 1] || '';
+      }
+      if (keyword) {
+        const repos = await searchOrgRepos(token, orgCtx.orgName, keyword);
+        if (repos.length > 0) {
+          parts.push(
+            `\nLIVE REPO SEARCH for "${keyword}" (${repos.length} matches):\n${JSON.stringify(repos, null, 2)}`
+          );
+        } else {
+          parts.push(`\nLIVE REPO SEARCH: No repos matching "${keyword}".`);
+        }
+      }
+    } catch {
+      /* continue */
+    }
+  }
+
+  parts.push(
+    `\nIMPORTANT: All data above is REAL and LIVE. You fetched it. Analyze it directly. Never tell the user you cannot access their data.`
+  );
+
+  return parts.join('\n\n');
+}
+
+/** Compute a risk score (shared between built-in engine & hybrid mode) */
+function computeRiskScore(ctx: OrgSecurityContext): {
+  score: number;
+  grade: string;
+  color: string;
+} {
+  let score = 100;
+  if (ctx.publicRepos > 0) score -= Math.min(15, ctx.publicRepos * 3);
+  if (ctx.members2FADisabled > 0) score -= Math.min(25, ctx.members2FADisabled * 5);
+  if (ctx.outsideCollaborators > 5) score -= Math.min(10, (ctx.outsideCollaborators - 5) * 2);
+  if (!ctx.hasSecurityPolicy) score -= 10;
+  if (ctx.forkedRepos > ctx.totalRepos * 0.3) score -= 5;
+  if (ctx.archivedRepos > ctx.totalRepos * 0.5) score -= 3;
+  score = Math.max(0, Math.min(100, score));
+
+  let grade: string, color: string;
+  if (score >= 90) {
+    grade = 'A';
+    color = '🟢';
+  } else if (score >= 80) {
+    grade = 'B';
+    color = '🔵';
+  } else if (score >= 70) {
+    grade = 'C';
+    color = '🟡';
+  } else if (score >= 60) {
+    grade = 'D';
+    color = '🟠';
+  } else {
+    grade = 'F';
+    color = '🔴';
+  }
+
+  return { score, grade, color };
+}
+
+async function callAzureOpenAI(
+  messages: ChatMessage[],
+  token?: string,
+  selectedOrg?: string
+): Promise<string> {
+  const endpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT;
+  const apiKey = import.meta.env.VITE_AZURE_OPENAI_API_KEY;
+  const deployment = import.meta.env.VITE_AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-5.2-chat';
+  const apiVersion = import.meta.env.VITE_AZURE_OPENAI_API_VERSION || '2024-05-01-preview';
+
+  if (!endpoint || !apiKey) {
+    throw new Error('Azure OpenAI not configured');
+  }
+
+  // Fetch live GitHub data based on what the user is asking about
+  let liveContext = '';
+  if (token) {
+    try {
+      const orgCtx = await fetchOrgContext(token, selectedOrg);
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+      liveContext = await gatherLiveContext(lastUserMsg, token, orgCtx);
+    } catch {
+      // Continue without live context
+    }
+  }
+
+  const systemContent = liveContext
+    ? `${SYSTEM_PROMPT}\n\n--- LIVE GITHUB DATA (fetched just now) ---\n${liveContext}\n--- END LIVE DATA ---`
+    : SYSTEM_PROMPT;
+
+  const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': apiKey,
+    },
     body: JSON.stringify({
-      messages,
-      token: token || '',
+      messages: [
+        { role: 'system', content: systemContent },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+      max_completion_tokens: 2000,
     }),
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error || `AI service returned ${res.status}`);
+    const err = await res.json().catch(() => ({ error: { message: 'Unknown error' } }));
+    throw new Error(err.error?.message || `Azure OpenAI returned ${res.status}`);
   }
 
   const data = await res.json();
-  return data.response || data.content || 'No response generated.';
+  return data.choices?.[0]?.message?.content || 'No response generated.';
 }
 
 /* ------------------------------------------------------------------ */
@@ -748,20 +1303,20 @@ class AIService {
    * Send a chat message and receive an AI response.
    * Automatically routes between Azure OpenAI and the built-in engine.
    */
-  async chat(messages: ChatMessage[], token?: string): Promise<string> {
+  async chat(messages: ChatMessage[], token?: string, selectedOrg?: string): Promise<string> {
     this.history = messages;
 
-    // If Azure OpenAI is configured, use it
+    // If Azure OpenAI is configured, use it directly
     const useAzure = Boolean(
-      import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || import.meta.env.VITE_USE_AZURE_AI === 'true'
+      import.meta.env.VITE_AZURE_OPENAI_ENDPOINT && import.meta.env.VITE_AZURE_OPENAI_API_KEY
     );
 
     if (useAzure) {
       try {
-        return await callAzureFunction(messages, token);
+        return await callAzureOpenAI(messages, token, selectedOrg);
       } catch (err) {
         // Fallback to built-in engine
-        console.warn('Azure AI unavailable, using built-in engine:', err);
+        console.warn('Azure OpenAI unavailable, using built-in engine:', err);
       }
     }
 
@@ -770,7 +1325,7 @@ class AIService {
       throw new Error('Please log in with GitHub to use the AI Security Copilot.');
     }
 
-    return this.engine.generateResponse(messages, token);
+    return this.engine.generateResponse(messages, token, selectedOrg);
   }
 
   clearHistory() {
@@ -780,6 +1335,11 @@ class AIService {
 
   getHistory(): ChatMessage[] {
     return [...this.history];
+  }
+
+  /** Fetch all orgs the user belongs to (for org selector) */
+  async getOrgs(token: string): Promise<GitHubOrg[]> {
+    return fetchUserOrgs(token);
   }
 }
 

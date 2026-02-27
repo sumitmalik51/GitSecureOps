@@ -5,7 +5,11 @@
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "GH_WEB_APP": "your_github_client_id",
     "GH_WEB_APP_SECRET": "your_github_client_secret",
-    "FRONTEND_URL": "http://localhost:4280"
+    "FRONTEND_URL": "http://localhost:4280",
+    "AZURE_OPENAI_ENDPOINT": "https://sumitkumar-0475-resource.cognitiveservices.azure.com",
+    "AZURE_OPENAI_API_KEY": "your_azure_openai_api_key",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-5.2-chat",
+    "AZURE_OPENAI_API_VERSION": "2024-05-01-preview"
   },
   "Host": {
     "LocalHttpPort": 7071,

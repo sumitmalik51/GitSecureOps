@@ -13,6 +13,9 @@ import {
   Zap,
   Brain,
   ChevronDown,
+  Building2,
+  GitPullRequest,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -178,6 +181,16 @@ const SUGGESTIONS = [
       "Analyze my organization's overall security posture and give me a risk score with top recommendations.",
   },
   {
+    icon: GitPullRequest,
+    label: 'Recent PRs',
+    prompt: 'Show me all PRs opened in the last 12 hours across all repos.',
+  },
+  {
+    icon: Search,
+    label: 'Find Repo',
+    prompt: 'Which repo is related to authentication?',
+  },
+  {
     icon: Zap,
     label: '2FA Compliance',
     prompt: "Which members in my org don't have 2FA enabled? What's the compliance percentage?",
@@ -209,8 +222,30 @@ export default function AICopilot() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
 
+  // Org selector
+  const [orgs, setOrgs] = useState<{ login: string; avatar_url: string }[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<string>('');
+  const [showOrgPicker, setShowOrgPicker] = useState(false);
+
+  // Detect which AI engine is active
+  const isAzureAI = Boolean(
+    import.meta.env.VITE_AZURE_OPENAI_ENDPOINT && import.meta.env.VITE_AZURE_OPENAI_API_KEY
+  );
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch orgs when panel opens
+  useEffect(() => {
+    if (isOpen && token && orgs.length === 0) {
+      aiService.getOrgs(token).then((fetchedOrgs) => {
+        setOrgs(fetchedOrgs);
+        if (fetchedOrgs.length > 0 && !selectedOrg) {
+          setSelectedOrg(fetchedOrgs[0].login);
+        }
+      });
+    }
+  }, [isOpen, token, orgs.length, selectedOrg]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -255,7 +290,11 @@ export default function AICopilot() {
     setIsLoading(true);
 
     try {
-      const response = await aiService.chat([...messages, userMsg], token || undefined);
+      const response = await aiService.chat(
+        [...messages, userMsg],
+        token || undefined,
+        selectedOrg || undefined
+      );
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
     } catch (err) {
       const errorMsg =
@@ -300,7 +339,7 @@ export default function AICopilot() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'fixed bottom-6 right-6 z-50 rounded-2xl p-3.5',
+          'fixed bottom-20 right-6 z-[100] rounded-2xl p-3.5',
           'bg-gradient-to-br from-brand-500 to-indigo-600',
           'text-white shadow-glow hover:shadow-glow-lg',
           'transition-all duration-300 hover:scale-105 active:scale-95',
@@ -323,7 +362,7 @@ export default function AICopilot() {
       {/* -------- Chat Panel -------- */}
       <div
         className={cn(
-          'fixed bottom-6 right-6 z-50',
+          'fixed bottom-20 right-6 z-[100]',
           panelWidth,
           panelHeight,
           'bg-dark-card/95 backdrop-blur-2xl',
@@ -348,12 +387,19 @@ export default function AICopilot() {
             <div>
               <h3 className="text-sm font-semibold text-dark-text flex items-center gap-1.5">
                 Security Copilot
-                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-brand-500/20 text-brand-300 uppercase tracking-wider">
-                  AI
+                <span
+                  className={cn(
+                    'px-1.5 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider',
+                    isAzureAI
+                      ? 'bg-success-500/20 text-success-400'
+                      : 'bg-brand-500/20 text-brand-300'
+                  )}
+                >
+                  {isAzureAI ? 'GPT' : 'BASIC'}
                 </span>
               </h3>
               <p className="text-[11px] text-dark-text-muted">
-                Powered by AI · Analyzes your GitHub org
+                {isAzureAI ? 'Azure OpenAI · gpt-5.2-chat' : 'Built-in engine · keyword matching'}
               </p>
             </div>
           </div>
@@ -382,6 +428,76 @@ export default function AICopilot() {
           </div>
         </div>
 
+        {/* -------- Org Selector -------- */}
+        {orgs.length > 0 && (
+          <div className="px-3 py-2 border-b border-dark-border/30 bg-dark-bg/20">
+            <div className="relative">
+              <button
+                onClick={() => setShowOrgPicker(!showOrgPicker)}
+                className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg bg-dark-bg/50 border border-dark-border/40 hover:border-brand-500/30 transition-colors text-left"
+              >
+                <Building2 className="w-3.5 h-3.5 text-dark-text-muted shrink-0" />
+                {selectedOrg ? (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <img
+                      src={orgs.find((o) => o.login === selectedOrg)?.avatar_url}
+                      alt=""
+                      className="w-4 h-4 rounded-sm"
+                    />
+                    <span className="text-xs font-medium text-dark-text truncate">
+                      {selectedOrg}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-dark-text-muted">Select organization…</span>
+                )}
+                <ChevronDown
+                  className={cn(
+                    'w-3 h-3 text-dark-text-muted transition-transform shrink-0',
+                    showOrgPicker && 'rotate-180'
+                  )}
+                />
+              </button>
+
+              {/* Dropdown */}
+              {showOrgPicker && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-elevated-lg z-10 max-h-[200px] overflow-y-auto">
+                  {orgs.map((org) => (
+                    <button
+                      key={org.login}
+                      onClick={() => {
+                        setSelectedOrg(org.login);
+                        setShowOrgPicker(false);
+                        // Clear context when org changes
+                        aiService.clearHistory();
+                      }}
+                      className={cn(
+                        'flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-dark-hover transition-colors',
+                        org.login === selectedOrg && 'bg-brand-500/10'
+                      )}
+                    >
+                      <img src={org.avatar_url} alt="" className="w-5 h-5 rounded-sm" />
+                      <span
+                        className={cn(
+                          'text-xs',
+                          org.login === selectedOrg
+                            ? 'font-semibold text-brand-400'
+                            : 'text-dark-text-secondary'
+                        )}
+                      >
+                        {org.login}
+                      </span>
+                      {org.login === selectedOrg && (
+                        <Check className="w-3 h-3 text-brand-400 ml-auto" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* -------- Messages -------- */}
         <div
           ref={scrollRef}
@@ -399,7 +515,7 @@ export default function AICopilot() {
                 AI-powered analysis of your GitHub organization&apos;s security, access controls,
                 and compliance.
               </p>
-              <div className="grid grid-cols-2 gap-2 w-full max-w-[340px]">
+              <div className="grid grid-cols-2 gap-2 w-full max-w-[360px]">
                 {SUGGESTIONS.map((s, i) => (
                   <button
                     key={i}

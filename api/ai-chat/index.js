@@ -142,8 +142,8 @@ module.exports = async function (context, req) {
   // Check Azure OpenAI configuration
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o';
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview';
+  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-5.2-chat';
+  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview';
 
   if (!endpoint || !apiKey) {
     context.res = {

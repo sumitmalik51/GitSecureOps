@@ -22,7 +22,7 @@ export const config = {
       'VITE_GITHUB_REDIRECT_URI',
       `${getEnv('VITE_FUNCTION_APP_URL', 'http://localhost:7071')}/api/github-callback`
     ),
-    scopes: ['repo', 'read:org', 'user:email', 'manage_billing:copilot'],
+    scopes: ['repo', 'read:org', 'admin:org', 'user:email', 'manage_billing:copilot'],
     apiBaseUrl: 'https://api.github.com',
     oauthUrl: 'https://github.com/login/oauth/authorize',
   },

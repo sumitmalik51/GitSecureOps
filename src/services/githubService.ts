@@ -708,12 +708,12 @@ class GitHubService {
     }
   }
 
-  // Add user to organization
+  // Add user to organization — returns membership state
   async addOrgMember(
     org: string,
     username: string,
     role: 'member' | 'admin' = 'member'
-  ): Promise<void> {
+  ): Promise<{ state: string; role: string; url: string }> {
     if (!this.token) {
       throw new Error('GitHub token not set');
     }
@@ -731,10 +731,21 @@ class GitHubService {
     });
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to add organization member: ${response.status} ${response.statusText}`
-      );
+      const body = await response.json().catch(() => ({}));
+      const ssoHeader = response.headers.get('X-GitHub-SSO');
+      if (response.status === 403 && ssoHeader) {
+        throw new Error(`SSO authorization required. Authorize this token at: ${ssoHeader}`);
+      }
+      const msg = (body as { message?: string }).message || response.statusText;
+      throw new Error(`Failed to add member: ${msg} (${response.status})`);
     }
+
+    const data = await response.json();
+    return {
+      state: data.state, // 'active' | 'pending'
+      role: data.role, // 'admin' | 'member'
+      url: data.url,
+    };
   }
 
   // Remove user from organization

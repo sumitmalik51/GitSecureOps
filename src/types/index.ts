@@ -80,7 +80,10 @@ export type AuditAction =
   | 'export_data'
   | 'bulk_removal'
   | 'login'
-  | 'logout';
+  | 'logout'
+  | 'add_org_owner'
+  | 'demote_org_owner'
+  | 'remove_org_owner';
 
 // ---------------------
 // Notification Types

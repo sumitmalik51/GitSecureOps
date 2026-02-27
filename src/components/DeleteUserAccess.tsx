@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Shield, 
-  Users, 
-  Search, 
-  Trash2, 
-  AlertTriangle, 
-  CheckCircle, 
-  X, 
-  Plus, 
+import {
+  Shield,
+  Users,
+  Search,
+  Trash2,
+  AlertTriangle,
+  CheckCircle,
+  X,
+  Plus,
   ArrowLeft,
   Filter,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import Card from './ui/Card';
 import Button from './ui/Button';
@@ -49,6 +49,14 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
   const [error, setError] = useState('');
   const [showOrgSelector, setShowOrgSelector] = useState(false);
 
+  // Progress tracking
+  const [progress, setProgress] = useState({
+    current: 0,
+    total: 0,
+    currentRepo: '',
+    phase: '' as '' | 'fetching-repos' | 'scanning' | 'done',
+  });
+
   // Load organizations on component mount
   useEffect(() => {
     const loadOrganizations = async () => {
@@ -56,7 +64,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
         githubService.setToken(token);
         const orgs = await githubService.getUserOrganizations();
         setOrganizations(orgs);
-        setOrgSelections(orgs.map(org => ({ login: org.login, selected: false })));
+        setOrgSelections(orgs.map((org) => ({ login: org.login, selected: false })));
       } catch (error) {
         console.warn('Failed to load organizations:', error);
       }
@@ -70,10 +78,11 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
       setFilteredAccess(userAccess);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = userAccess.filter(access => 
-        access.username.toLowerCase().includes(query) ||
-        access.repository.toLowerCase().includes(query) ||
-        (access.organization && access.organization.toLowerCase().includes(query))
+      const filtered = userAccess.filter(
+        (access) =>
+          access.username.toLowerCase().includes(query) ||
+          access.repository.toLowerCase().includes(query) ||
+          (access.organization && access.organization.toLowerCase().includes(query))
       );
       setFilteredAccess(filtered);
     }
@@ -96,17 +105,13 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
   };
 
   const toggleOrgSelection = (orgLogin: string) => {
-    setOrgSelections(prev => 
-      prev.map(org => 
-        org.login === orgLogin 
-          ? { ...org, selected: !org.selected }
-          : org
-      )
+    setOrgSelections((prev) =>
+      prev.map((org) => (org.login === orgLogin ? { ...org, selected: !org.selected } : org))
     );
   };
 
   const searchUserAccess = async () => {
-    const validUsernames = usernames.filter(u => u.trim() !== '');
+    const validUsernames = usernames.filter((u) => u.trim() !== '');
     if (validUsernames.length === 0) {
       setError('Please enter at least one username');
       return;
@@ -115,34 +120,39 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
     setIsSearching(true);
     setError('');
     setUserAccess([]);
+    setProgress({ current: 0, total: 0, currentRepo: '', phase: 'fetching-repos' });
 
     try {
       githubService.setToken(token);
       const allAccess: UserAccess[] = [];
 
       if (selectedScope === 'user') {
-        // Search in user repositories
+        // Fetch repos first to know total count
+        setProgress((p) => ({ ...p, phase: 'fetching-repos' }));
         const repos = await githubService.getUserRepositories();
-        
-        for (const repo of repos) {
+        setProgress({ current: 0, total: repos.length, currentRepo: '', phase: 'scanning' });
+
+        for (let i = 0; i < repos.length; i++) {
+          const repo = repos[i];
+          setProgress((p) => ({ ...p, current: i + 1, currentRepo: repo.full_name }));
           try {
             const collaborators = await githubService.getRepositoryCollaborators(
               repo.owner.login,
               repo.name
             );
-            
+
             for (const collab of collaborators) {
-              if (validUsernames.some(u => u.toLowerCase() === collab.login.toLowerCase())) {
+              if (validUsernames.some((u) => u.toLowerCase() === collab.login.toLowerCase())) {
                 const permission = await githubService.getUserPermissionForRepo(
                   repo.owner.login,
                   repo.name,
                   collab.login
                 );
-                
+
                 allAccess.push({
                   username: collab.login,
                   repository: repo.full_name,
-                  permission: permission.permission
+                  permission: permission.permission,
                 });
               }
             }
@@ -151,61 +161,79 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
           }
         }
       } else if (selectedScope === 'selected') {
-        // Search in selected organizations
-        const selectedOrgs = orgSelections.filter(org => org.selected);
-        
+        // Fetch all org repos first to get total count
+        const selectedOrgs = orgSelections.filter((org) => org.selected);
+        setProgress((p) => ({ ...p, phase: 'fetching-repos' }));
+
+        const orgRepoMap: {
+          org: string;
+          repos: Awaited<ReturnType<typeof githubService.getOrgRepositories>>;
+        }[] = [];
+        let totalRepos = 0;
         for (const orgSelection of selectedOrgs) {
           try {
             const repos = await githubService.getOrgRepositories(orgSelection.login);
-            
-            for (const repo of repos) {
-              try {
-                const collaborators = await githubService.getRepositoryCollaborators(
-                  repo.owner.login,
-                  repo.name
-                );
-                
-                for (const collab of collaborators) {
-                  if (validUsernames.some(u => u.toLowerCase() === collab.login.toLowerCase())) {
-                    const permission = await githubService.getUserPermissionForRepo(
-                      repo.owner.login,
-                      repo.name,
-                      collab.login
-                    );
-                    
-                    allAccess.push({
-                      username: collab.login,
-                      repository: repo.full_name,
-                      permission: permission.permission,
-                      organization: orgSelection.login
-                    });
-                  }
-                }
-              } catch (repoError) {
-                console.warn(`Failed to check ${repo.full_name}:`, repoError);
-              }
-            }
+            orgRepoMap.push({ org: orgSelection.login, repos });
+            totalRepos += repos.length;
           } catch (orgError) {
-            console.warn(`Failed to check org ${orgSelection.login}:`, orgError);
+            console.warn(`Failed to fetch repos for org ${orgSelection.login}:`, orgError);
+          }
+        }
+
+        let processed = 0;
+        setProgress({ current: 0, total: totalRepos, currentRepo: '', phase: 'scanning' });
+
+        for (const { org, repos } of orgRepoMap) {
+          for (const repo of repos) {
+            processed++;
+            setProgress((p) => ({ ...p, current: processed, currentRepo: repo.full_name }));
+            try {
+              const collaborators = await githubService.getRepositoryCollaborators(
+                repo.owner.login,
+                repo.name
+              );
+
+              for (const collab of collaborators) {
+                if (validUsernames.some((u) => u.toLowerCase() === collab.login.toLowerCase())) {
+                  const permission = await githubService.getUserPermissionForRepo(
+                    repo.owner.login,
+                    repo.name,
+                    collab.login
+                  );
+
+                  allAccess.push({
+                    username: collab.login,
+                    repository: repo.full_name,
+                    permission: permission.permission,
+                    organization: org,
+                  });
+                }
+              }
+            } catch (repoError) {
+              console.warn(`Failed to check ${repo.full_name}:`, repoError);
+            }
           }
         }
       }
 
+      setProgress((p) => ({ ...p, phase: 'done' }));
+
       setUserAccess(allAccess);
-      
+
       if (allAccess.length === 0) {
         setError(`No access found for users: ${validUsernames.join(', ')}`);
         toast.warning('No Access Found', `No repository access found for the specified users.`);
       } else {
         toast.success('Search Complete', `Found ${allAccess.length} access entries.`);
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to search user access';
       setError(errorMessage);
       toast.error('Search Failed', errorMessage);
     } finally {
       setIsSearching(false);
+      // Keep progress visible briefly then clear
+      setTimeout(() => setProgress({ current: 0, total: 0, currentRepo: '', phase: '' }), 3000);
     }
   };
 
@@ -229,14 +257,19 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
       }
 
       if (successCount > 0) {
-        toast.success('Removal Complete', `Successfully removed access from ${successCount} repositories.`);
-        setUserAccess(prev => prev.filter(access => !filteredAccess.includes(access)));
+        toast.success(
+          'Removal Complete',
+          `Successfully removed access from ${successCount} repositories.`
+        );
+        setUserAccess((prev) => prev.filter((access) => !filteredAccess.includes(access)));
       }
 
       if (errorCount > 0) {
-        toast.warning('Partial Success', `${errorCount} removals failed. Check console for details.`);
+        toast.warning(
+          'Partial Success',
+          `${errorCount} removals failed. Check console for details.`
+        );
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to remove user access';
       toast.error('Removal Failed', errorMessage);
@@ -250,9 +283,9 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
@@ -260,8 +293,8 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.5 }
-    }
+      transition: { duration: 0.5 },
+    },
   };
 
   return (
@@ -282,7 +315,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
-            
+
             <Trash2 className="w-10 h-10 text-red-500" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
               Delete User Access
@@ -306,7 +339,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                 <Filter className="w-6 h-6 text-primary" />
                 Search Scope
               </h2>
-              
+
               <div className="flex flex-wrap gap-4 mb-6">
                 <Button
                   variant={selectedScope === 'user' ? 'primary' : 'secondary'}
@@ -316,7 +349,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                   <Users className="w-4 h-4" />
                   My Repositories
                 </Button>
-                
+
                 <Button
                   variant={selectedScope === 'selected' ? 'primary' : 'secondary'}
                   onClick={() => {
@@ -326,7 +359,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                   className="flex items-center gap-2"
                 >
                   <Shield className="w-4 h-4" />
-                  Selected Organizations ({orgSelections.filter(org => org.selected).length})
+                  Selected Organizations ({orgSelections.filter((org) => org.selected).length})
                 </Button>
               </div>
 
@@ -341,18 +374,14 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-white">Select Organizations</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowOrgSelector(false)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => setShowOrgSelector(false)}>
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
                       {organizations.map((org) => {
-                        const selection = orgSelections.find(s => s.login === org.login);
+                        const selection = orgSelections.find((s) => s.login === org.login);
                         return (
                           <div
                             key={org.login}
@@ -364,10 +393,16 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                             onClick={() => toggleOrgSelection(org.login)}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-4 h-4 rounded border ${
-                                selection?.selected ? 'bg-primary border-primary' : 'border-gray-500'
-                              } flex items-center justify-center`}>
-                                {selection?.selected && <CheckCircle className="w-3 h-3 text-white" />}
+                              <div
+                                className={`w-4 h-4 rounded border ${
+                                  selection?.selected
+                                    ? 'bg-primary border-primary'
+                                    : 'border-gray-500'
+                                } flex items-center justify-center`}
+                              >
+                                {selection?.selected && (
+                                  <CheckCircle className="w-3 h-3 text-white" />
+                                )}
                               </div>
                               <span className="font-medium">{org.login}</span>
                             </div>
@@ -429,7 +464,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
               <div className="flex justify-end mt-6">
                 <Button
                   onClick={searchUserAccess}
-                  disabled={isSearching || usernames.every(u => u.trim() === '')}
+                  disabled={isSearching || usernames.every((u) => u.trim() === '')}
                   className="flex items-center gap-2"
                 >
                   {isSearching ? (
@@ -440,11 +475,77 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                   ) : (
                     <>
                       <Search className="w-4 h-4" />
-                      Search Access ({usernames.filter(u => u.trim() !== '').length} users)
+                      Search Access ({usernames.filter((u) => u.trim() !== '').length} users)
                     </>
                   )}
                 </Button>
               </div>
+
+              {/* Progress Bar */}
+              <AnimatePresence>
+                {isSearching && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-6 space-y-3"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">
+                        {progress.phase === 'fetching-repos' && (
+                          <span className="flex items-center gap-2">
+                            <RefreshCw className="w-3 h-3 animate-spin text-primary" />
+                            Fetching repository list...
+                          </span>
+                        )}
+                        {progress.phase === 'scanning' && progress.total > 0 && (
+                          <span className="flex items-center gap-2">
+                            <Search className="w-3 h-3 text-primary" />
+                            Scanning:{' '}
+                            <span className="text-white font-mono truncate max-w-xs inline-block align-bottom">
+                              {progress.currentRepo}
+                            </span>
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-gray-300 font-mono">
+                        {progress.phase === 'scanning' && progress.total > 0
+                          ? `${progress.current} / ${progress.total} repos`
+                          : ''}
+                      </span>
+                    </div>
+
+                    <div className="relative w-full h-3 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+                      {progress.phase === 'fetching-repos' ? (
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary to-primary/60"
+                          animate={{ x: ['-100%', '100%'] }}
+                          transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                          style={{ width: '50%' }}
+                        />
+                      ) : (
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-primary to-emerald-400 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{
+                            width:
+                              progress.total > 0
+                                ? `${(progress.current / progress.total) * 100}%`
+                                : '0%',
+                          }}
+                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                        />
+                      )}
+                    </div>
+
+                    {progress.phase === 'scanning' && progress.total > 0 && (
+                      <div className="text-right text-xs text-gray-500">
+                        {Math.round((progress.current / progress.total) * 100)}% complete
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Card>
           </motion.div>
 
@@ -482,7 +583,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                       <CheckCircle className="w-6 h-6 text-green-500" />
                       Found Access ({filteredAccess.length} entries)
                     </h2>
-                    
+
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -494,7 +595,7 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                           className="pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none focus:bg-gray-700/50"
                         />
                       </div>
-                      
+
                       <Button
                         onClick={removeUserAccess}
                         disabled={isRemoving || filteredAccess.length === 0}
@@ -531,18 +632,22 @@ export default function DeleteUserAccess({ token, onBack }: DeleteUserAccessProp
                               <div className="font-semibold text-white">{access.username}</div>
                               <div className="text-sm text-gray-400">{access.repository}</div>
                               {access.organization && (
-                                <div className="text-xs text-gray-500">Org: {access.organization}</div>
+                                <div className="text-xs text-gray-500">
+                                  Org: {access.organization}
+                                </div>
                               )}
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              access.permission === 'admin' 
-                                ? 'bg-red-900/50 text-red-300 border border-red-500/50'
-                                : access.permission === 'write'
-                                ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-500/50'
-                                : 'bg-blue-900/50 text-blue-300 border border-blue-500/50'
-                            }`}>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                access.permission === 'admin'
+                                  ? 'bg-red-900/50 text-red-300 border border-red-500/50'
+                                  : access.permission === 'write'
+                                    ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-500/50'
+                                    : 'bg-blue-900/50 text-blue-300 border border-blue-500/50'
+                              }`}
+                            >
                               {access.permission.toUpperCase()}
                             </span>
                           </div>

@@ -35,6 +35,7 @@ const OrgPulsePage = lazy(() => import('./pages/OrgPulsePage'));
 const SecurityRadarPage = lazy(() => import('./pages/SecurityRadarPage'));
 const RepoHealthPage = lazy(() => import('./pages/RepoHealthPage'));
 const DevVelocityPage = lazy(() => import('./pages/DevVelocityPage'));
+const OrgOwnerPage = lazy(() => import('./pages/OrgOwnerPage'));
 
 function App() {
   return (
@@ -246,6 +247,14 @@ function App() {
                 element={
                   <Suspense fallback={<PageSkeleton />}>
                     <DevVelocityPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/org-owner"
+                element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <OrgOwnerPage />
                   </Suspense>
                 }
               />

@@ -27,6 +27,7 @@ import {
   Radar,
   Heart,
   Rocket,
+  Crown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +55,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: 'Access Control', to: '/access', icon: Users },
       { label: 'Access Mgmt', to: '/access-management', icon: UserCog },
       { label: 'Team Members', to: '/team-members', icon: UsersRound },
+      { label: 'Org Owners', to: '/org-owner', icon: Crown, badge: 'New' },
       { label: 'Copilot', to: '/copilot', icon: Bot },
       { label: 'Copilot ROI', to: '/copilot-roi', icon: DollarSign },
     ],
