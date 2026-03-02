@@ -97,9 +97,14 @@ jobs:
           exit 1
         fi
 
-        npm install -g azure-functions-core-tools@4 --unsafe-perm true
         npm ci --omit=dev
-        func azure functionapp publish $FUNCTION_APP_NAME --no-build
+        zip -r ../functionapp.zip . -x "*.git*" "local.settings.json" "*.log" ".vscode/*" "test/*" ".azure/*" ".env" "*.tmp"
+        cd ..
+        az functionapp deployment source config-zip \
+          --resource-group "$RESOURCE_GROUP" \
+          --name "$FUNCTION_APP_NAME" \
+          --src functionapp.zip
+        rm -f functionapp.zip
         echo "✅ Function App deployed: https://$FUNCTION_APP_NAME.azurewebsites.net"
 
     - name: Update Function App settings for OAuth
