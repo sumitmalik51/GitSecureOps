@@ -195,6 +195,8 @@ export default function OrgOwnerPage() {
         }
         auditLogService.log({
           action: 'add_org_owner',
+          actor: 'current_user',
+          status: 'success',
           target: username,
           details: {
             description: `Added ${username} as owner to ${selectedOrg}`,
@@ -224,6 +226,8 @@ export default function OrgOwnerPage() {
       toast.success('Demoted', `${username} is now a regular member`);
       auditLogService.log({
         action: 'demote_org_owner',
+        actor: 'current_user',
+        status: 'success',
         target: username,
         details: { description: `Demoted ${username} from owner to member`, org: selectedOrg },
       });
@@ -244,6 +248,8 @@ export default function OrgOwnerPage() {
       toast.success('Removed', `${username} has been removed from ${selectedOrg}`);
       auditLogService.log({
         action: 'remove_org_owner',
+        actor: 'current_user',
+        status: 'success',
         target: username,
         details: { description: `Removed ${username} from org`, org: selectedOrg },
       });

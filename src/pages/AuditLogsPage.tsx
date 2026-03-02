@@ -50,6 +50,9 @@ const ACTION_CONFIG: Record<AuditAction, { label: string; icon: React.ReactNode;
     bulk_removal: { label: 'Bulk Removal', icon: <Trash2 size={16} />, color: 'text-red-400' },
     login: { label: 'Login', icon: <LogIn size={16} />, color: 'text-green-400' },
     logout: { label: 'Logout', icon: <LogOut size={16} />, color: 'text-gray-400' },
+    add_org_owner: { label: 'Owner Added', icon: <UserPlus size={16} />, color: 'text-green-400' },
+    demote_org_owner: { label: 'Owner Demoted', icon: <UserMinus size={16} />, color: 'text-yellow-400' },
+    remove_org_owner: { label: 'Owner Removed', icon: <Trash2 size={16} />, color: 'text-red-400' },
   };
 
 const containerVariants = {
