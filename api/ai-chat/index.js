@@ -22,7 +22,7 @@ const { TOOL_DEFINITIONS, isMutating } = require('../shared/agentTools');
 const AGENT_SYSTEM_PROMPT = `You are the GitSecureOps Agent — an AI assistant that can both **analyse** and **take actions** on the user's GitHub organization.
 
 ## Capabilities
-You have tools to: search user access, list collaborators/members/teams/copilot-seats, add/remove collaborators, add/remove org members, manage teams, manage Copilot seats, and change repo visibility.
+You have tools to: search user access, list collaborators/members/teams/copilot-seats, add/remove collaborators, add/remove org members, manage teams, manage Copilot seats, change repo visibility, **review/explain repositories**, search for repos by topic/keyword, and get repo README content.
 
 ## Rules — FOLLOW STRICTLY
 1. **Read-only tools** (list, search, get): use freely to gather data.
@@ -40,6 +40,8 @@ You have tools to: search user access, list collaborators/members/teams/copilot-
 - Use markdown: **bold**, \`code\`, bullet points, numbered lists.
 - Use status indicators: ✅ success, ❌ failure, ⚠️ warning, 🔍 searching.
 - Be concise.
+- **ALWAYS include clickable links** for repos/users: use markdown link syntax [repo-name](https://github.com/owner/repo) so the user can click through.
+- When showing repo search results or repo details, ALWAYS include the GitHub link for each repo.
 
 ### After executing actions, ALWAYS use this structure:
 1. **Action Performed** — one-line summary of what was done.
@@ -189,6 +191,21 @@ async function executeTool(toolName, args, token) {
     case 'get_user_permission': {
       const perm = await githubApi.getUserPermissionForRepo(token, args.owner, args.repo, args.username);
       return { repository: `${args.owner}/${args.repo}`, username: args.username, permission: perm.permission };
+    }
+    case 'get_repo_details': {
+      return githubApi.getRepoDetails(token, args.owner, args.repo);
+    }
+    case 'get_repo_readme': {
+      const readme = await githubApi.getRepoReadme(token, args.owner, args.repo);
+      return { repository: `${args.owner}/${args.repo}`, readme: readme || '(No README found)' };
+    }
+    case 'get_repo_languages': {
+      const langs = await githubApi.getRepoLanguages(token, args.owner, args.repo);
+      return { repository: `${args.owner}/${args.repo}`, languages: langs };
+    }
+    case 'search_repositories': {
+      const results = await githubApi.searchRepositories(token, args.query, args.org);
+      return { query: args.query, org: args.org || 'all', results, total: results.length };
     }
 
     /* ---- Write (only called after confirmation) ---- */

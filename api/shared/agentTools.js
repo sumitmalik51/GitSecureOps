@@ -346,6 +346,72 @@ const TOOL_DEFINITIONS = [
       },
     },
   },
+  /* ---------- Read: Repo Review & Search ---------- */
+  {
+    type: 'function',
+    function: {
+      name: 'get_repo_details',
+      description:
+        'Get detailed information about a repository: description, language, topics, stars, forks, issues, license, visibility, and more. Always include the html_url link in your response.',
+      parameters: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string', description: 'Repository owner (user or org)' },
+          repo: { type: 'string', description: 'Repository name' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_repo_readme',
+      description:
+        'Get the README content of a repository. Use this to understand what a repo does, its setup instructions, architecture, or dependencies.',
+      parameters: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string', description: 'Repository owner (user or org)' },
+          repo: { type: 'string', description: 'Repository name' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_repo_languages',
+      description:
+        'Get the programming languages used in a repository and their byte counts.',
+      parameters: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string', description: 'Repository owner (user or org)' },
+          repo: { type: 'string', description: 'Repository name' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'search_repositories',
+      description:
+        'Search for repositories by keyword/topic. Can search within a specific org or globally. Returns matching repos with name, description, language, stars, and link. Always include the html_url link for each result.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Search query (keywords, topic, technology, etc.)' },
+          org: { type: 'string', description: 'Optional: limit search to this organization' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+
   {
     type: 'function',
     function: {

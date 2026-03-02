@@ -81,6 +81,70 @@ async function getOrgRepositories(token, org) {
   return ghPaginate(`/orgs/${encodeURIComponent(org)}/repos?sort=updated`, token);
 }
 
+/** Get detailed info about a single repository */
+async function getRepoDetails(token, owner, repo) {
+  const res = await ghRequest(`/repos/${owner}/${repo}`, { token });
+  assertOk(res, `get repo details ${owner}/${repo}`);
+  const r = res.data;
+  return {
+    full_name: r.full_name,
+    description: r.description,
+    html_url: r.html_url,
+    private: r.private,
+    language: r.language,
+    topics: r.topics || [],
+    default_branch: r.default_branch,
+    stargazers_count: r.stargazers_count,
+    forks_count: r.forks_count,
+    open_issues_count: r.open_issues_count,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+    pushed_at: r.pushed_at,
+    size: r.size,
+    license: r.license?.spdx_id || null,
+    archived: r.archived,
+    visibility: r.visibility,
+  };
+}
+
+/** Get repo README content (decoded from base64) */
+async function getRepoReadme(token, owner, repo) {
+  const res = await ghRequest(`/repos/${owner}/${repo}/readme`, { token });
+  if (res.statusCode !== 200) return null;
+  try {
+    const content = Buffer.from(res.data.content, 'base64').toString('utf-8');
+    // Truncate to first 3000 chars to keep token count sane
+    return content.length > 3000 ? content.slice(0, 3000) + '\n\n...(truncated)' : content;
+  } catch {
+    return null;
+  }
+}
+
+/** Get the languages used in a repo */
+async function getRepoLanguages(token, owner, repo) {
+  const res = await ghRequest(`/repos/${owner}/${repo}/languages`, { token });
+  if (res.statusCode !== 200) return {};
+  return res.data; // { "JavaScript": 12345, "TypeScript": 6789, ... }
+}
+
+/** Search repositories within an org or globally by query */
+async function searchRepositories(token, query, org) {
+  const q = org ? `${query}+org:${encodeURIComponent(org)}` : query;
+  const res = await ghRequest(`/search/repositories?q=${encodeURIComponent(q)}&sort=best-match&per_page=15`, { token });
+  if (res.statusCode !== 200) return [];
+  return (res.data.items || []).map(r => ({
+    full_name: r.full_name,
+    html_url: r.html_url,
+    description: r.description,
+    private: r.private,
+    language: r.language,
+    topics: r.topics || [],
+    stargazers_count: r.stargazers_count,
+    updated_at: r.updated_at,
+    archived: r.archived,
+  }));
+}
+
 /* ================================================================== */
 /*  Repository Collaborators                                           */
 /* ================================================================== */
@@ -425,4 +489,9 @@ module.exports = {
   isOutsideCollaborator,
   getUserTeamsInOrg,
   getDirectCollabRepos,
+  // Repo info & search
+  getRepoDetails,
+  getRepoReadme,
+  getRepoLanguages,
+  searchRepositories,
 };

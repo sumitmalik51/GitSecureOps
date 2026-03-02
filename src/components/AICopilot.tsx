@@ -63,9 +63,7 @@ function ActionProposalCard({
     <div
       className={cn(
         'rounded-xl border p-4 my-2',
-        isDangerous
-          ? 'bg-red-950/30 border-red-500/40'
-          : 'bg-amber-950/20 border-amber-500/30'
+        isDangerous ? 'bg-red-950/30 border-red-500/40' : 'bg-amber-950/20 border-amber-500/30'
       )}
     >
       <div className="flex items-start gap-3">
@@ -108,9 +106,7 @@ function ActionProposalCard({
             >
               {isExecuting ? (
                 <>
-                  <span
-                    className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"
-                  />
+                  <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   Executing…
                 </>
               ) : (
@@ -269,9 +265,9 @@ function RenderMarkdown({ text }: { text: string }) {
 }
 
 function renderInline(text: string): React.ReactNode {
-  // Handle **bold**, `code`, and remaining text
+  // Handle **bold**, `code`, [link](url), and bare URLs
   const parts: React.ReactNode[] = [];
-  const regex = /(\*\*(.+?)\*\*|`(.+?)`)/g;
+  const regex = /(\*\*(.+?)\*\*|`(.+?)`|\[([^\]]+)\]\((https?:\/\/[^)]+)\)|(https?:\/\/[^\s<)]+))/g;
   let lastIndex = 0;
   let match;
 
@@ -280,12 +276,14 @@ function renderInline(text: string): React.ReactNode {
       parts.push(text.slice(lastIndex, match.index));
     }
     if (match[2]) {
+      // **bold**
       parts.push(
         <strong key={match.index} className="font-semibold text-dark-text">
           {match[2]}
         </strong>
       );
     } else if (match[3]) {
+      // `code`
       parts.push(
         <code
           key={match.index}
@@ -293,6 +291,32 @@ function renderInline(text: string): React.ReactNode {
         >
           {match[3]}
         </code>
+      );
+    } else if (match[4] && match[5]) {
+      // [text](url)
+      parts.push(
+        <a
+          key={match.index}
+          href={match[5]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
+        >
+          {match[4]}
+        </a>
+      );
+    } else if (match[6]) {
+      // bare URL
+      parts.push(
+        <a
+          key={match.index}
+          href={match[6]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
+        >
+          {match[6]}
+        </a>
       );
     }
     lastIndex = match.index + match[0].length;
@@ -336,6 +360,16 @@ const SUGGESTIONS = [
     icon: Zap,
     label: 'Team Members',
     prompt: 'List all teams in my org and their members.',
+  },
+  {
+    icon: Search,
+    label: 'Review Repo',
+    prompt: 'Review and explain the repository sumitmalik51/GitSecureOps — what does it do?',
+  },
+  {
+    icon: Search,
+    label: 'Find Repos',
+    prompt: 'Find repositories related to security scanning in my org.',
   },
 ];
 
@@ -472,11 +506,7 @@ export default function AICopilot() {
     setIsExecutingAction(true);
 
     try {
-      const agentRes = await aiService.confirmAction(
-        messages,
-        pendingAction,
-        token || undefined
-      );
+      const agentRes = await aiService.confirmAction(messages, pendingAction, token || undefined);
 
       setPendingAction(null);
       setMessages((prev) => [
@@ -636,7 +666,10 @@ export default function AICopilot() {
               <RotateCcw className="w-4 h-4" />
             </button>
             <button
-              onClick={() => { setIsMinimized(!isMinimized); if (isMinimized) setIsExpanded(false); }}
+              onClick={() => {
+                setIsMinimized(!isMinimized);
+                if (isMinimized) setIsExpanded(false);
+              }}
               className="p-1.5 rounded-lg text-dark-text-muted hover:text-dark-text hover:bg-dark-hover transition-colors"
               title={isMinimized ? 'Restore' : 'Minimize'}
             >
@@ -662,234 +695,236 @@ export default function AICopilot() {
         </div>
 
         {/* -------- Body (hidden when minimized) -------- */}
-        {!isMinimized && (<>
-        {/* -------- Org Selector -------- */}
-        {orgs.length > 0 && (
-          <div className="px-3 py-2 border-b border-dark-border/30 bg-dark-bg/20">
-            <div className="relative">
-              <button
-                onClick={() => setShowOrgPicker(!showOrgPicker)}
-                className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg bg-dark-bg/50 border border-dark-border/40 hover:border-brand-500/30 transition-colors text-left"
-              >
-                <Building2 className="w-3.5 h-3.5 text-dark-text-muted shrink-0" />
-                {selectedOrg ? (
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <img
-                      src={orgs.find((o) => o.login === selectedOrg)?.avatar_url}
-                      alt=""
-                      className="w-4 h-4 rounded-sm"
-                    />
-                    <span className="text-xs font-medium text-dark-text truncate">
-                      {selectedOrg}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-dark-text-muted">Select organization…</span>
-                )}
-                <ChevronDown
-                  className={cn(
-                    'w-3 h-3 text-dark-text-muted transition-transform shrink-0',
-                    showOrgPicker && 'rotate-180'
-                  )}
-                />
-              </button>
-
-              {/* Dropdown */}
-              {showOrgPicker && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-elevated-lg z-10 max-h-[200px] overflow-y-auto">
-                  {orgs.map((org) => (
-                    <button
-                      key={org.login}
-                      onClick={() => {
-                        setSelectedOrg(org.login);
-                        setShowOrgPicker(false);
-                        // Clear context when org changes
-                        aiService.clearHistory();
-                      }}
+        {!isMinimized && (
+          <>
+            {/* -------- Org Selector -------- */}
+            {orgs.length > 0 && (
+              <div className="px-3 py-2 border-b border-dark-border/30 bg-dark-bg/20">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowOrgPicker(!showOrgPicker)}
+                    className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg bg-dark-bg/50 border border-dark-border/40 hover:border-brand-500/30 transition-colors text-left"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-dark-text-muted shrink-0" />
+                    {selectedOrg ? (
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <img
+                          src={orgs.find((o) => o.login === selectedOrg)?.avatar_url}
+                          alt=""
+                          className="w-4 h-4 rounded-sm"
+                        />
+                        <span className="text-xs font-medium text-dark-text truncate">
+                          {selectedOrg}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-dark-text-muted">Select organization…</span>
+                    )}
+                    <ChevronDown
                       className={cn(
-                        'flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-dark-hover transition-colors',
-                        org.login === selectedOrg && 'bg-brand-500/10'
+                        'w-3 h-3 text-dark-text-muted transition-transform shrink-0',
+                        showOrgPicker && 'rotate-180'
+                      )}
+                    />
+                  </button>
+
+                  {/* Dropdown */}
+                  {showOrgPicker && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-elevated-lg z-10 max-h-[200px] overflow-y-auto">
+                      {orgs.map((org) => (
+                        <button
+                          key={org.login}
+                          onClick={() => {
+                            setSelectedOrg(org.login);
+                            setShowOrgPicker(false);
+                            // Clear context when org changes
+                            aiService.clearHistory();
+                          }}
+                          className={cn(
+                            'flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-dark-hover transition-colors',
+                            org.login === selectedOrg && 'bg-brand-500/10'
+                          )}
+                        >
+                          <img src={org.avatar_url} alt="" className="w-5 h-5 rounded-sm" />
+                          <span
+                            className={cn(
+                              'text-xs',
+                              org.login === selectedOrg
+                                ? 'font-semibold text-brand-400'
+                                : 'text-dark-text-secondary'
+                            )}
+                          >
+                            {org.login}
+                          </span>
+                          {org.login === selectedOrg && (
+                            <Check className="w-3 h-3 text-brand-400 ml-auto" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* -------- Messages -------- */}
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
+            >
+              {messages.length === 0 ? (
+                /* ---- Welcome State ---- */
+                <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500/20 to-indigo-600/20 border border-brand-500/20 flex items-center justify-center mb-4">
+                    <Sparkles className="w-8 h-8 text-brand-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-dark-text mb-1.5">Security Copilot</h3>
+                  <p className="text-sm text-dark-text-muted mb-6 max-w-[280px]">
+                    AI-powered analysis of your GitHub organization&apos;s security, access
+                    controls, and compliance.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 w-full max-w-[360px]">
+                    {SUGGESTIONS.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSend(s.prompt)}
+                        className="flex items-center gap-2 p-3 rounded-xl bg-dark-bg/60 border border-dark-border/40 hover:border-brand-500/30 hover:bg-dark-hover text-left transition-all group"
+                      >
+                        <s.icon className="w-4 h-4 text-brand-400 shrink-0 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs text-dark-text-secondary group-hover:text-dark-text transition-colors">
+                          {s.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* ---- Message Bubbles ---- */
+                messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      'flex gap-2.5',
+                      msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                    )}
+                  >
+                    {/* Avatar */}
+                    {msg.role === 'assistant' && (
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Bot className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+
+                    {/* Bubble */}
+                    <div
+                      className={cn(
+                        'max-w-[85%] rounded-2xl px-4 py-2.5',
+                        msg.role === 'user'
+                          ? 'bg-brand-500/15 text-dark-text border border-brand-500/20 rounded-br-md'
+                          : 'bg-dark-bg/60 text-dark-text-secondary border border-dark-border/30 rounded-bl-md'
                       )}
                     >
-                      <img src={org.avatar_url} alt="" className="w-5 h-5 rounded-sm" />
-                      <span
-                        className={cn(
-                          'text-xs',
-                          org.login === selectedOrg
-                            ? 'font-semibold text-brand-400'
-                            : 'text-dark-text-secondary'
-                        )}
-                      >
-                        {org.login}
-                      </span>
-                      {org.login === selectedOrg && (
-                        <Check className="w-3 h-3 text-brand-400 ml-auto" />
+                      {msg.role === 'assistant' ? (
+                        <div className="relative group">
+                          <RenderMarkdown text={msg.content} />
+                          <button
+                            onClick={() => handleCopy(msg.content, idx)}
+                            className="absolute -top-1 -right-1 p-1 rounded-md bg-dark-card border border-dark-border text-dark-text-muted hover:text-dark-text opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Copy response"
+                          >
+                            {copiedId === idx ? (
+                              <Check className="w-3 h-3 text-success-400" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm">{msg.content}</p>
                       )}
-                    </button>
+                    </div>
+                  </div>
+                ))
+              )}
+
+              {/* Action Results */}
+              {actionResults.length > 0 && !isLoading && (
+                <div className="ml-9">
+                  {actionResults.map((r, i) => (
+                    <ActionResultBadge key={`ar-${i}`} result={r} />
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        )}
 
-        {/* -------- Messages -------- */}
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
-        >
-          {messages.length === 0 ? (
-            /* ---- Welcome State ---- */
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500/20 to-indigo-600/20 border border-brand-500/20 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-brand-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-dark-text mb-1.5">Security Copilot</h3>
-              <p className="text-sm text-dark-text-muted mb-6 max-w-[280px]">
-                AI-powered analysis of your GitHub organization&apos;s security, access controls,
-                and compliance.
-              </p>
-              <div className="grid grid-cols-2 gap-2 w-full max-w-[360px]">
-                {SUGGESTIONS.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(s.prompt)}
-                    className="flex items-center gap-2 p-3 rounded-xl bg-dark-bg/60 border border-dark-border/40 hover:border-brand-500/30 hover:bg-dark-hover text-left transition-all group"
-                  >
-                    <s.icon className="w-4 h-4 text-brand-400 shrink-0 group-hover:scale-110 transition-transform" />
-                    <span className="text-xs text-dark-text-secondary group-hover:text-dark-text transition-colors">
-                      {s.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* ---- Message Bubbles ---- */
-            messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={cn(
-                  'flex gap-2.5',
-                  msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                )}
-              >
-                {/* Avatar */}
-                {msg.role === 'assistant' && (
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <Bot className="w-3.5 h-3.5 text-white" />
+              {/* Pending Action Card */}
+              {pendingAction && !isLoading && (
+                <div className="ml-9">
+                  <ActionProposalCard
+                    action={pendingAction}
+                    onConfirm={handleConfirmAction}
+                    onCancel={handleCancelAction}
+                    isExecuting={isExecutingAction}
+                  />
+                </div>
+              )}
+
+              {/* Typing indicator */}
+              {isLoading && (
+                <div className="flex gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shrink-0">
+                    <Bot className="w-3.5 h-3.5 text-white animate-pulse" />
                   </div>
-                )}
+                  <div className="bg-dark-bg/60 border border-dark-border/30 rounded-2xl rounded-bl-md">
+                    <TypingIndicator />
+                  </div>
+                </div>
+              )}
+            </div>
 
-                {/* Bubble */}
-                <div
+            {/* Scroll-to-bottom */}
+            {showScrollDown && (
+              <button
+                onClick={scrollToBottom}
+                className="absolute bottom-24 left-1/2 -translate-x-1/2 p-1.5 rounded-full bg-dark-card border border-dark-border shadow-elevated hover:bg-dark-hover transition-colors"
+              >
+                <ChevronDown className="w-4 h-4 text-dark-text-muted" />
+              </button>
+            )}
+
+            {/* -------- Input -------- */}
+            <div className="px-4 py-3 border-t border-dark-border/50 bg-dark-bg/30">
+              <div className="flex items-end gap-2 bg-dark-bg/60 rounded-xl border border-dark-border/40 focus-within:border-brand-500/40 transition-colors px-3 py-2">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask about your org's security…"
+                  className="flex-1 bg-transparent text-sm text-dark-text placeholder:text-dark-text-muted resize-none outline-none max-h-[120px] min-h-[24px] leading-relaxed"
+                  rows={1}
+                />
+                <button
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || isLoading}
                   className={cn(
-                    'max-w-[85%] rounded-2xl px-4 py-2.5',
-                    msg.role === 'user'
-                      ? 'bg-brand-500/15 text-dark-text border border-brand-500/20 rounded-br-md'
-                      : 'bg-dark-bg/60 text-dark-text-secondary border border-dark-border/30 rounded-bl-md'
+                    'p-2 rounded-lg transition-all shrink-0',
+                    input.trim() && !isLoading
+                      ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-sm hover:shadow-glow-sm'
+                      : 'text-dark-text-muted cursor-not-allowed'
                   )}
                 >
-                  {msg.role === 'assistant' ? (
-                    <div className="relative group">
-                      <RenderMarkdown text={msg.content} />
-                      <button
-                        onClick={() => handleCopy(msg.content, idx)}
-                        className="absolute -top-1 -right-1 p-1 rounded-md bg-dark-card border border-dark-border text-dark-text-muted hover:text-dark-text opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Copy response"
-                      >
-                        {copiedId === idx ? (
-                          <Check className="w-3 h-3 text-success-400" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-sm">{msg.content}</p>
-                  )}
-                </div>
+                  <Send className="w-4 h-4" />
+                </button>
               </div>
-            ))
-          )}
-
-          {/* Action Results */}
-          {actionResults.length > 0 && !isLoading && (
-            <div className="ml-9">
-              {actionResults.map((r, i) => (
-                <ActionResultBadge key={`ar-${i}`} result={r} />
-              ))}
+              <p className="text-[10px] text-dark-text-muted text-center mt-1.5 opacity-60">
+                {agentMode
+                  ? 'Agent mode — can search, add & remove access · Shift+Enter for new line'
+                  : 'AI responses are generated based on your GitHub data · Shift+Enter for new line'}
+              </p>
             </div>
-          )}
-
-          {/* Pending Action Card */}
-          {pendingAction && !isLoading && (
-            <div className="ml-9">
-              <ActionProposalCard
-                action={pendingAction}
-                onConfirm={handleConfirmAction}
-                onCancel={handleCancelAction}
-                isExecuting={isExecutingAction}
-              />
-            </div>
-          )}
-
-          {/* Typing indicator */}
-          {isLoading && (
-            <div className="flex gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shrink-0">
-                <Bot className="w-3.5 h-3.5 text-white animate-pulse" />
-              </div>
-              <div className="bg-dark-bg/60 border border-dark-border/30 rounded-2xl rounded-bl-md">
-                <TypingIndicator />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Scroll-to-bottom */}
-        {showScrollDown && (
-          <button
-            onClick={scrollToBottom}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 p-1.5 rounded-full bg-dark-card border border-dark-border shadow-elevated hover:bg-dark-hover transition-colors"
-          >
-            <ChevronDown className="w-4 h-4 text-dark-text-muted" />
-          </button>
+          </>
         )}
-
-        {/* -------- Input -------- */}
-        <div className="px-4 py-3 border-t border-dark-border/50 bg-dark-bg/30">
-          <div className="flex items-end gap-2 bg-dark-bg/60 rounded-xl border border-dark-border/40 focus-within:border-brand-500/40 transition-colors px-3 py-2">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask about your org's security…"
-              className="flex-1 bg-transparent text-sm text-dark-text placeholder:text-dark-text-muted resize-none outline-none max-h-[120px] min-h-[24px] leading-relaxed"
-              rows={1}
-            />
-            <button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              className={cn(
-                'p-2 rounded-lg transition-all shrink-0',
-                input.trim() && !isLoading
-                  ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-sm hover:shadow-glow-sm'
-                  : 'text-dark-text-muted cursor-not-allowed'
-              )}
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-          <p className="text-[10px] text-dark-text-muted text-center mt-1.5 opacity-60">
-            {agentMode
-              ? 'Agent mode — can search, add & remove access · Shift+Enter for new line'
-              : 'AI responses are generated based on your GitHub data · Shift+Enter for new line'}
-          </p>
-        </div>
-        </>)}
       </div>
 
       {/* -------- Global bounce keyframes -------- */}
