@@ -306,7 +306,7 @@ module.exports = async function (context, req) {
         messages: chatMessages,
         tools: TOOL_DEFINITIONS,
         tool_choice: 'auto',
-        max_tokens: 2000,
+        max_completion_tokens: 2000,
         temperature: 0.4,
         top_p: 0.9,
       });
@@ -390,7 +390,7 @@ module.exports = async function (context, req) {
       if (pendingAction) {
         const finalResult = await makeRequest(openaiUrl, { method: 'POST', headers: openaiHeaders }, {
           messages: chatMessages,
-          max_tokens: 1000,
+          max_completion_tokens: 1000,
           temperature: 0.4,
         });
 
