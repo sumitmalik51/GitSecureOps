@@ -97,19 +97,50 @@ async function executeTool(toolName, args, token) {
   switch (toolName) {
     /* ---- Read ---- */
     case 'search_user_access': {
-      const repos = args.scope === 'org'
-        ? await githubApi.getOrgRepositories(token, args.org)
-        : await githubApi.getUserRepositories(token);
-      const found = [];
-      for (const repo of repos) {
+      const userOrgs = await githubApi.getUserOrganizations(token);
+      const targetOrgs = args.org
+        ? [{ login: args.org }]
+        : userOrgs;
+
+      const orgResults = [];
+      for (const org of targetOrgs) {
+        const orgName = org.login;
+        const result = { org: orgName, isMember: false, role: null, isOutsideCollab: false, teams: [], directRepos: 0 };
+
         try {
-          const perm = await githubApi.getUserPermissionForRepo(token, repo.owner.login, repo.name, args.username);
-          if (perm.permission && perm.permission !== 'none') {
-            found.push({ repository: repo.full_name, permission: perm.permission });
+          // 1. Check org membership
+          const membership = await githubApi.isOrgMember(token, orgName, args.username);
+          result.isMember = membership.isMember;
+          result.role = membership.role;
+
+          // 2. Check outside collaborator
+          result.isOutsideCollab = await githubApi.isOutsideCollaborator(token, orgName, args.username);
+
+          // 3. Check team memberships
+          result.teams = await githubApi.getUserTeamsInOrg(token, orgName, args.username);
+
+          // 4. Only check direct repo access if not an org member (otherwise it's inherited)
+          if (!result.isMember && !result.isOutsideCollab && result.teams.length === 0) {
+            // No org-level access found — no need to check repos
+          } else if (result.isOutsideCollab) {
+            // Outside collaborators have direct repo access
+            const directRepos = await githubApi.getDirectCollabRepos(token, orgName, args.username);
+            result.directRepos = directRepos.length;
           }
-        } catch { /* skip repos we can't access */ }
+        } catch { /* skip orgs we can't access */ }
+
+        // Only include orgs where user has some access
+        if (result.isMember || result.isOutsideCollab || result.teams.length > 0) {
+          orgResults.push(result);
+        }
       }
-      return { username: args.username, access: found, total: found.length };
+
+      return {
+        username: args.username,
+        organizations: orgResults,
+        totalOrgsWithAccess: orgResults.length,
+        hasAnyAccess: orgResults.length > 0,
+      };
     }
     case 'list_repo_collaborators': {
       const collabs = await githubApi.getRepositoryCollaborators(token, args.owner, args.repo);

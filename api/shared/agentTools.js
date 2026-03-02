@@ -40,19 +40,14 @@ const TOOL_DEFINITIONS = [
     function: {
       name: 'search_user_access',
       description:
-        'Search for a specific GitHub user across repositories to find all repos they have access to. Use for user scope (personal repos) or org scope.',
+        'Check if a GitHub user has any REAL access (org membership, team membership, outside collaborator, or direct repo access) across all orgs or a specific org. Does NOT count public repo read access. Returns org membership status, role, teams, and direct repo count.',
       parameters: {
         type: 'object',
         properties: {
           username: { type: 'string', description: 'GitHub username to search for' },
-          scope: {
-            type: 'string',
-            enum: ['user', 'org'],
-            description: 'Search in the authenticated user\'s own repos or in an org\'s repos',
-          },
-          org: { type: 'string', description: 'Organization login (required when scope is "org")' },
+          org: { type: 'string', description: 'Optional: specific organization to check. If omitted, checks all orgs.' },
         },
-        required: ['username', 'scope'],
+        required: ['username'],
       },
     },
   },

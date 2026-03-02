@@ -315,6 +315,77 @@ async function getUserOrganizations(token) {
   return ghPaginate('/user/orgs', token, 3);
 }
 
+/** Check if a user is a member of an org. Returns { isMember, role } */
+async function isOrgMember(token, org, username) {
+  const res = await ghRequest(`/orgs/${encodeURIComponent(org)}/members/${username}`, { token });
+  if (res.statusCode === 204) {
+    // Get their role (admin vs member)
+    const membership = await ghRequest(`/orgs/${encodeURIComponent(org)}/memberships/${username}`, { token });
+    return { isMember: true, role: membership.data?.role || 'member' };
+  }
+  return { isMember: false, role: null };
+}
+
+/** Check if a user is an outside collaborator of an org */
+async function isOutsideCollaborator(token, org, username) {
+  const res = await ghRequest(`/orgs/${encodeURIComponent(org)}/outside_collaborators/${username}`, { token });
+  return res.statusCode === 204;
+}
+
+/** Get all teams a user belongs to in an org */
+async function getUserTeamsInOrg(token, org, username) {
+  const teams = await getOrgTeams(token, org);
+  const userTeams = [];
+  const BATCH = 10;
+  for (let i = 0; i < teams.length; i += BATCH) {
+    const batch = teams.slice(i, i + BATCH);
+    const results = await Promise.allSettled(
+      batch.map(async (team) => {
+        const res = await ghRequest(
+          `/orgs/${encodeURIComponent(org)}/teams/${team.slug}/memberships/${username}`,
+          { token }
+        );
+        if (res.statusCode === 200) {
+          return { team: team.slug, name: team.name, role: res.data?.role || 'member' };
+        }
+        return null;
+      })
+    );
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value) userTeams.push(r.value);
+    }
+  }
+  return userTeams;
+}
+
+/** Get repos where user is a direct collaborator (not inherited from org/teams) */
+async function getDirectCollabRepos(token, org, username) {
+  const repos = await getOrgRepositories(token, org);
+  const directRepos = [];
+  const BATCH = 10;
+  for (let i = 0; i < repos.length; i += BATCH) {
+    const batch = repos.slice(i, i + BATCH);
+    const results = await Promise.allSettled(
+      batch.map(async (repo) => {
+        // Check direct collaborator via affiliation=direct
+        const res = await ghRequest(
+          `/repos/${repo.owner.login}/${repo.name}/collaborators/${username}`,
+          { token }
+        );
+        if (res.statusCode === 204) {
+          const perm = await getUserPermissionForRepo(token, repo.owner.login, repo.name, username);
+          return { repo: repo.full_name, permission: perm.permission, private: repo.private };
+        }
+        return null;
+      })
+    );
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value) directRepos.push(r.value);
+    }
+  }
+  return directRepos;
+}
+
 /* ================================================================== */
 /*  Exports                                                            */
 /* ================================================================== */
@@ -349,4 +420,9 @@ module.exports = {
   // User
   getAuthenticatedUser,
   getUserOrganizations,
+  // Access checks
+  isOrgMember,
+  isOutsideCollaborator,
+  getUserTeamsInOrg,
+  getDirectCollabRepos,
 };
