@@ -27,13 +27,14 @@ You have tools to: search user access, list collaborators/members/teams/copilot-
 ## Rules — FOLLOW STRICTLY
 1. **Read-only tools** (list, search, get): use freely to gather data.
 2. **Mutating tools** (add, remove, update): NEVER call them without first explaining exactly what you will do and asking for user confirmation.
-   - Present the proposed action clearly and say: "Type **confirm** to proceed or **cancel** to abort."
-   - Only after the user explicitly confirms should you call the mutating tool.
-3. For bulk operations, list ALL affected items first, then ask for confirmation.
-4. Never remove the last admin from a repository or organization.
-5. Cap bulk operations at 25 items per confirmation round.
-6. If a tool call fails, report the error and suggest alternatives.
-7. Always say which org/repo/user you are operating on — be explicit.
+   - Ask for confirmation ONCE for the entire operation. List everything that will happen, then say: "Type **confirm** to proceed or **cancel** to abort."
+   - Only after the user explicitly confirms should you call the mutating tool(s).
+3. **ONE confirmation = execute ALL.** Once the user says "confirm", execute the COMPLETE operation across ALL orgs/repos in a SINGLE pass. Do NOT ask for confirmation again. Do NOT process one org at a time. Call the tool once for each org in the SAME response.
+4. **NEVER re-ask or add extra confirmation gates.** No "confirm all", "confirm execute", "CONFIRM EXECUTE", or any other variant. One "confirm" is enough.
+5. For bulk operations, list ALL affected items first, then ask for ONE confirmation.
+6. Never remove the last admin from a repository or organization.
+7. If a tool call fails, report the error and suggest alternatives.
+8. Always say which org/repo/user you are operating on — be explicit.
 
 ## Response Formatting — FOLLOW STRICTLY
 - Use markdown: **bold**, \`code\`, bullet points, numbered lists.
@@ -42,9 +43,9 @@ You have tools to: search user access, list collaborators/members/teams/copilot-
 
 ### After executing actions, ALWAYS use this structure:
 1. **Action Performed** — one-line summary of what was done.
-2. **Results** — a clear table or list showing each item and its outcome (✅ removed / ❌ failed / ⏭️ skipped).
-3. **Summary counts** — e.g. "Removed from 112 repos, 3 failed, 0 skipped."
-4. **Next steps** — suggest verification or follow-up actions.
+2. **Results** — a clear table showing EACH org and its outcome (✅ removed / ❌ failed / ⏭️ skipped).
+3. **Summary counts** — e.g. "Removed from 5 orgs, 578 repos total, 0 failed."
+4. **Next steps** — suggest verification scan.
 
 ### NEVER mix "before" data with "after" results.
 - If you scanned access BEFORE taking action, label it clearly: "📋 **Before** (pre-removal scan)"
@@ -52,7 +53,7 @@ You have tools to: search user access, list collaborators/members/teams/copilot-
 - If the user wants proof, run a NEW scan and label it: "📋 **After** (post-removal verification)"
 
 ### For removal operations specifically:
-- Show a per-org summary: org name, repos processed, repos removed, errors.
+- Show a per-org summary: org name, repos removed, teams removed, org membership removed, errors.
 - Do NOT list every single repo unless the user asks for details.
 - End with a clear ✅ or ❌ overall status.
 
@@ -254,11 +255,13 @@ module.exports = async function (context, req) {
     }
 
     const actionsTaken = [];
+    let userHasConfirmed = false;
 
     /* ------------------------------------------------------------ */
     /*  Handle confirmed action execution                            */
     /* ------------------------------------------------------------ */
     if (confirmed_action && confirmed_action.tool && confirmed_action.args) {
+      userHasConfirmed = true; // user confirmed — allow subsequent mutating calls too
       try {
         const result = await executeTool(confirmed_action.tool, confirmed_action.args, token);
         actionsTaken.push({ tool: confirmed_action.tool, args: confirmed_action.args, result });
@@ -361,24 +364,44 @@ module.exports = async function (context, req) {
         }
 
         if (isMutating(toolName)) {
-          // Mutating → stop and ask for confirmation
-          pendingAction = {
-            id: toolCall.id,
-            tool: toolName,
-            args,
-            description: describeAction(toolName, args),
-          };
+          if (userHasConfirmed) {
+            // User already confirmed — execute immediately
+            try {
+              const toolResult = await executeTool(toolName, args, token);
+              actionsTaken.push({ tool: toolName, args, result: toolResult });
+              chatMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: JSON.stringify(toolResult),
+              });
+            } catch (err) {
+              actionsTaken.push({ tool: toolName, args, error: err.message });
+              chatMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: JSON.stringify({ error: err.message }),
+              });
+            }
+          } else {
+            // Not yet confirmed → stop and ask for confirmation
+            pendingAction = {
+              id: toolCall.id,
+              tool: toolName,
+              args,
+              description: describeAction(toolName, args),
+            };
 
-          // Give the model a message so it can frame the confirmation request
-          chatMessages.push({
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify({
-              status: 'PENDING_CONFIRMATION',
-              description: pendingAction.description,
-              message: 'This action requires user confirmation. Ask the user to confirm.',
-            }),
-          });
+            // Give the model a message so it can frame the confirmation request
+            chatMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({
+                status: 'PENDING_CONFIRMATION',
+                description: pendingAction.description,
+                message: 'This action requires user confirmation. Ask the user to confirm.',
+              }),
+            });
+          }
         } else {
           // Read-only → execute immediately
           try {
