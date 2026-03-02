@@ -197,12 +197,44 @@ async function addOrgMember(token, org, username, role = 'member') {
 }
 
 async function removeOrgMember(token, org, username) {
-  const res = await ghRequest(`/orgs/${encodeURIComponent(org)}/members/${username}`, {
+  // 1. Try removing as org member
+  const memberRes = await ghRequest(`/orgs/${encodeURIComponent(org)}/members/${username}`, {
     method: 'DELETE',
     token,
   });
-  assertOk(res, `remove ${username} from org ${org}`);
-  return { status: 'removed', organization: org, username };
+  if (memberRes.statusCode === 204) {
+    return { status: 'removed', organization: org, username, removedAs: 'member' };
+  }
+
+  // 2. If not a member (404), try removing as outside collaborator
+  const ocRes = await ghRequest(`/orgs/${encodeURIComponent(org)}/outside_collaborators/${username}`, {
+    method: 'DELETE',
+    token,
+  });
+  if (ocRes.statusCode === 204) {
+    return { status: 'removed', organization: org, username, removedAs: 'outside_collaborator' };
+  }
+
+  // 3. If neither worked, try removing direct collaborator access from all org repos
+  const repos = await getOrgRepositories(token, org);
+  let removedFromRepos = 0;
+  for (const repo of repos) {
+    try {
+      const delRes = await ghRequest(
+        `/repos/${repo.owner.login}/${repo.name}/collaborators/${username}`,
+        { method: 'DELETE', token }
+      );
+      if (delRes.statusCode === 204) removedFromRepos++;
+    } catch { /* skip */ }
+  }
+
+  if (removedFromRepos > 0) {
+    return { status: 'removed', organization: org, username, removedAs: 'direct_collaborator', reposRemoved: removedFromRepos };
+  }
+
+  // Nothing worked — throw with details
+  const msg = memberRes.data?.message || `HTTP ${memberRes.statusCode}`;
+  throw new Error(`Could not remove ${username} from ${org}. They may not have any access, or you lack admin permissions. GitHub said: ${msg}`);
 }
 
 async function removeUserFromAllOrgRepos(token, org, username) {
