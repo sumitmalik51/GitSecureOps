@@ -216,8 +216,9 @@ async function executeTool(toolName, args, token) {
     case 'add_org_member':
       return githubApi.addOrgMember(token, args.org, args.username, args.role || 'member');
     case 'remove_org_member':
-      return githubApi.removeOrgMember(token, args.org, args.username);
     case 'remove_user_from_all_org_repos':
+      // Both tools now do the same comprehensive removal:
+      // teams → direct repo access → outside collaborator → org membership
       return githubApi.removeUserFromAllOrgRepos(token, args.org, args.username);
     case 'remove_outside_collaborator':
       return githubApi.removeOutsideCollaborator(token, args.org, args.username);

@@ -242,7 +242,7 @@ const TOOL_DEFINITIONS = [
     type: 'function',
     function: {
       name: 'remove_org_member',
-      description: 'Remove a user from an organization entirely. ALWAYS confirm first.',
+      description: 'COMPREHENSIVE removal: removes a user from ALL teams, ALL direct repo collaborator access, outside collaborator status, AND org membership. Equivalent to remove_user_from_all_org_repos. ALWAYS confirm first.',
       parameters: {
         type: 'object',
         properties: {
