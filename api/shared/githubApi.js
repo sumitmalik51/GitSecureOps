@@ -144,18 +144,36 @@ async function removeOrgMember(token, org, username) {
 async function removeUserFromAllOrgRepos(token, org, username) {
   const repos = await getOrgRepositories(token, org);
   const results = [];
-  for (const repo of repos) {
-    try {
-      const collabs = await getRepositoryCollaborators(token, repo.owner.login, repo.name);
-      const found = collabs.find((c) => c.login.toLowerCase() === username.toLowerCase());
-      if (found) {
-        await removeRepoCollaborator(token, repo.owner.login, repo.name, username);
-        results.push({ repo: repo.full_name, status: 'removed' });
-      }
-    } catch (err) {
-      results.push({ repo: repo.full_name, status: 'error', message: err.message });
+  const BATCH_SIZE = 10;
+
+  for (let i = 0; i < repos.length; i += BATCH_SIZE) {
+    const batch = repos.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (repo) => {
+        const owner = repo.owner.login;
+        const name = repo.name;
+        try {
+          // Direct DELETE — returns 204 if removed, 404 if not a collaborator
+          const res = await ghRequest(`/repos/${owner}/${name}/collaborators/${username}`, {
+            method: 'DELETE',
+            token,
+          });
+          if (res.statusCode === 204) {
+            return { repo: repo.full_name, status: 'removed' };
+          }
+          // 404 = not a collaborator, skip silently
+          return null;
+        } catch (err) {
+          return { repo: repo.full_name, status: 'error', message: err.message };
+        }
+      })
+    );
+    for (const r of batchResults) {
+      if (r.status === 'fulfilled' && r.value) results.push(r.value);
+      if (r.status === 'rejected') results.push({ repo: 'unknown', status: 'error', message: String(r.reason) });
     }
   }
+
   return { username, organization: org, results, removedCount: results.filter((r) => r.status === 'removed').length };
 }
 
