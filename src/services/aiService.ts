@@ -21,6 +21,29 @@ export interface ChatMessage {
   content: string;
 }
 
+/** A mutating action proposed by the agent, awaiting user confirmation. */
+export interface PendingAction {
+  id: string;
+  tool: string;
+  args: Record<string, unknown>;
+  description: string;
+}
+
+/** Result of an executed agent action. */
+export interface ActionResult {
+  tool: string;
+  args: Record<string, unknown>;
+  result?: unknown;
+  error?: string;
+}
+
+/** Full response from the agent backend. */
+export interface AgentResponse {
+  response: string;
+  pending_action?: PendingAction;
+  actions_taken?: ActionResult[];
+}
+
 interface GitHubOrg {
   login: string;
   avatar_url: string;
@@ -1326,6 +1349,54 @@ class AIService {
     }
 
     return this.engine.generateResponse(messages, token, selectedOrg);
+  }
+
+  /**
+   * Agent chat — routes through the Azure Function backend with tool calling.
+   * Returns the full agent response including pending actions and executed results.
+   */
+  async agentChat(
+    messages: ChatMessage[],
+    token?: string,
+    confirmedAction?: { tool: string; args: Record<string, unknown> }
+  ): Promise<AgentResponse> {
+    this.history = messages;
+
+    const functionAppUrl =
+      import.meta.env.VITE_FUNCTION_APP_URL || 'http://localhost:7071';
+
+    const res = await fetch(`${functionAppUrl}/api/ai-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        token,
+        confirmed_action: confirmedAction || undefined,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(err.error || `Agent API returned ${res.status}`);
+    }
+
+    const data: AgentResponse = await res.json();
+    return data;
+  }
+
+  /**
+   * Convenience wrapper: confirm a pending action and get the agent's follow-up.
+   */
+  async confirmAction(
+    messages: ChatMessage[],
+    pendingAction: PendingAction,
+    token?: string
+  ): Promise<AgentResponse> {
+    const confirmMsg: ChatMessage = { role: 'user', content: 'confirm' };
+    return this.agentChat([...messages, confirmMsg], token, {
+      tool: pendingAction.tool,
+      args: pendingAction.args,
+    });
   }
 
   clearHistory() {

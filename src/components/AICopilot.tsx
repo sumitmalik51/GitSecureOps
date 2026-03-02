@@ -14,12 +14,144 @@ import {
   Brain,
   ChevronDown,
   Building2,
-  GitPullRequest,
   Search,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Play,
+  UserMinus,
+  UserPlus,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { aiService, type ChatMessage } from '@/services/aiService';
+import {
+  aiService,
+  type ChatMessage,
+  type PendingAction,
+  type ActionResult,
+  type AgentResponse,
+} from '@/services/aiService';
+
+/* ------------------------------------------------------------------ */
+/*  Agent Action Card — renders pending / completed actions inline     */
+/* ------------------------------------------------------------------ */
+
+function getActionIcon(tool: string) {
+  if (tool.includes('remove')) return UserMinus;
+  if (tool.includes('add') || tool.includes('invite')) return UserPlus;
+  if (tool.includes('update') || tool.includes('visibility')) return Settings;
+  return Play;
+}
+
+function ActionProposalCard({
+  action,
+  onConfirm,
+  onCancel,
+  isExecuting,
+}: {
+  action: PendingAction;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isExecuting: boolean;
+}) {
+  const Icon = getActionIcon(action.tool);
+  const isDangerous = action.tool.includes('remove');
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl border p-4 my-2',
+        isDangerous
+          ? 'bg-red-950/30 border-red-500/40'
+          : 'bg-amber-950/20 border-amber-500/30'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+            isDangerous ? 'bg-red-500/20' : 'bg-amber-500/20'
+          )}
+        >
+          <Icon className={cn('w-4 h-4', isDangerous ? 'text-red-400' : 'text-amber-400')} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle
+              className={cn('w-3.5 h-3.5', isDangerous ? 'text-red-400' : 'text-amber-400')}
+            />
+            <span
+              className={cn(
+                'text-xs font-semibold uppercase tracking-wider',
+                isDangerous ? 'text-red-400' : 'text-amber-400'
+              )}
+            >
+              {isDangerous ? 'Destructive Action' : 'Action Required'}
+            </span>
+          </div>
+          <p className="text-sm text-dark-text mb-3">
+            <RenderMarkdown text={action.description} />
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={onConfirm}
+              disabled={isExecuting}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                isDangerous
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'bg-amber-500 hover:bg-amber-600 text-black',
+                isExecuting && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              {isExecuting ? (
+                <>
+                  <span
+                    className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"
+                  />
+                  Executing…
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Confirm
+                </>
+              )}
+            </button>
+            <button
+              onClick={onCancel}
+              disabled={isExecuting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-dark-bg/60 border border-dark-border/40 text-dark-text-muted hover:text-dark-text hover:border-dark-border transition-all"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionResultBadge({ result }: { result: ActionResult }) {
+  const success = !result.error;
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2 rounded-lg px-3 py-2 my-1 text-xs border',
+        success
+          ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
+          : 'bg-red-950/30 border-red-500/30 text-red-300'
+      )}
+    >
+      {success ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+      <span className="font-medium">{result.tool.replace(/_/g, ' ')}</span>
+      <span className="text-dark-text-muted">—</span>
+      <span>{success ? 'Completed' : result.error}</span>
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Typing dots animation                                              */
@@ -175,37 +307,34 @@ function renderInline(text: string): React.ReactNode {
 /* ------------------------------------------------------------------ */
 const SUGGESTIONS = [
   {
-    icon: Shield,
-    label: 'Security Posture',
-    prompt:
-      "Analyze my organization's overall security posture and give me a risk score with top recommendations.",
-  },
-  {
-    icon: GitPullRequest,
-    label: 'Recent PRs',
-    prompt: 'Show me all PRs opened in the last 12 hours across all repos.',
-  },
-  {
     icon: Search,
-    label: 'Find Repo',
-    prompt: 'Which repo is related to authentication?',
+    label: 'Who Has Access?',
+    prompt: 'Who has access to my repositories? List all collaborators.',
   },
   {
-    icon: Zap,
-    label: '2FA Compliance',
-    prompt: "Which members in my org don't have 2FA enabled? What's the compliance percentage?",
+    icon: UserMinus,
+    label: 'Remove User',
+    prompt: 'Find and remove a user from all my repos.',
+  },
+  {
+    icon: Shield,
+    label: 'Outside Collabs',
+    prompt: 'List all outside collaborators in my organization.',
+  },
+  {
+    icon: UserPlus,
+    label: 'Add Collaborator',
+    prompt: 'Add a user as a collaborator to one of my repositories.',
   },
   {
     icon: Brain,
-    label: 'Repo Risks',
-    prompt:
-      'Identify the top 5 riskiest repositories based on visibility, activity, and security configuration.',
+    label: 'Copilot Seats',
+    prompt: 'Show me all Copilot seat assignments in my org.',
   },
   {
-    icon: Sparkles,
-    label: 'Quick Wins',
-    prompt:
-      "Give me 5 quick security wins I can implement today to improve my GitHub org's security.",
+    icon: Zap,
+    label: 'Team Members',
+    prompt: 'List all teams in my org and their members.',
   },
 ];
 
@@ -221,6 +350,12 @@ export default function AICopilot() {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
+
+  // Agent state
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [actionResults, setActionResults] = useState<ActionResult[]>([]);
+  const [isExecutingAction, setIsExecutingAction] = useState(false);
+  const [agentMode, setAgentMode] = useState(true);
 
   // Org selector
   const [orgs, setOrgs] = useState<{ login: string; avatar_url: string }[]>([]);
@@ -285,17 +420,36 @@ export default function AICopilot() {
     if (!message || isLoading) return;
 
     const userMsg: ChatMessage = { role: 'user', content: message };
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setInput('');
     setIsLoading(true);
+    setPendingAction(null);
 
     try {
-      const response = await aiService.chat(
-        [...messages, userMsg],
-        token || undefined,
-        selectedOrg || undefined
-      );
-      setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+      if (agentMode) {
+        // Agent mode — route through backend with tool calling
+        const agentRes: AgentResponse = await aiService.agentChat(
+          updatedMessages,
+          token || undefined
+        );
+        setMessages((prev) => [...prev, { role: 'assistant', content: agentRes.response }]);
+
+        if (agentRes.pending_action) {
+          setPendingAction(agentRes.pending_action);
+        }
+        if (agentRes.actions_taken) {
+          setActionResults(agentRes.actions_taken);
+        }
+      } else {
+        // Classic chat mode — direct to Azure OpenAI / built-in engine
+        const response = await aiService.chat(
+          updatedMessages,
+          token || undefined,
+          selectedOrg || undefined
+        );
+        setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+      }
     } catch (err) {
       const errorMsg =
         err instanceof Error ? err.message : 'Something went wrong. Please try again.';
@@ -309,6 +463,51 @@ export default function AICopilot() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction || isExecutingAction) return;
+    setIsExecutingAction(true);
+
+    try {
+      const agentRes = await aiService.confirmAction(
+        messages,
+        pendingAction,
+        token || undefined
+      );
+
+      setPendingAction(null);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'user', content: 'confirm' },
+        { role: 'assistant', content: agentRes.response },
+      ]);
+
+      if (agentRes.actions_taken) {
+        setActionResults(agentRes.actions_taken);
+      }
+      if (agentRes.pending_action) {
+        setPendingAction(agentRes.pending_action);
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to execute action.';
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `❌ **Action failed:** ${errorMsg}` },
+      ]);
+      setPendingAction(null);
+    } finally {
+      setIsExecutingAction(false);
+    }
+  };
+
+  const handleCancelAction = () => {
+    setPendingAction(null);
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: 'cancel' },
+      { role: 'assistant', content: 'Action cancelled. How else can I help?' },
+    ]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -326,6 +525,8 @@ export default function AICopilot() {
 
   const handleReset = () => {
     setMessages([]);
+    setPendingAction(null);
+    setActionResults([]);
     aiService.clearHistory();
   };
 
@@ -397,13 +598,34 @@ export default function AICopilot() {
                 >
                   {isAzureAI ? 'GPT' : 'BASIC'}
                 </span>
+                {agentMode && (
+                  <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider bg-purple-500/20 text-purple-400">
+                    AGENT
+                  </span>
+                )}
               </h3>
               <p className="text-[11px] text-dark-text-muted">
-                {isAzureAI ? 'Azure OpenAI · gpt-5.2-chat' : 'Built-in engine · keyword matching'}
+                {agentMode
+                  ? 'Agent mode · can take actions on your behalf'
+                  : isAzureAI
+                    ? 'Azure OpenAI · gpt-5.2-chat'
+                    : 'Built-in engine · keyword matching'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => setAgentMode(!agentMode)}
+              className={cn(
+                'p-1.5 rounded-lg transition-colors',
+                agentMode
+                  ? 'text-purple-400 bg-purple-500/10 hover:bg-purple-500/20'
+                  : 'text-dark-text-muted hover:text-dark-text hover:bg-dark-hover'
+              )}
+              title={agentMode ? 'Switch to chat mode' : 'Switch to agent mode'}
+            >
+              <Zap className="w-4 h-4" />
+            </button>
             <button
               onClick={handleReset}
               className="p-1.5 rounded-lg text-dark-text-muted hover:text-dark-text hover:bg-dark-hover transition-colors"
@@ -579,6 +801,27 @@ export default function AICopilot() {
             ))
           )}
 
+          {/* Action Results */}
+          {actionResults.length > 0 && !isLoading && (
+            <div className="ml-9">
+              {actionResults.map((r, i) => (
+                <ActionResultBadge key={`ar-${i}`} result={r} />
+              ))}
+            </div>
+          )}
+
+          {/* Pending Action Card */}
+          {pendingAction && !isLoading && (
+            <div className="ml-9">
+              <ActionProposalCard
+                action={pendingAction}
+                onConfirm={handleConfirmAction}
+                onCancel={handleCancelAction}
+                isExecuting={isExecutingAction}
+              />
+            </div>
+          )}
+
           {/* Typing indicator */}
           {isLoading && (
             <div className="flex gap-2.5">
@@ -628,7 +871,9 @@ export default function AICopilot() {
             </button>
           </div>
           <p className="text-[10px] text-dark-text-muted text-center mt-1.5 opacity-60">
-            AI responses are generated based on your GitHub data · Shift+Enter for new line
+            {agentMode
+              ? 'Agent mode — can search, add & remove access · Shift+Enter for new line'
+              : 'AI responses are generated based on your GitHub data · Shift+Enter for new line'}
           </p>
         </div>
       </div>
