@@ -263,7 +263,7 @@ const TOOL_DEFINITIONS = [
     function: {
       name: 'remove_user_from_all_org_repos',
       description:
-        'Remove a user from ALL repositories in an organization. This is a bulk destructive action — ALWAYS confirm first and show the user what will be affected.',
+        'COMPREHENSIVE removal: removes a user from ALL teams, ALL direct repo collaborator access, outside collaborator status, AND org membership in one operation. This fully revokes every form of access the user has in the org. This is the most thorough removal tool — use it when you need to completely cut off a user. ALWAYS confirm first.',
       parameters: {
         type: 'object',
         properties: {

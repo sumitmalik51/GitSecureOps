@@ -198,7 +198,7 @@ function describeAction(toolName, args) {
     remove_repo_collaborator: () => `Remove **${args.username}** from **${args.owner}/${args.repo}**`,
     add_org_member: () => `Invite **${args.username}** to org **${args.org}** as **${args.role || 'member'}**`,
     remove_org_member: () => `Remove **${args.username}** from org **${args.org}**`,
-    remove_user_from_all_org_repos: () => `Remove **${args.username}** from ALL repositories in **${args.org}**`,
+    remove_user_from_all_org_repos: () => `Completely remove **${args.username}** from **${args.org}** (teams, repos, org membership)`,
     remove_outside_collaborator: () => `Remove outside collaborator **${args.username}** from **${args.org}**`,
     add_team_member: () => `Add **${args.username}** to team **${args.team_slug}** in **${args.org}**`,
     remove_team_member: () => `Remove **${args.username}** from team **${args.team_slug}** in **${args.org}**`,

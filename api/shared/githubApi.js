@@ -142,39 +142,76 @@ async function removeOrgMember(token, org, username) {
 }
 
 async function removeUserFromAllOrgRepos(token, org, username) {
-  const repos = await getOrgRepositories(token, org);
-  const results = [];
-  const BATCH_SIZE = 10;
+  const summary = { username, organization: org, directRepos: 0, teams: 0, orgMembership: false, outsideCollab: false, errors: [] };
 
-  for (let i = 0; i < repos.length; i += BATCH_SIZE) {
-    const batch = repos.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.allSettled(
-      batch.map(async (repo) => {
-        const owner = repo.owner.login;
-        const name = repo.name;
-        try {
-          // Direct DELETE — returns 204 if removed, 404 if not a collaborator
-          const res = await ghRequest(`/repos/${owner}/${name}/collaborators/${username}`, {
-            method: 'DELETE',
-            token,
-          });
-          if (res.statusCode === 204) {
-            return { repo: repo.full_name, status: 'removed' };
-          }
-          // 404 = not a collaborator, skip silently
-          return null;
-        } catch (err) {
-          return { repo: repo.full_name, status: 'error', message: err.message };
-        }
-      })
-    );
-    for (const r of batchResults) {
-      if (r.status === 'fulfilled' && r.value) results.push(r.value);
-      if (r.status === 'rejected') results.push({ repo: 'unknown', status: 'error', message: String(r.reason) });
+  // 1. Remove from all teams first (teams grant repo access)
+  try {
+    const teams = await getOrgTeams(token, org);
+    const BATCH = 10;
+    for (let i = 0; i < teams.length; i += BATCH) {
+      const batch = teams.slice(i, i + BATCH);
+      await Promise.allSettled(
+        batch.map(async (team) => {
+          try {
+            const members = await getTeamMembers(token, org, team.slug);
+            if (members.some((m) => m.login.toLowerCase() === username.toLowerCase())) {
+              await removeTeamMember(token, org, team.slug, username);
+              summary.teams++;
+            }
+          } catch { /* skip */ }
+        })
+      );
     }
+  } catch (err) {
+    summary.errors.push(`teams: ${err.message}`);
   }
 
-  return { username, organization: org, results, removedCount: results.filter((r) => r.status === 'removed').length };
+  // 2. Remove direct collaborator access from all repos
+  try {
+    const repos = await getOrgRepositories(token, org);
+    const BATCH = 10;
+    for (let i = 0; i < repos.length; i += BATCH) {
+      const batch = repos.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(async (repo) => {
+          try {
+            const res = await ghRequest(`/repos/${repo.owner.login}/${repo.name}/collaborators/${username}`, {
+              method: 'DELETE',
+              token,
+            });
+            return res.statusCode === 204 ? 'removed' : 'skipped';
+          } catch { return 'skipped'; }
+        })
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value === 'removed') summary.directRepos++;
+      }
+    }
+  } catch (err) {
+    summary.errors.push(`repos: ${err.message}`);
+  }
+
+  // 3. Remove outside collaborator status
+  try {
+    const res = await ghRequest(`/orgs/${encodeURIComponent(org)}/outside_collaborators/${username}`, {
+      method: 'DELETE',
+      token,
+    });
+    if (res.statusCode === 204) summary.outsideCollab = true;
+  } catch { /* not an outside collaborator */ }
+
+  // 4. Remove org membership (this revokes ALL inherited access)
+  try {
+    const res = await ghRequest(`/orgs/${encodeURIComponent(org)}/members/${username}`, {
+      method: 'DELETE',
+      token,
+    });
+    if (res.statusCode === 204) summary.orgMembership = true;
+  } catch (err) {
+    summary.errors.push(`org membership: ${err.message}`);
+  }
+
+  return summary;
 }
 
 async function getOutsideCollaborators(token, org) {
