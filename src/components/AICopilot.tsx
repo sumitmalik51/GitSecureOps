@@ -13,6 +13,7 @@ import {
   Zap,
   Brain,
   ChevronDown,
+  Minus,
   Building2,
   Search,
   AlertTriangle,
@@ -345,6 +346,7 @@ export default function AICopilot() {
   const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -531,8 +533,8 @@ export default function AICopilot() {
   };
 
   // Panel dimensions
-  const panelWidth = isExpanded ? 'w-[680px]' : 'w-[420px]';
-  const panelHeight = isExpanded ? 'h-[85vh]' : 'h-[600px]';
+  const panelWidth = isMinimized ? 'w-[280px]' : isExpanded ? 'w-[680px]' : 'w-[420px]';
+  const panelHeight = isMinimized ? 'h-auto' : isExpanded ? 'h-[85vh]' : 'h-[600px]';
 
   return (
     <>
@@ -634,12 +636,21 @@ export default function AICopilot() {
               <RotateCcw className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={() => { setIsMinimized(!isMinimized); if (isMinimized) setIsExpanded(false); }}
               className="p-1.5 rounded-lg text-dark-text-muted hover:text-dark-text hover:bg-dark-hover transition-colors"
-              title={isExpanded ? 'Collapse' : 'Expand'}
+              title={isMinimized ? 'Restore' : 'Minimize'}
             >
-              {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
             </button>
+            {!isMinimized && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-1.5 rounded-lg text-dark-text-muted hover:text-dark-text hover:bg-dark-hover transition-colors"
+                title={isExpanded ? 'Collapse' : 'Expand'}
+              >
+                {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+            )}
             <button
               onClick={() => setIsOpen(false)}
               className="p-1.5 rounded-lg text-dark-text-muted hover:text-dark-text hover:bg-dark-hover transition-colors"
@@ -650,6 +661,8 @@ export default function AICopilot() {
           </div>
         </div>
 
+        {/* -------- Body (hidden when minimized) -------- */}
+        {!isMinimized && (<>
         {/* -------- Org Selector -------- */}
         {orgs.length > 0 && (
           <div className="px-3 py-2 border-b border-dark-border/30 bg-dark-bg/20">
@@ -876,6 +889,7 @@ export default function AICopilot() {
               : 'AI responses are generated based on your GitHub data · Shift+Enter for new line'}
           </p>
         </div>
+        </>)}
       </div>
 
       {/* -------- Global bounce keyframes -------- */}
