@@ -98,8 +98,8 @@ jobs:
         fi
 
         npm install -g azure-functions-core-tools@4 --unsafe-perm true
-        npm ci --production
-        func azure functionapp publish $FUNCTION_APP_NAME
+        npm ci --omit=dev
+        func azure functionapp publish $FUNCTION_APP_NAME --no-build
         echo "✅ Function App deployed: https://$FUNCTION_APP_NAME.azurewebsites.net"
 
     - name: Update Function App settings for OAuth
